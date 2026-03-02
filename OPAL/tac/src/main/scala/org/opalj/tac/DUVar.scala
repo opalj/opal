@@ -13,6 +13,7 @@ import org.opalj.br.PDUVar
 import org.opalj.br.PDVar
 import org.opalj.br.PUVar
 import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.util.elidedAssert
 import org.opalj.value.ValueInformation
 
 /**
@@ -81,7 +82,7 @@ object DefSites {
      * Defines an extractor to get the definition site of an expression's/statement's value.
      * Returns the empty set if the value is a constant.
      */
-    def unapply(valueExpr: Expr[DUVar[_]] /*Expr to make it fail!*/ ): Some[IntTrieSet] = {
+    def unapply(valueExpr: Expr[DUVar[?]] /*Expr to make it fail!*/ ): Some[IntTrieSet] = {
         Some(
             valueExpr match {
                 case UVar(_, defSites) => defSites
@@ -120,7 +121,7 @@ class DVar[+Value <: ValueInformation /*org.opalj.ai.ValuesDomain#DomainValue*/ 
     private[tac] var useSites: IntTrieSet
 ) extends DUVar[Value] {
 
-    assert(origin >= 0)
+    elidedAssert(origin >= 0)
 
     def copy[V >: Value <: ValueInformation /*org.opalj.ai.ValuesDomain#DomainValue*/ ](
         origin:   ValueOrigin = this.origin,
@@ -157,7 +158,7 @@ class DVar[+Value <: ValueInformation /*org.opalj.ai.ValuesDomain#DomainValue*/ 
         pcToIndex:                    Array[Int],
         isIndexOfCaughtExceptionStmt: Int => Boolean
     ): Unit = {
-        assert(
+        elidedAssert(
             origin >= 0,
             s"DVars are not intended to be used to model parameters/exceptions (origin=$origin)"
         )
@@ -199,7 +200,7 @@ class DVar[+Value <: ValueInformation /*org.opalj.ai.ValuesDomain#DomainValue*/ 
 
     override def toPersistentForm(
         implicit stmts: Array[Stmt[V]]
-    ): PDVar[Value] = PDVar(value, usedBy.map(pcOfDefSite _))
+    ): PDVar[Value] = PDVar(value, usedBy.map { use => pcOfDefSite(use) })
 
 }
 
@@ -213,9 +214,9 @@ object DVar {
         useSites: IntTrieSet
     ): DVar[d.DomainValue] = {
 
-        assert(useSites != null, s"no uses (null) for $origin: $value")
-        assert(value != null)
-        assert(
+        elidedAssert(useSites != null, s"no uses (null) for $origin: $value")
+        elidedAssert(value != null)
+        elidedAssert(
             value == d.TheIllegalValue || value.computationalType != ComputationalTypeReturnAddress,
             s"value has unexpected computational type: $value"
         )
@@ -278,7 +279,7 @@ class UVar[+Value <: ValueInformation /*org.opalj.ai.ValuesDomain#DomainValue*/ 
 
     override def equals(other: Any): Boolean = {
         other match {
-            case that: UVar[_] => this.defSites == that.defSites
+            case that: UVar[?] => this.defSites == that.defSites
             case _             => false
         }
     }
@@ -289,7 +290,7 @@ class UVar[+Value <: ValueInformation /*org.opalj.ai.ValuesDomain#DomainValue*/ 
 
     override def toPersistentForm(
         implicit stmts: Array[Stmt[V]]
-    ): PUVar[Value] = PUVar(value, definedBy.map(pcOfDefSite _))
+    ): PUVar[Value] = PUVar(value, definedBy.map(pcOfDefSite))
 
 }
 

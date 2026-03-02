@@ -49,7 +49,7 @@ case class CONSTANT_Dynamic_info(
     override def toString(implicit cp: Constant_Pool): String = {
         "CONSTANT_Dynamic_info(" +
             s"$bootstrap_method_attr_index," +
-            s"${cp(name_and_type_index).toString(cp)}/*$name_and_type_index */ " +
+            s"${cp(name_and_type_index).toString}/*$name_and_type_index */ " +
             ")"
     }
 }

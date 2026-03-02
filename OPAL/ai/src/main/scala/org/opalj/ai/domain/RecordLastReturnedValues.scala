@@ -13,16 +13,16 @@ package domain
  * @author Michael Eichberg
  */
 trait RecordLastReturnedValues extends RecordReturnedValues {
-    domain: ValuesDomain with Configuration with ExceptionsFactory =>
+    domain: ValuesDomain & Configuration & ExceptionsFactory =>
 
     type ReturnedValue = DomainValue
 
-    protected[this] def recordReturnedValue(
+    protected def recordReturnedValue(
         pc:    Int,
         value: DomainValue
     ): ReturnedValue = value
 
-    protected[this] def joinReturnedValues(
+    protected def joinReturnedValues(
         pc:                      Int,
         previouslyReturnedValue: ReturnedValue,
         value:                   DomainValue

@@ -9,7 +9,7 @@ import org.scalatestplus.junit.JUnitRunner
 
 import org.opalj.bi.TestResources.locateTestResources
 import org.opalj.br.analyses.Project
-import org.opalj.br.instructions._
+import org.opalj.br.instructions.*
 import org.opalj.br.reader.Java8Framework.ClassFiles
 import org.opalj.collection.immutable.IntTrieSet
 
@@ -21,15 +21,15 @@ import org.opalj.collection.immutable.IntTrieSet
 @RunWith(classOf[JUnitRunner])
 class CodeAttributeTest extends AnyFlatSpec with Matchers {
 
-    import CodeAttributeTest._
+    import CodeAttributeTest.*
 
     behavior of "the \"Code\" attribute handlersFor method"
 
     it should "only report the most specific handler and not all handers" in {
 
-        nestedCatch.handlersFor(5).toList should be(Iterable(nestedCatch.exceptionHandlers(0)))
-        nestedCatch.handlersFor(14).toList should be(Iterable(nestedCatch.exceptionHandlers(1)))
-        nestedCatch.handlersFor(10).toList should be(Iterable(nestedCatch.exceptionHandlers(2)))
+        nestedCatch.handlersFor(5) should be(Iterable(nestedCatch.exceptionHandlers(0)))
+        nestedCatch.handlersFor(14) should be(Iterable(nestedCatch.exceptionHandlers(1)))
+        nestedCatch.handlersFor(10) should be(Iterable(nestedCatch.exceptionHandlers(2)))
 
         // the last instruction
         nestedCatch.handlersFor(37) should be(empty)
@@ -38,30 +38,30 @@ class CodeAttributeTest extends AnyFlatSpec with Matchers {
     behavior of "the \"Code\" attribute's collect method"
 
     it should "be able to correctly collect all matching instructions" in {
-        codeOfPut collect ({ case DUP => DUP }: PartialFunction[Instruction, Instruction]) should
+        codeOfPut.collect({ case DUP => DUP }: PartialFunction[Instruction, Instruction]) should
             equal(Seq(PCAndAnyRef(31, DUP)))
 
-        codeOfPut collect ({
+        codeOfPut.collect({
             case ICONST_1 => ICONST_1
         }: PartialFunction[Instruction, Instruction]) should
             equal(Seq(PCAndAnyRef(20, ICONST_1), PCAndAnyRef(35, ICONST_1)))
 
-        codeOfPut collect ({
+        codeOfPut.collect({
             case GETFIELD(declaringClass, "last", _) => declaringClass
         }: PartialFunction[Instruction, ClassType]) should
             equal(Seq(PCAndAnyRef(17, boundedBufferClass), PCAndAnyRef(45, boundedBufferClass)))
 
-        codeOfPut collect ({
+        codeOfPut.collect({
             case RETURN => "The very last instruction."
         }: PartialFunction[Instruction, String]) should equal(Seq(PCAndAnyRef(54, "The very last instruction.")))
 
     }
 
     it should "be able to correctly handle the case if no instruction is matched" in {
-        codeOfPut collect ({ case DUP2_X2 => DUP2_X2 }: PartialFunction[Instruction, Instruction]) should equal(Seq())
+        codeOfPut.collect({ case DUP2_X2 => DUP2_X2 }: PartialFunction[Instruction, Instruction]) should equal(Seq())
     }
 
-    import org.opalj.br.CodeAttributeTest._
+    import org.opalj.br.CodeAttributeTest.*
 
     behavior of "the \"Code\" attribute's collectWithIndex method"
 
@@ -69,7 +69,7 @@ class CodeAttributeTest extends AnyFlatSpec with Matchers {
         codeOfPut.collectWithIndex({
             case i: PCAndInstruction if i.instruction.isSimpleConditionalBranchInstruction =>
                 val cbi = i.instruction.asSimpleConditionalBranchInstruction
-                Seq(cbi.indexOfNextInstruction(i.pc)(codeOfPut), i.pc + cbi.branchoffset)
+                Seq(cbi.indexOfNextInstruction(i.pc)(using codeOfPut), i.pc + cbi.branchoffset)
         }).flatten should equal(Seq(11, 15))
     }
 
@@ -124,7 +124,7 @@ class CodeAttributeTest extends AnyFlatSpec with Matchers {
         instructions should be(
             Seq(
                 PCAndInstruction(0, ALOAD_0),
-                PCAndInstruction(1, GETFIELD(immutbleListClass, "e", ClassType.Object)),
+                PCAndInstruction(1, GETFIELD(immutableListClass, "e", ClassType.Object)),
                 PCAndInstruction(4, ARETURN)
             )
         )
@@ -150,7 +150,7 @@ class CodeAttributeTest extends AnyFlatSpec with Matchers {
 
     behavior of "the \"Code\" attribute's firstLineNumber method"
 
-    it should "be able to correctly extract the line number for the first instruction of aconstructor" in {
+    it should "be able to correctly extract the line number for the first instruction of a äconstructor" in {
         codeOfConstructor.firstLineNumber should be(Some(18))
     }
     it should "be able to correctly extract the line number for the first instruction" in {
@@ -239,7 +239,7 @@ private object CodeAttributeTest {
             .find(_.name == "nestedCatch").get.body.get
 
     val boundedBufferClass = ClassType("code/BoundedBuffer")
-    val immutbleListClass = ClassType("code/ImmutableList")
+    val immutableListClass = ClassType("code/ImmutableList")
     val quickSortClass = ClassType("code/Quicksort")
 
     //
@@ -277,7 +277,7 @@ private object CodeAttributeTest {
     // The code of the "put" method is excepted to have the following bytecode:
     // Method descriptor #13 (I)V
     // Stack: 3, Locals: 2
-    //  public void put(int item) throws java.lang.InterruptedException;
+    //  public void put(int item) throws java.lang.InterruptedException {
     //     0  aload_0 [this]
     //     1  getfield code.BoundedBuffer.numberInBuffer : int [18]
     //     4  aload_0 [this]
@@ -324,7 +324,7 @@ private object CodeAttributeTest {
     //        [pc: 15, same]
     // }
 
-    val codeOfGet = project.classFile(immutbleListClass).get.methods.find(_.name == "get").get.body.get
+    val codeOfGet = project.classFile(immutableListClass).get.methods.find(_.name == "get").get.body.get
     // The code of get is as follows:
     // Method descriptor #30 ()Ljava/lang/Object;
     // Signature: ()TT;

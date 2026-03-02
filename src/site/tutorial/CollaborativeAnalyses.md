@@ -112,7 +112,7 @@ We use a [`PartialResult`](/library/api/SNAPSHOT/org/opalj/fpcf/NoResult.html) h
 The partial result takes the entity (we use `project` here, since the set of instantiated classes is global to the whole program that is analyzed) and the key of the property that we compute.  
 Finally, it takes a function that will get the current value of that property and computes an update to it.  
 To do so, we check whether there already is a property present and extract its upper bound.  
-If that upper bound already contains our class, we return `None` to signal that no update is necessary, otherwise we create an updated result, which is an [`InterimEUBP`](/library/api/SNAPSHOT/org/opalj/fpcf/InterimEUBP.html), i.e., a not yet final result consisting of an entity (E; `project`) and and upper bound (UB) for its property (P), which is the old set of instantiated classes extended by the class type of the analyzed constructor.  
+If that upper bound already contains our class, we return `None` to signal that no update is necessary, otherwise we create an updated result, which is an [`InterimEUBP`](/library/api/SNAPSHOT/org/opalj/fpcf/InterimEUBP.html), i.e., a not yet final result consisting of an entity (E; `project`) and an upper bound (UB) for its property (P), which is the old set of instantiated classes extended by the class type of the analyzed constructor.  
 If, on the other hand, no property has been computed so far, the update function will be called with an [`EPK`](/library/api/SNAPSHOT/org/opalj/fpcf/EPK.html), i.e., a tuple of the entity and the key of the property.
 In that case, we return property that contains just the class type of the analyzed constructor.
 

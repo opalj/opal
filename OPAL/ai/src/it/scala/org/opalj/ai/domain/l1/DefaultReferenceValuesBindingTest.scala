@@ -62,7 +62,7 @@ class DefaultReferenceValuesBindingTest extends AnyFlatSpec with Matchers {
 
         }
 
-    it should "correctly join a value which implements multiple interfaces with a value that implementes just one interface that is a subtype of one of the previous interfaces" in {
+    it should "correctly join a value which implements multiple interfaces with a value that implements just one interface that is a subtype of one of the previous interfaces" in {
         val l1 = ClassType("java/io/Serializable")
         val l2 = ClassType("java/util/RandomAccess")
         val r = ClassType("java/io/Externalizable")

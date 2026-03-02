@@ -8,7 +8,7 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.junit.JUnitRunner
 
 import org.opalj.bi.TestResources.locateTestResources
-import org.opalj.br._
+import org.opalj.br.*
 import org.opalj.br.reader.Java8Framework.ClassFile
 
 /**
@@ -38,7 +38,7 @@ class DependenciesOnTypesTest extends AnyFlatSpec with Matchers {
                     dType:  DependencyType
                 ): Unit = {
                     if (target.isClass) {
-                        val VirtualClass(targetType) = target
+                        val VirtualClass(targetType) = target: @unchecked
                         extractedClassTypes += targetType
                     }
                 }

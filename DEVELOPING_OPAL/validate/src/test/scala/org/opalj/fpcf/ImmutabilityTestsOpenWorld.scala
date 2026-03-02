@@ -36,7 +36,7 @@ class ImmutabilityTestsOpenWorld extends PropertiesTest {
     override def init(p: Project[URL]): Unit = {
 
         p.updateProjectInformationKeyInitializationData(AIDomainFactoryKey) { _ =>
-            Set[Class[_ <: AnyRef]](classOf[l1.DefaultDomainWithCFGAndDefUse[URL]])
+            Set[Class[? <: AnyRef]](classOf[l1.DefaultDomainWithCFGAndDefUse[URL]])
         }
 
         p.get(RTACallGraphKey)

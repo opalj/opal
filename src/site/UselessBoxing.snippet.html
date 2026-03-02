@@ -14,8 +14,8 @@ int i = (new Double(value)).intValue // &lt;&lt; the issue
 
 The complete(!) analysis to find the described bug pattern is shown next.
 
-<pre><code class="scala">import org.opalj.br._
-import org.opalj.br.instructions._
+<pre><code class="scala">import org.opalj.br.*
+import org.opalj.br.instructions.*
 import org.opalj.br.reader.Java8Framework.ClassFiles
 
 val project = ClassFiles(new java.io.File("/Library/Java/JavaVirtualMachines/jdk1.8.0.jdk/Contents/Home/jre/lib"))

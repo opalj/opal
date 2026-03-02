@@ -11,10 +11,12 @@ import org.opalj.br.fpcf.ContextProviderKey
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.FPCFAnalysisScheduler
 import org.opalj.br.fpcf.FPCFLazyAnalysisScheduler
+import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.br.fpcf.properties.string.StringConstancyProperty
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyStore
+import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.tac.fpcf.properties.string.MethodStringFlow
 
 /**
@@ -27,7 +29,8 @@ sealed trait StringAnalysisScheduler extends FPCFAnalysisScheduler {
 
     final def derivedProperty: PropertyBounds = PropertyBounds.lub(StringConstancyProperty)
 
-    override def uses: Set[PropertyBounds] = Set(PropertyBounds.ub(MethodStringFlow))
+    override def uses: Set[PropertyBounds] =
+        PropertyBounds.ubs(MethodStringFlow, Callers, TACAI, StringConstancyProperty)
 
     override final type InitializationData =
         (ContextFreeStringAnalysis, ContextStringAnalysis, MethodParameterContextStringAnalysis)

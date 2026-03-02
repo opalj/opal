@@ -13,20 +13,20 @@ public class EscapesOfExceptions {
         throw new @EscapeViaAbnormalReturn("the exception is thrown") RuntimeException();
     }
 
-    public static int directCatchedException() {
+    public static int directCaughtException() {
         try {
-            throw new @EscapeInCallee("the exception is catched immediately") RuntimeException();
+            throw new @EscapeInCallee("the exception is caught immediately") RuntimeException();
         } catch (RuntimeException e) {
             return -1;
         }
     }
 
-    public static int multipleExceptionsAllCatched(boolean b) throws Exception {
+    public static int multipleExceptionsAllCaught(boolean b) throws Exception {
         Exception e;
         if (b) {
-            e = new @EscapeInCallee("the exception is catched") IllegalArgumentException();
+            e = new @EscapeInCallee("the exception is caught") IllegalArgumentException();
         } else {
-            e = new @EscapeInCallee("the exception is also catched") IllegalStateException();
+            e = new @EscapeInCallee("the exception is also caught") IllegalStateException();
         }
         try {
             throw e;
@@ -37,13 +37,13 @@ public class EscapesOfExceptions {
         }
     }
 
-    public static int multipleExceptionsSomeCatched(boolean b) throws Exception {
+    public static int multipleExceptionsSomeCaught(boolean b) throws Exception {
         Exception e = null;
         if (b) {
-            e = new @EscapeInCallee("the exception is catched") IllegalArgumentException();
+            e = new @EscapeInCallee("the exception is caught") IllegalArgumentException();
         } else {
             e = new @EscapeViaAbnormalReturn(
-                    "the exception is not catched") IllegalStateException();
+                    "the exception is not caught") IllegalStateException();
         }
         try {
             throw e;

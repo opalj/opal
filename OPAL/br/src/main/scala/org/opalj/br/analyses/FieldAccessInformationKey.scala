@@ -24,7 +24,7 @@ object FieldAccessInformationKey extends ProjectInformationKey[FieldAccessInform
                 OPALLogger.warn(
                     "analysis configuration",
                     s"no field access information analysis configured, using SimpleFieldAccessInformationAnalysis as a fallback"
-                )(project.logContext)
+                )(using project.logContext)
                 Seq(EagerSimpleFieldAccessInformationAnalysis)
             }
         )
@@ -42,7 +42,7 @@ object FieldAccessInformationKey extends ProjectInformationKey[FieldAccessInform
                 OPALLogger.error(
                     "analysis configuration",
                     s"no field access information analysis configured even though requirements were run"
-                )(project.logContext)
+                )(using project.logContext)
                 throw new IllegalStateException()
         }
 

@@ -23,7 +23,7 @@ case object PropertyIsNotComputedByAnyAnalysis extends FallbackReason {
  * The fallback is used, because the property was queried/is required, but the property was
  * not computed for the specific entity though an analysis is scheduled/executed.
  *
- * @note This may happen for properties associated with dead code/code that is no used by the
+ * @note This may happen for properties associated with dead code/code that is not used by the
  *       current project. E.g., the callers property of an unused library method is most
  *       likely not computed. If it is queried, then this is the Property that should be returned.
  */

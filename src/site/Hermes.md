@@ -110,7 +110,7 @@ The big advantage of registering all queries in the same place is that it is eas
 
 ## Starting Hermes
 
-Hermes can be be started by specifying the json file which contains the configured projects that should be analysed. If you have checked out OPAL/Hermes from BitBucket you can use the `sbt` console to start Hermes (the main class is: `org.opalj.hermes.Hermes`). For example, to get an overview of the properties of some of the test projects which are part of OPAL, you can use the preconfigured project configuration:
+Hermes can be started by specifying the json file which contains the configured projects that should be analysed. If you have checked out OPAL/Hermes from BitBucket you can use the `sbt` console to start Hermes (the main class is: `org.opalj.hermes.Hermes`). For example, to get an overview of the properties of some of the test projects which are part of OPAL, you can use the preconfigured project configuration:
 
     project OPAL-DeveloperTools
     ~runMain org.opalj.hermes.Hermes src/main/resources/hermes-test-fixtures.json

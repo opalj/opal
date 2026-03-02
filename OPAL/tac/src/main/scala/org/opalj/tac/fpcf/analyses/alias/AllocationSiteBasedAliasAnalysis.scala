@@ -11,9 +11,9 @@ import org.opalj.br.fpcf.properties.alias.AliasSourceElement
 
 trait AllocationSiteBasedAliasAnalysis extends SetBasedAliasAnalysis {
 
-    override protected[this] type AliasElementType = AllocationSite
-    override protected[this] type AliasSet = AllocationSiteBasedAliasSet
-    override protected[this] type AnalysisState <: AllocationSiteBasedAliasAnalysisState
+    override protected type AliasElementType = AllocationSite
+    override protected type AliasSet = AllocationSiteBasedAliasSet
+    override protected type AnalysisState <: AllocationSiteBasedAliasAnalysisState
 
 }
 
@@ -24,7 +24,7 @@ trait AllocationSiteBasedAliasAnalysis extends SetBasedAliasAnalysis {
 class AllocationSiteBasedAliasAnalysisState
     extends SetBasedAliasAnalysisState[AllocationSite, AllocationSiteBasedAliasSet] {
 
-    override protected[this] def createAliasSet(): AllocationSiteBasedAliasSet = new AllocationSiteBasedAliasSet
+    override protected def createAliasSet(): AllocationSiteBasedAliasSet = new AllocationSiteBasedAliasSet
 
     def addPointsTo(ase: AliasSourceElement, context: Context, pc: PC)(
         implicit aliasContext: AliasAnalysisContext

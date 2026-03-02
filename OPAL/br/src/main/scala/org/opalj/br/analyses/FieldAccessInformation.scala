@@ -17,15 +17,15 @@ import org.opalj.fpcf.SomeInterimEP
 
 /**
  * Acts as a proxy for the propertyStore, accessing [[FieldReadAccessInformation]] and [[FieldWriteAccessInformation]].
- * Should be computed outside of any FPCF phases as it cannot handle intermediate values.
+ * Should be computed outside any FPCF phases as it cannot handle intermediate values.
  *
  * @author Maximilian Rüsch
  */
 case class FieldAccessInformation(project: SomeProject) {
 
-    private[this] val propertyStore = project.get(PropertyStoreKey)
+    private val propertyStore = project.get(PropertyStoreKey)
 
-    private[this] def getFieldAccessInformation[S <: fieldaccess.FieldAccessInformation[S]](
+    private def getFieldAccessInformation[S <: fieldaccess.FieldAccessInformation[S]](
         field: DeclaredField,
         key:   PropertyKey[fieldaccess.FieldAccessInformation[S]]
     ): fieldaccess.FieldAccessInformation[S] = {

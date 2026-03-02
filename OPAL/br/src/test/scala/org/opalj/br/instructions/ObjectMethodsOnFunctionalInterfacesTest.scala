@@ -79,8 +79,8 @@ class ObjectMethodsOnFunctionalInterfacesTest extends AnyFunSpec with Matchers {
         val candidates: ArraySeq[Option[Method]] = for {
             invokedMethod <- annotations.filter(_.annotationType == InvokedMethod)
             pairs = invokedMethod.elementValuePairs
-            ElementValuePair("receiverType", StringValue(receiverType)) <- pairs
-            ElementValuePair("name", StringValue(methodName)) <- pairs
+            case ElementValuePair("receiverType", StringValue(receiverType)) <- pairs
+            case ElementValuePair("name", StringValue(methodName)) <- pairs
             classFile <- project.classFile(ClassType(receiverType))
         } yield {
             val parameterTypes = getParameterTypes(pairs)

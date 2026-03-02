@@ -18,7 +18,7 @@ import org.opalj.bi.reader.Constant_PoolReader
 trait Constant_PoolBinding extends Constant_PoolReader with Constant_PoolAbstractions {
 
     // HERE, WE DON'T NEED A DEFERRED ACTIONS STORE
-    protected[this] def createDeferredActionsStore(): DeferredActionsStore = {
+    protected def createDeferredActionsStore(): DeferredActionsStore = {
         new mutable.ArrayBuffer[ClassFile => ClassFile] with Constant_Pool_Entry {
             override def Constant_Type_Value: Nothing = {
                 throw new UnsupportedOperationException()

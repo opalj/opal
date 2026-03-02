@@ -17,7 +17,7 @@ final class Node(
 
     override def hashCode: Int = name.hashCode()
     override def equals(other: Any): Boolean = other match {
-        case that: Node => this.name equals that.name
+        case that: Node => this.name == that.name
         case _          => false
     }
 

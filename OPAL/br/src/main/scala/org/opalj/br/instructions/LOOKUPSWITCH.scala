@@ -83,7 +83,7 @@ case class LOOKUPSWITCH(
     ): List[PC] = {
         val defaultTarget = currentPC + defaultOffset
         var pcs = List(defaultTarget)
-        var seen: IntArraySet = new IntArraySet1(defaultTarget)
+        var seen: IntArraySet = IntArraySet1(defaultTarget)
         npairs foreach { npair =>
             val offset = npair.value
             val nextTarget = currentPC + offset

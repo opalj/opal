@@ -23,7 +23,7 @@ case class LocalVariableTable_attribute(
             <summary class="attribute_name">LocalVariableTable [size: {local_variable_table.size} item(s)]</summary>
             {
                 if (local_variable_table.nonEmpty)
-                    local_variable_table.map(_.toXHTML(cp))
+                    local_variable_table.map(_.toXHTML)
                 else
                     Text("<Empty>")
             }

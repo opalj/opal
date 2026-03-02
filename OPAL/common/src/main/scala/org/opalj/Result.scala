@@ -92,11 +92,11 @@ sealed trait NoResult extends Result[Nothing] {
 }
 
 object NoResult {
-    def unapply(result: Result[_]): Boolean = !result.hasValue
+    def unapply(result: Result[?]): Boolean = !result.hasValue
 }
 
 /**
- * The computation '''finished''', but did no produce any results or the result was filtered.
+ * The computation '''finished''', but did not produce any results or the result was filtered.
  *
  * @note    The precise semantics of ''succeeded without results'' is dependent on the semantics
  *          of the concrete computation and needs to be defined per use case.

@@ -5,6 +5,7 @@ package fpcf
 package analyses
 package escape
 
+import org.opalj.br.DeclaredMethod
 import org.opalj.br.DefinedMethod
 import org.opalj.br.Method
 import org.opalj.br.VirtualDeclaredMethod
@@ -22,7 +23,7 @@ import org.opalj.br.fpcf.ContextProviderKey
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.FPCFAnalysisScheduler
 import org.opalj.br.fpcf.analyses.ContextProvider
-import org.opalj.br.fpcf.properties._
+import org.opalj.br.fpcf.properties.*
 import org.opalj.br.fpcf.properties.Context
 import org.opalj.br.fpcf.properties.EscapeProperty
 import org.opalj.br.fpcf.properties.GlobalEscape
@@ -42,11 +43,12 @@ import org.opalj.fpcf.Result
 import org.opalj.fpcf.SomeEOptionP
 import org.opalj.tac.common.DefinitionSitesKey
 import org.opalj.tac.fpcf.properties.TACAI
+import org.opalj.util.elidedAssert
 import org.opalj.value.ValueInformation
 
 class InterProceduralEscapeAnalysisContext(
     val entity:                  (Context, Entity),
-    val targetMethod:            Method,
+    val targetMethod:            DeclaredMethod,
     val declaredMethods:         DeclaredMethods,
     val virtualFormalParameters: VirtualFormalParameters,
     val project:                 SomeProject,
@@ -78,8 +80,8 @@ class InterProceduralEscapeAnalysis private[analyses] (
     override type AnalysisContext = InterProceduralEscapeAnalysisContext
     type AnalysisState = InterProceduralEscapeAnalysisState
 
-    private[this] val isMethodOverridable: Method => Answer = project.get(IsOverridableMethodKey)
-    private[this] val simpleContexts: SimpleContexts = project.get(SimpleContextsKey)
+    private val isMethodOverridable: Method => Answer = project.get(IsOverridableMethodKey)
+    private val simpleContexts: SimpleContexts = project.get(SimpleContextsKey)
 
     override def determineEscapeOfFP(
         fp: (Context, VirtualFormalParameter)
@@ -129,8 +131,8 @@ class InterProceduralEscapeAnalysis private[analyses] (
                 Result(fp, AtMost(NoEscape))
 
             case VirtualFormalParameter(dm: DefinedMethod, _) =>
-                val ctx = createContext(fp, dm.definedMethod)
-                doDetermineEscape(ctx, createState)
+                val ctx = createContext(fp, dm)
+                doDetermineEscape(using ctx, createState)
 
             case VirtualFormalParameter(_: VirtualDeclaredMethod, _) =>
                 throw new IllegalArgumentException()
@@ -139,7 +141,7 @@ class InterProceduralEscapeAnalysis private[analyses] (
 
     override def createContext(
         entity:       (Context, Entity),
-        targetMethod: Method
+        targetMethod: DeclaredMethod
     ): InterProceduralEscapeAnalysisContext = new InterProceduralEscapeAnalysisContext(
         entity,
         targetMethod,
@@ -185,7 +187,7 @@ object EagerInterProceduralEscapeAnalysis
 
         val methods = declaredMethods.declaredMethods
         val callersProperties = ps(methods.to(Iterable), Callers)
-        assert(callersProperties.forall(_.isFinal))
+        elidedAssert(callersProperties.forall(_.isFinal))
 
         val reachableMethods = callersProperties.filterNot(_.asFinal.p == NoCallers).map {
             v => v.e -> v.ub
@@ -197,8 +199,8 @@ object EagerInterProceduralEscapeAnalysis
         }.flatten
 
         val ass = p.get(DefinitionSitesKey).getAllocationSites.collect {
-            case as if reachableMethods.contains(declaredMethods(as.method)) =>
-                val dm = declaredMethods(as.method)
+            case as if reachableMethods.contains(as.method) =>
+                val dm = as.method
                 reachableMethods(dm).calleeContexts(dm).iterator.map((_, as))
         }.flatten
 
@@ -219,7 +221,7 @@ object LazyInterProceduralEscapeAnalysis
 
     /**
      * Registers the analysis as a lazy computation, that is, the method
-     * will call `ProperytStore.scheduleLazyComputation`.
+     * will call `PropertyStore.scheduleLazyComputation`.
      */
     override def register(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val analysis = new InterProceduralEscapeAnalysis(p)

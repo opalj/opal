@@ -30,8 +30,7 @@ trait TypeAnnotationPathReader extends Constant_PoolAbstractions {
      */
     def TypeAnnotationDirectlyOnType: TypeAnnotationPath
 
-    type TypeAnnotationPathElement <: AnyRef
-    implicit val typeAnnotationPathElementType: ClassTag[TypeAnnotationPathElement] // TODO: Replace in Scala 3 by `type TypeAnnotationPathElement : ClassTag`
+    type TypeAnnotationPathElement <: AnyRef: ClassTag
     type TypeAnnotationPathElementsTable = ArraySeq[TypeAnnotationPathElement]
 
     def TypeAnnotationPath(path: TypeAnnotationPathElementsTable): TypeAnnotationPath

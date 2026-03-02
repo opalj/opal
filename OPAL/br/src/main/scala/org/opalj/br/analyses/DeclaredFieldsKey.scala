@@ -3,7 +3,7 @@ package org.opalj
 package br
 package analyses
 
-import java.util.concurrent.{ConcurrentHashMap => ConcurrentMap}
+import java.util.concurrent.ConcurrentHashMap as ConcurrentMap
 import java.util.concurrent.atomic.AtomicInteger
 import scala.jdk.CollectionConverters.EnumerationHasAsScala
 

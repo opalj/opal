@@ -14,7 +14,7 @@ case object FMUL extends MultiplyInstruction {
 
     final val mnemonic = "fmul"
 
-    final val computationalType = ComputationalTypeFloat
+    final val computationalType: ComputationalTypeFloat.type = ComputationalTypeFloat
 
     final def stackSlotsChange: Int = -1
 }

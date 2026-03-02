@@ -14,7 +14,7 @@ case class CONSTANT_Utf8_info(raw: Array[Byte], value: String) extends Constant_
 
     override final def size: Int = {
         // The length of the string in bytes is not equivalent to `value.length` due to the
-        // usage of the modified UTF8 enconding.
+        // usage of the modified UTF8 encoding.
         1 /* tag */ + 2 /* the length */ + raw.length /* the bytes of the string */
     }
 
@@ -38,13 +38,13 @@ case class CONSTANT_Utf8_info(raw: Array[Byte], value: String) extends Constant_
 object CONSTANT_Utf8 {
 
     def apply(value: String): CONSTANT_Utf8_info = {
-        new CONSTANT_Utf8_info(
+        CONSTANT_Utf8_info(
             {
                 val bout = new ByteArrayOutputStream(value.length + 2)
                 val dout = new DataOutputStream(bout)
                 dout.writeUTF(value)
                 dout.flush()
-                bout.toByteArray()
+                bout.toByteArray
             },
             value
         )

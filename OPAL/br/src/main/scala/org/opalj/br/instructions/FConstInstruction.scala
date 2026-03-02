@@ -8,7 +8,7 @@ package instructions
  */
 trait FConstInstruction extends LoadConstantInstruction[Float] with ImplicitValue {
 
-    override final def computationalType = ComputationalTypeFloat
+    override final def computationalType: ComputationalTypeFloat.type = ComputationalTypeFloat
 
 }
 

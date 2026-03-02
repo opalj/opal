@@ -22,7 +22,7 @@ import org.opalj.value.ValueInformation
  *
  * @author Michael Eichberg
  */
-object ComputeTACAIKey extends TACAIKey[Method => Domain with RecordDefUse] {
+object ComputeTACAIKey extends TACAIKey[Method => Domain & RecordDefUse] {
 
     /**
      * TACAI code has no special prerequisites.
@@ -30,7 +30,7 @@ object ComputeTACAIKey extends TACAIKey[Method => Domain with RecordDefUse] {
     override def requirements(project: SomeProject): Seq[ProjectInformationKey[Nothing, Nothing]] = Nil
 
     /**
-     * Returns an factory which computes the 3-address code of a method anew when called.
+     * Returns a factory which computes the 3-address code of a method anew when called.
      *
      * All methods belonging to a project are converted using the same `domainFactory`. Hence,
      * the `domainFactory` needs to be set (using `setProjectInformationKeyInitializationData`)

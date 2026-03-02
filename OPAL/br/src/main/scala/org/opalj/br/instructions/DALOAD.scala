@@ -14,6 +14,6 @@ case object DALOAD extends ArrayLoadInstruction with PrimitiveArrayAccess {
 
     final val mnemonic = "daload"
 
-    final val elementTypeComputationalType = ComputationalTypeDouble
+    final val elementTypeComputationalType: ComputationalTypeDouble.type = ComputationalTypeDouble
 
 }

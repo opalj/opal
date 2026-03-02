@@ -13,10 +13,10 @@ id 		correct 	class															method
 9		x 			java.lang.invoke.BoundMethodHandle											final double argD (int)
 10		x			java.lang.AbstractStringBuilder												append ( Object )
 11		x           java.beans.EventSetDescriptor												<init>(EventSetDescriptor)
-12		x    	 	javax.managmement.BinaryOpValueExp											public int getOperator()
-13		x 			javax.xml.crypto.dsigTransformService$MachanismMapEntry						public boolean equals(Object)
+12		x    	 	javax.management.BinaryOpValueExp											public int getOperator()
+13		x 			javax.xml.crypto.dsigTransformService$MechanismMapEntry						public boolean equals(Object)
 14		x   		java.util.regex.Pattern														private int readEscape()
-15		x 		 	javax.swing.text.rtf.MockAtrributeSet										public boolean isEmpty()
+15		x 		 	javax.swing.text.rtf.MockAttributeSet										public boolean isEmpty()
 16		x           java.awt.geom.GeneralPath													<init>(int, byte[], int, float[], int) // comments hint to native, but we found no evidence.
 17		x 			java.security.AccessControlContext											boolean isPrivileged()
 18		x 			java.net.Inet6Address														int deriveNumericScope ( String )

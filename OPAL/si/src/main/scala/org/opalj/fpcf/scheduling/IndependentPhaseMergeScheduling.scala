@@ -77,7 +77,6 @@ abstract class PhaseMergeScheduling extends MultiplePhaseScheduling {
 }
 
 /**
- * Independent Phase Merge Scheduling (IPMS) Strategy.
  * Merges independent batches to optimize parallelism.
  */
 object IndependentPhaseMergeScheduling extends PhaseMergeScheduling {

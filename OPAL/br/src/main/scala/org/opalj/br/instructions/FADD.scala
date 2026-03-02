@@ -14,6 +14,6 @@ case object FADD extends AddInstruction {
 
     final val mnemonic = "fadd"
 
-    final val computationalType = ComputationalTypeFloat
+    final val computationalType: ComputationalTypeFloat.type = ComputationalTypeFloat
 
 }

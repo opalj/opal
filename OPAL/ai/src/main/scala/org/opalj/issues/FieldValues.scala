@@ -26,9 +26,9 @@ class FieldValues(
 
     final def classFile: ClassFile = method.classFile
 
-    private[this] implicit def code: Code = result.code
+    private implicit def code: Code = result.code
 
-    private[this] def operandsArray = result.operandsArray
+    private def operandsArray = result.operandsArray
 
     def collectReadFieldValues: List[PCAndAnyRef[String]] = {
         code.foldLeft(List.empty[PCAndAnyRef[String]]) { (readFields, pc, instruction) =>

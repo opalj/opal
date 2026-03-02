@@ -21,7 +21,7 @@ object PerformAI extends BaseAI {
 
     override def isInterrupted = Thread.interrupted()
 
-    def apply(d: TheProject with TheMethod with Domain): AIResult { val domain: d.type } = {
+    def apply(d: TheProject & TheMethod & Domain): AIResult { val domain: d.type } = {
         val m = d.method
         apply(m, d)
     }

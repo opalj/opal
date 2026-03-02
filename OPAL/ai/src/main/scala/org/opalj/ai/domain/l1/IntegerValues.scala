@@ -22,7 +22,7 @@ import org.opalj.value.IsIntegerValue
  * @author David Becker
  */
 trait IntegerValues extends IntegerValuesDomain with ConcreteIntegerValues {
-    domain: Configuration with ExceptionsFactory =>
+    domain: Configuration & ExceptionsFactory =>
 
     // -----------------------------------------------------------------------------------
     //

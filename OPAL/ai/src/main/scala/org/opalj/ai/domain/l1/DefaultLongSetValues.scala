@@ -7,6 +7,7 @@ package l1
 import scala.collection.immutable.SortedSet
 
 import org.opalj.br.ComputationalTypeLong
+import org.opalj.util.elidedAssert
 
 /**
  * This domain implements the tracking of long values at the level of sets.
@@ -18,9 +19,9 @@ trait DefaultLongSetValues
     extends DefaultSpecialDomainValuesBinding
     with CorrelationalDomain
     with LongSetValues {
-    domain: IntegerRangeValuesFactory with Configuration with ExceptionsFactory =>
+    domain: IntegerRangeValuesFactory & Configuration & ExceptionsFactory =>
 
-    class ALongValue() extends super.ALongValueLike {
+    class ALongValue extends super.ALongValueLike {
 
         override def constantValue: Option[Long] = None
 
@@ -49,7 +50,7 @@ trait DefaultLongSetValues
 
     class LongSet(val values: SortedSet[Long]) extends super.LongSetLike {
 
-        assert(values.nonEmpty)
+        elidedAssert(values.nonEmpty)
 
         override def constantValue: Option[Long] = {
             if (values.size == 1) Some(values.head) else None

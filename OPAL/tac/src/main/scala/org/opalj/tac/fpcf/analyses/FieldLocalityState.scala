@@ -32,18 +32,18 @@ import org.opalj.tac.fpcf.properties.TACAI
 
 class FieldLocalityState(val field: Field, val thisIsCloneable: Boolean) {
 
-    private[this] var declaredMethodsDependees: Set[EOptionP[Context, ReturnValueFreshness]] = Set.empty
-    private[this] var definitionSitesDependees: Map[
+    private var declaredMethodsDependees: Set[EOptionP[Context, ReturnValueFreshness]] = Set.empty
+    private var definitionSitesDependees: Map[
         (Context, DefinitionSiteLike),
         (EOptionP[(Context, DefinitionSiteLike), EscapeProperty], Boolean)
     ] =
         Map.empty
-    private[this] var tacDependees: Map[Method, EOptionP[Method, TACAI]] = Map.empty
-    private[this] var callerDependees: Map[DeclaredMethod, EOptionP[DeclaredMethod, Callers]] = Map.empty
-    private[this] val calleeDependees: mutable.Map[DeclaredMethod, (EOptionP[DeclaredMethod, Callees], IntTrieSet)] =
+    private var tacDependees: Map[Method, EOptionP[Method, TACAI]] = Map.empty
+    private var callerDependees: Map[DeclaredMethod, EOptionP[DeclaredMethod, Callers]] = Map.empty
+    private val calleeDependees: mutable.Map[DeclaredMethod, (EOptionP[DeclaredMethod, Callees], IntTrieSet)] =
         mutable.Map()
-    private[this] var fieldReadAccessDependee: Option[EOptionP[DeclaredField, FieldReadAccessInformation]] = None
-    private[this] var fieldWriteAccessDependee: Option[EOptionP[DeclaredField, FieldWriteAccessInformation]] = None
+    private var fieldReadAccessDependee: Option[EOptionP[DeclaredField, FieldReadAccessInformation]] = None
+    private var fieldWriteAccessDependee: Option[EOptionP[DeclaredField, FieldWriteAccessInformation]] = None
 
     var tacFieldReadAccesses: Map[Method, Set[(PC, AccessReceiver)]] = Map.empty
     var tacFieldWriteAccesses: Map[Method, Set[(PC, AccessParameter)]] = Map.empty
@@ -52,9 +52,9 @@ class FieldLocalityState(val field: Field, val thisIsCloneable: Boolean) {
 
     val thisType: ClassType = field.classFile.thisType
 
-    private[this] var clonedDependees: Set[(Context, DefinitionSiteLike)] = Set.empty
+    private var clonedDependees: Set[(Context, DefinitionSiteLike)] = Set.empty
 
-    private[this] var temporary: FieldLocality = LocalField
+    private var temporary: FieldLocality = LocalField
 
     def dependees: Set[SomeEOptionP] = {
         // TODO This really looks very imperformant...

@@ -4,7 +4,7 @@ package org.opalj
 package tac
 
 /**
- * Just a very simple class to demonstrate the very busy expressions analysis.
+ * Just a very simple class to demonstrate the very-busy-expressions analysis.
  *
  * @author Michael Eichberg
  */

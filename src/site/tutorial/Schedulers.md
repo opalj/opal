@@ -111,7 +111,7 @@ object TACAITransformer extends BasicFPCFTransformerScheduler {
 It computes the [`TACAI`](/library/api/SNAPSHOT/org/opalj/tac/fpcf/properties/TACAI.html), a three address code intermediate representation of your methods based on the result of an abstract interpretation.  
 As that abstract interpretation has to be performed first, there is no need to call the analysis function before this has completed, thus a transformer is more convenient and more performant here than a lazy scheduler.
 
-As you can see, it is almost identical to he lazy scheduler, but it uses `registerTransformer` to register the analysis function.  
+As you can see, it is almost identical to the lazy scheduler, but it uses `registerTransformer` to register the analysis function.  
 In addition to the key of the property that our analysis computes (`TACAI.key` here), we also have to specify the key of the property that the analysis waits for (`BaseAIResult.key` in our example).  
 Note that it is not necessary to explicitly query for this required property: when the property computed by the transformer is queried, that automatically triggers the computation of its required property as well.  
 The analysis function here takes two arguments: the entity (as with lazy schedulers, this could be on any type) and the required property (a `BaseAIResult` here).

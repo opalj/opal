@@ -16,6 +16,6 @@ case class MethodInfo[Source](source: Source, method: Method) {
  */
 object BasicMethodInfo {
 
-    def unapply(methodInfo: MethodInfo[_]): Some[Method] = Some(methodInfo.method)
+    def unapply(methodInfo: MethodInfo[?]): Some[Method] = Some(methodInfo.method)
 
 }

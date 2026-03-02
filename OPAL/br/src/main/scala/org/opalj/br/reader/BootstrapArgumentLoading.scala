@@ -4,6 +4,8 @@ package br
 package reader
 
 import scala.collection.immutable.ArraySeq
+import scala.util.boundary
+import scala.util.boundary.break
 
 import org.opalj.bi.ACC_PRIVATE
 import org.opalj.bi.ACC_STATIC
@@ -66,7 +68,7 @@ trait BootstrapArgumentLoading {
      *         new!) class file
      */
     def loadBootstrapArgument(
-        argument:     ConstantValue[_],
+        argument:     ConstantValue[?],
         instructions: InstructionsBuilder,
         classFile:    ClassFile,
         boxed:        Boolean = false
@@ -102,9 +104,9 @@ trait BootstrapArgumentLoading {
         instructions:    InstructionsBuilder,
         classFile:       ClassFile,
         boxed:           Boolean = false
-    ): (Int, ClassFile) = {
+    ): (Int, ClassFile) = boundary {
 
-        def dynamicLoad(): LoadConstantInstruction[_] = {
+        def dynamicLoad(): LoadConstantInstruction[?] = {
             if (descriptor.computationalType.isCategory2) LoadDynamic2_W(bootstrapMethod, name, descriptor)
             else LoadDynamic_W(bootstrapMethod, name, descriptor)
         }
@@ -112,7 +114,7 @@ trait BootstrapArgumentLoading {
         bootstrapMethod match {
             case BootstrapMethod(
                     InvokeStaticMethodHandle(ClassType.ConstantBootstraps, false, methodName, _),
-                    args: ArraySeq[ConstantValue[_]] @unchecked
+                    args: ArraySeq[ConstantValue[?]] @unchecked
                 ) =>
                 methodName match {
                     case "arrayVarHandle" =>
@@ -237,7 +239,7 @@ trait BootstrapArgumentLoading {
                 val (updatedClassFile, newMethodDescriptor) =
                     createObjectMethodsTarget(bootstrapMethod.arguments, name, newMethodName, classFile).getOrElse {
                         instructions ++= dynamicLoad()
-                        return (descriptor.computationalType.operandSize, classFile);
+                        break((descriptor.computationalType.operandSize, classFile));
                     }
 
                 instructions ++= LoadMethodHandle_W(InvokeStaticMethodHandle(
@@ -353,8 +355,8 @@ trait BootstrapArgumentLoading {
      * Generate instructions to invoke a given MethodHandle.
      */
     private def invokeMethodHandle(
-        methodHandle: ConstantValue[_],
-        arguments:    ArraySeq[ConstantValue[_]],
+        methodHandle: ConstantValue[?],
+        arguments:    ArraySeq[ConstantValue[?]],
         returnType:   FieldType,
         instructions: InstructionsBuilder,
         classFile:    ClassFile,
@@ -460,20 +462,21 @@ trait BootstrapArgumentLoading {
      * @param newMethodName The name for the newly created method
      * @return Either a tuple of the updated class file and the descriptor of the new method or None
      */
-    protected[this] def createObjectMethodsTarget(
+    protected def createObjectMethodsTarget(
         bootstrapArgs: BootstrapArguments,
         methodName:    String,
         newMethodName: String,
         classFile:     ClassFile
-    ): Option[(ClassFile, MethodDescriptor)] = {
+    ): Option[(ClassFile, MethodDescriptor)] = boundary {
+
         val recordType = bootstrapArgs.head match {
             case ConstantClass(rt) => rt.asClassType
-            case _                 => return None;
+            case _                 => break(None);
         }
 
         val getters = bootstrapArgs.drop(2) map {
             case mh: GetFieldMethodHandle => mh
-            case _                        => return None;
+            case _                        => break(None);
         }
 
         /*
@@ -637,7 +640,7 @@ trait BootstrapArgumentLoading {
         val attributes = if ("equals" == methodName) {
             ArraySeq(StackMapTable(ArraySeq(SameFrame(7), SameFrame(1))))
         } else {
-            ArraySeq.empty
+            ArraySeq.empty[StackMapTable]
         }
 
         val code = Code(maxStack, maxLocals, body.result(), NoExceptionHandlers, attributes)
@@ -655,7 +658,7 @@ trait BootstrapArgumentLoading {
     /**
      * Replaces each of several characters in a String with a given corresponding character.
      */
-    protected[this] def replaceChars(in: String, oldChars: String, newChars: String): String = {
+    protected def replaceChars(in: String, oldChars: String, newChars: String): String = {
         var result = in
         for ((oldC, newC) <- oldChars.zip(newChars)) {
             result = result.replace(oldC, newC)
@@ -672,7 +675,7 @@ trait BootstrapArgumentLoading {
      * characters illegal in method names (replacing /, [, ;, < and > by $, ], :, _ and _
      * respectively) and where pc is the pc of the invokedynamic that is rewritten.
      */
-    protected[this] def newTargetMethodName(
+    protected def newTargetMethodName(
         cp:                               Constant_Pool,
         surroundingMethodNameIndex:       Int,
         surroundingMethodDescriptorIndex: Int,

@@ -56,14 +56,14 @@ sealed trait FieldAccessInformationAnalysis extends FPCFAnalysis {
 
     type ContextType <: Context
 
-    protected[this] class State(
-        override val callContext:                  ContextType,
-        override protected[this] var _tacDependee: EOptionP[Method, TACAI]
+    protected class State(
+        override val callContext:   ContextType,
+        protected var _tacDependee: EOptionP[Method, TACAI]
     ) extends BaseAnalysisState with TACAIBasedAnalysisState[ContextType]
 
-    protected[this] val declaredFields: DeclaredFields = project.get(DeclaredFieldsKey)
+    protected val declaredFields: DeclaredFields = project.get(DeclaredFieldsKey)
 
-    protected[this] def handleTac(
+    protected def handleTac(
         context: ContextType,
         tac:     TACode[TACMethodParameter, DUVar[ValueInformation]]
     )(implicit fieldAccesses: DirectFieldAccesses): Unit = {
@@ -73,14 +73,14 @@ sealed trait FieldAccessInformationAnalysis extends FPCFAnalysis {
                     context,
                     pc,
                     declaredFields(declaringClass, fieldName, fieldType),
-                    persistentUVar(objRef.asVar)(tac.stmts)
+                    persistentUVar(objRef.asVar)(using tac.stmts)
                 )
             case _ @ExprStmt(_, GetField(pc, declaringClass, fieldName, fieldType, objRef)) =>
                 fieldAccesses.addFieldRead(
                     context,
                     pc,
                     declaredFields(declaringClass, fieldName, fieldType),
-                    persistentUVar(objRef.asVar)(tac.stmts)
+                    persistentUVar(objRef.asVar)(using tac.stmts)
                 )
 
             case _ @Assignment(_, _, GetStatic(pc, declaringClass, fieldName, fieldType)) =>
@@ -93,8 +93,8 @@ sealed trait FieldAccessInformationAnalysis extends FPCFAnalysis {
                     context,
                     pc,
                     declaredFields(declaringClass, fieldName, fieldType),
-                    persistentUVar(objRef.asVar)(tac.stmts),
-                    persistentUVar(value.asVar)(tac.stmts)
+                    persistentUVar(objRef.asVar)(using tac.stmts),
+                    persistentUVar(value.asVar)(using tac.stmts)
                 )
             case PutStatic(pc, declaringClass, fieldName, fieldType, value) =>
                 fieldAccesses.addFieldWrite(
@@ -102,7 +102,7 @@ sealed trait FieldAccessInformationAnalysis extends FPCFAnalysis {
                     pc,
                     declaredFields(declaringClass, fieldName, fieldType),
                     None,
-                    persistentUVar(value.asVar)(tac.stmts)
+                    persistentUVar(value.asVar)(using tac.stmts)
                 )
 
             case _ => /* Nothing to do */
@@ -114,8 +114,8 @@ private[fieldaccess] class EagerTacBasedFieldAccessInformationAnalysis(
     val project: SomeProject
 ) extends FieldAccessInformationAnalysis {
 
-    private[this] val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
-    private[this] val contextProvider: ContextProvider = project.get(ContextProviderKey)
+    private val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
+    private val contextProvider: ContextProvider = project.get(ContextProviderKey)
 
     def analyzeMethod(method: Method): PropertyComputationResult = {
         val context = contextProvider.newContext(declaredMethods(method)).asInstanceOf[ContextType]
@@ -141,9 +141,9 @@ private[fieldaccess] class EagerTacBasedFieldAccessInformationAnalysis(
         eps match {
             case UBP(tac: TheTACAI) =>
                 val fieldAccesses = new DirectFieldAccesses()
-                handleTac(context, tac.theTAC)(fieldAccesses)
+                handleTac(context, tac.theTAC)(using fieldAccesses)
 
-                returnResult(context)(state, fieldAccesses)
+                returnResult(context)(using state, fieldAccesses)
 
             case _ =>
                 InterimPartialResult(state.dependees, continuation(context, state))

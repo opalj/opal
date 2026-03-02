@@ -12,6 +12,7 @@ import org.opalj.fpcf.FPCFAnalysesManagerKey
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.PropertyStoreKey
 import org.opalj.tac.fpcf.analyses.cg.CHATypeIterator
+import org.opalj.tac.fpcf.analyses.cg.TypeIterator
 
 /**
  * Pseudo CallGraphKey that can be used to declare methods reachable without computing a call graph.
@@ -29,7 +30,7 @@ object NoCallGraphKey extends CallGraphKey {
 
     override protected[cg] def callGraphSchedulers(project: SomeProject): Iterable[FPCFAnalysisScheduler] = List.empty
 
-    override def getTypeIterator(project: SomeProject) = new CHATypeIterator(project)
+    override def getTypeIterator(project: SomeProject): TypeIterator = new CHATypeIterator(project)
 
     override protected def runAnalyses(project: SomeProject, ps: PropertyStore): Unit = {
         val methods = project.getProjectInformationKeyInitializationData(this).getOrElse(project.allMethods)

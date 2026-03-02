@@ -9,7 +9,7 @@ package instructions
  * @author Michael Eichberg
  */
 case class INVOKEVIRTUAL(
-    declaringClass:   ReferenceType, // an class or array type to be precise
+    declaringClass:   ReferenceType, // a class or array type to be precise
     name:             String,
     methodDescriptor: MethodDescriptor
 ) extends VirtualMethodInvocationInstruction {
@@ -47,8 +47,6 @@ object INVOKEVIRTUAL extends InstructionMetaInformation {
      *          e.g., `java/lang/Object` or `[java/lang/Object` in case of a method call on
      *          an array object. In the latter case, the called method has to be a method defined
      *          by `java/lang/Object`; e.g., `clone` or `wait`.
-     * @param   isInterface has to be `true` if declaring class identifies an interface.
-     *          (Determines how the target method is resolved - relevant for Java 8 onwards.)
      * @param   methodDescriptor the method descriptor in JVM notation,
      *          e.g., "()V" for a method without parameters which returns void.
      */

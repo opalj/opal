@@ -4,7 +4,7 @@ package tac
 package fpcf
 package analyses
 
-import scala.jdk.CollectionConverters._
+import scala.jdk.CollectionConverters.*
 
 import com.typesafe.config.Config
 
@@ -18,7 +18,7 @@ import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.VirtualFormalParameter
 import org.opalj.br.analyses.VirtualFormalParameters
 
-import net.ceedubs.ficus.Ficus._
+import net.ceedubs.ficus.Ficus.*
 import net.ceedubs.ficus.readers.ValueReader
 
 case class ConfiguredMethods(nativeMethods: Array[ConfiguredMethodData])
@@ -26,7 +26,7 @@ case class ConfiguredMethods(nativeMethods: Array[ConfiguredMethodData])
 object ConfiguredMethods {
     implicit val reader: ValueReader[ConfiguredMethods] = (config: Config, path: String) => {
         val c = config.getConfig(path)
-        val configs = c.getConfigList("nativeMethods").asScala.toArray
+        val configs = c.getConfigList("nativeMethods").asScala.toArray[Config]
         val data = configs.map(c => ConfiguredMethodData.reader.read(c, ""))
         ConfiguredMethods(data)
     }
@@ -36,7 +36,7 @@ case class ConfiguredMethodData(
     cf:                String,
     name:              String,
     desc:              String,
-    pointsTo:          Option[Array[PointsToRelation]],
+    pointsTo:          Option[Array[EntityAssignment]],
     methodInvocations: Option[Array[MethodDescription]]
 ) {
     def method(
@@ -56,13 +56,15 @@ object ConfiguredMethodData {
         val desc = c.getString("desc")
         val pointsTo =
             if (c.hasPath("pointsTo"))
-                Some(c.getConfigList("pointsTo").asScala.toArray.map(c => PointsToRelation.reader.read(c, "")))
+                Some(c.getConfigList("pointsTo").asScala.toArray[Config].map(c => EntityAssignment.reader.read(c, "")))
             else
                 None
 
         val methodInvocations =
             if (c.hasPath("methodInvocations"))
-                Some(c.getConfigList("methodInvocations").asScala.toArray.map(c => MethodDescription.reader.read(c, "")))
+                Some(c.getConfigList("methodInvocations").asScala.toArray[Config].map(c =>
+                    MethodDescription.reader.read(c, "")
+                ))
             else
                 None
 
@@ -70,14 +72,14 @@ object ConfiguredMethodData {
     }
 }
 
-case class PointsToRelation(lhs: EntityDescription, rhs: EntityDescription)
+case class EntityAssignment(lhs: EntityDescription, rhs: EntityDescription)
 
-object PointsToRelation {
-    implicit val reader: ValueReader[PointsToRelation] = (config: Config, path: String) => {
+object EntityAssignment {
+    implicit val reader: ValueReader[EntityAssignment] = (config: Config, path: String) => {
         val c = if (path.nonEmpty) config.getConfig(path) else config
         val lhs = EntityDescription.reader.read(c.getConfig("lhs"), "")
         val rhs = EntityDescription.reader.read(c.getConfig("rhs"), "")
-        PointsToRelation(lhs, rhs)
+        EntityAssignment(lhs, rhs)
     }
 }
 

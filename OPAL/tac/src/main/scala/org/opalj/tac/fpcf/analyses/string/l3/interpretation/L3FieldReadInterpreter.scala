@@ -43,11 +43,12 @@ import org.opalj.tac.fpcf.properties.string.StringFlowFunctionProperty
  * @author Maximilian Rüsch
  */
 class L3FieldReadInterpreter(
-    implicit val ps:              PropertyStore,
-    implicit val project:         SomeProject,
-    implicit val declaredFields:  DeclaredFields,
-    implicit val contextProvider: ContextProvider,
-    implicit val highSoundness:   Boolean
+    implicit
+    val ps:              PropertyStore,
+    val project:         SomeProject,
+    val declaredFields:  DeclaredFields,
+    val contextProvider: ContextProvider,
+    val highSoundness:   Boolean
 ) extends AssignmentBasedStringInterpreter {
 
     override type E = FieldRead[V]
@@ -229,13 +230,14 @@ class L3FieldReadInterpreter(
         eps match {
             case UBP(_: FieldWriteAccessInformation) =>
                 handleFieldAccessInformation(eps.asInstanceOf[EPS[DeclaredField, FieldWriteAccessInformation]])(
+                    using
                     accessState,
                     state
                 )
 
             case UBP(_: StringConstancyProperty) =>
                 accessState.updateAccessDependee(eps.asInstanceOf[EOptionP[VariableDefinition, StringConstancyProperty]])
-                computeResult(accessState, state)
+                computeResult(using accessState, state)
 
             case _ => throw new IllegalArgumentException(s"Encountered unknown eps: $eps")
         }

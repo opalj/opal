@@ -4,7 +4,7 @@ package collection
 package immutable
 
 import java.util.Random
-import scala.collection.immutable.{BitSet => SBitSet}
+import scala.collection.immutable.BitSet as SBitSet
 
 import org.junit.runner.RunWith
 import org.scalacheck.Arbitrary
@@ -37,7 +37,7 @@ object BitArraySetProperties extends Properties("BitArraySetProperties") {
     // generates an IntArraySet which only contains positive values
     implicit val arbIntArraySet: Arbitrary[IntArraySet] = Arbitrary {
         Gen.sized { s =>
-            Gen.frequency(frequencies: _*).map { max =>
+            Gen.frequency(frequencies*).map { max =>
                 (0 until s).foldLeft(IntArraySet.empty) { (c, n) => c + r.nextInt(max) }
             }
         }
@@ -45,7 +45,7 @@ object BitArraySetProperties extends Properties("BitArraySetProperties") {
 
     implicit val arbIntBitSet: Arbitrary[SBitSet] = Arbitrary {
         Gen.sized { s =>
-            Gen.frequency(frequencies: _*).map { max =>
+            Gen.frequency(frequencies*).map { max =>
                 (0 until s).foldLeft(SBitSet.empty) { (c, n) => c + r.nextInt(max) }
             }
         }
@@ -105,9 +105,11 @@ object BitArraySetProperties extends Properties("BitArraySetProperties") {
 
     property("adding a subset of this set to this set should return this set") = forAll {
         (s: IntArraySet) =>
-            val bas1 = s.foldLeft(BitArraySet.empty)(_ + _)
-            val bas2 = s.foldLeft(BitArraySet.empty)(_ + _)
-            (bas1 ++ bas2) eq bas1
+            {
+                val bas1 = s.foldLeft(BitArraySet.empty)(_ + _)
+                val bas2 = s.foldLeft(BitArraySet.empty)(_ + _)
+                (bas1 ++ bas2) eq bas1
+            }
     }
 
     property("adding this set to another set of which this set is a subset of should return the other set") = forAll {
@@ -132,14 +134,20 @@ object BitArraySetProperties extends Properties("BitArraySetProperties") {
 
     property("- (in order)") = forAll { (s: IntArraySet, other: IntArraySet) =>
         var bas = s.foldLeft(BitArraySet.empty)(_ + _)
-        other.forall({ v => bas -= v; !bas.contains(v) }) :| "when we delete a value it is no longer in the set" &&
-            s.forall({ v => bas -= v; !bas.contains(v) }) :| "we successively delete the initial values" &&
+        other.forall({ v =>
+            bas -= v; !bas.contains(v)
+        }) :| "when we delete a value it is no longer in the set" &&
+            s.forall({ v =>
+                bas -= v; !bas.contains(v)
+            }) :| "we successively delete the initial values" &&
             (bas == BitArraySet0) :| "the empty set is always represented by the singleton instance"
     }
 
     property("- (in reverse order)") = forAll { (s: IntArraySet, other: IntArraySet) =>
         var bas = s.foldLeft(BitArraySet.empty)(_ + _)
-        other.forall({ v => bas -= v; !bas.contains(v) }) :| "when we delete a value it is no longer in the set" &&
+        other.forall({ v =>
+            bas -= v; !bas.contains(v)
+        }) :| "when we delete a value it is no longer in the set" &&
             s.toList.reverse.forall({ v =>
                 bas -= v
                 !bas.contains(v)

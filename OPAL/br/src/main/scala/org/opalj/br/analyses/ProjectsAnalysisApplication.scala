@@ -34,7 +34,7 @@ abstract class ProjectsAnalysisApplication {
         execution:      Int
     ): Unit = {
         val (project, report) = analyze(cp, analysisConfig, execution)
-        OPALLogger.log(LogMessage.plainInfo(report.toConsoleString))(project.logContext)
+        OPALLogger.log(LogMessage.plainInfo(report.toConsoleString))(using project.logContext)
     }
 
     protected def analyze(

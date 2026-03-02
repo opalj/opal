@@ -37,7 +37,7 @@ trait SkipUnknown_attributeReader
         val size: Int = in.readInt
         var skipped: Int = 0
         while (skipped < size) {
-            val actuallySkipped = in skipBytes (size - skipped) // skip returns a long value...
+            val actuallySkipped = in.skipBytes(size - skipped) // skip returns a long value...
             if (actuallySkipped > 0)
                 skipped += actuallySkipped
             else {

@@ -5,18 +5,21 @@ package fpcf
 package analyses
 package alias
 
+import scala.util.boundary
+import scala.util.boundary.break
+
 import org.opalj.br.PC
 import org.opalj.br.fpcf.properties.Context
 import org.opalj.br.fpcf.properties.NoContext
 
 trait AllocationSiteAndTacBasedAliasAnalysis extends AllocationSiteBasedAliasAnalysis with TacBasedAliasAnalysis {
 
-    override protected[this] type AnalysisState <: AllocationSiteBasedAliasAnalysisState with TacBasedAliasAnalysisState
+    override protected type AnalysisState <: AllocationSiteBasedAliasAnalysisState & TacBasedAliasAnalysisState
 
-    override protected[this] def checkMustAlias(intersectingElement: AliasElementType)(implicit
+    override protected def checkMustAlias(intersectingElement: AliasElementType)(implicit
         state:   AnalysisState,
         context: AnalysisContext
-    ): Boolean = {
+    ): Boolean = boundary {
 
         val pointsTo1 = state.pointsTo1
         val pointsTo2 = state.pointsTo2
@@ -67,14 +70,14 @@ trait AllocationSiteAndTacBasedAliasAnalysis extends AllocationSiteBasedAliasAna
                         // Only report a negative result if the allocation site is inside the loop.
                         // If the allocation site dominates (any) loop end nodes, it can be executed multiple times
                         if (allocBB == pred || domTree.strictlyDominates(allocBB, pred)) {
-                            return false
+                            break(false);
                         }
                     }
                 })
 
             })
 
-            return true
+            break(true);
         }
 
         false

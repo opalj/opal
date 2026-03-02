@@ -75,7 +75,7 @@ trait Signature_attributeReader extends AttributeReader with ClassFileReaderConf
      * where the signature is syntactically invalid. In this case the attribute
      * is skipped.
      */
-    private[this] def parser(
+    private def parser(
         cp:                   Constant_Pool,
         ap:                   AttributeParent,
         ap_name_index:        Constant_Pool_Index,
@@ -99,7 +99,7 @@ trait Signature_attributeReader extends AttributeReader with ClassFileReaderConf
             case iae: IllegalArgumentException =>
                 OPALLogger.error(
                     "parsing bytecode",
-                    s"skipping ${ap.toString().toLowerCase()} signature: " + iae.getMessage
+                    s"skipping ${ap.toString.toLowerCase()} signature: " + iae.getMessage
                 )
                 if (throwIllegalArgumentException) throw iae else null
         }

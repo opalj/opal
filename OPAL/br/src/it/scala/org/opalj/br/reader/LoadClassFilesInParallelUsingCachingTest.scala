@@ -15,7 +15,7 @@ class LoadClassFilesInParallelUsingCachingTest extends AnyFlatSpec with Matchers
 
     val reader = new Java8FrameworkWithCaching(new BytecodeInstructionsCache)
 
-    private[this] def validate(classFile: ClassFile): Unit = {
+    private def validate(classFile: ClassFile): Unit = {
         classFile.thisType.fqn should not be null
     }
 

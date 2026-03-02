@@ -1,6 +1,6 @@
-import de.heikoseeberger.sbtheader.CommentStyle
-import de.heikoseeberger.sbtheader.HeaderPlugin.autoImport.HeaderPattern
-import de.heikoseeberger.sbtheader.LineCommentCreator
+import sbtheader.CommentStyle
+import sbtheader.HeaderPlugin.autoImport.HeaderPattern
+import sbtheader.LineCommentCreator
 
 object LicenseHeaderConfig {
     val defaultHeader = CommentStyle(

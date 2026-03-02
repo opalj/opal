@@ -50,7 +50,7 @@ case class TRYEND(id: Symbol) extends ExceptionHandlerElement {
  *         is stable - i.e., two handlers with the same number will end up in the same order
  *         in the table. Furthermore, it is possible to use negative numbers to ensure that a
  *         (custom) handler has precedence over all ''handlers'' found in the initial code;
- *         the initial handlers will have ids in the range [0...(number of exception handler)).
+ *         the initial handlers will have ids in the range [0...(number of exception handlers)].
  * @param handlerType The type of the handled exception or `None` if all exceptions are handled
  *         (finally handler).
  */
@@ -72,7 +72,7 @@ object CATCH {
 
     /**
      * Creates a [[CATCH]] pseudo instruction marking the handler of a
-     * [[org.opalj.br.ExceptionHandler]] catching the given `handlerTpye`.
+     * [[org.opalj.br.ExceptionHandler]] catching the given `handlerType`.
      * @see [[ExceptionHandlerElement]]
      * @param handlerType the fqn of the caught exception class
      */

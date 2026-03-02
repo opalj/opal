@@ -4,7 +4,7 @@ package br
 
 import java.io.File
 import java.net.URL
-import scala.util.control.ControlThrowable
+import scala.util.boundary.Break
 
 import org.opalj.bytecode.JavaBase
 import org.opalj.bytecode.JRELibraryFolder
@@ -64,8 +64,8 @@ package object reader {
                 perFile(file)
                 classFilesReader(file, handleException)
             } catch {
-                case ct: ControlThrowable => throw ct
-                case t: Throwable         => handleException(file, t); Iterable.empty
+                case b: Break[?]  => throw b
+                case t: Throwable => handleException(file, t); Iterable.empty
             }
         }
         (allClassFiles.flatten.seq, exceptions)

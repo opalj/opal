@@ -8,14 +8,11 @@ package instances
 package lcp_on_fields
 package problem
 
-import scala.collection.immutable.Map
-
 import org.opalj.ide.problem.AllBottomEdgeFunction
 import org.opalj.ide.problem.AllTopEdgeFunction
 import org.opalj.ide.problem.EdgeFunction
 import org.opalj.ide.problem.IdentityEdgeFunction
 import org.opalj.ide.problem.IDEValue
-import org.opalj.tac.fpcf.analyses.ide.instances.linear_constant_propagation
 import org.opalj.tac.fpcf.analyses.ide.instances.linear_constant_propagation.problem.LinearConstantPropagationLattice
 import org.opalj.tac.fpcf.analyses.ide.instances.linear_constant_propagation.problem.LinearConstantPropagationValue
 
@@ -48,9 +45,9 @@ class ObjectEdgeFunction(
             case PutFieldEdgeFunction(fieldName, value) =>
                 ObjectEdgeFunction((values - fieldName) + (fieldName -> value))
 
-            case IdentityEdgeFunction        => this
-            case _: AllTopEdgeFunction[V]    => secondEdgeFunction
-            case _: AllBottomEdgeFunction[V] => secondEdgeFunction
+            case IdentityEdgeFunction                   => this
+            case _: AllTopEdgeFunction[V @unchecked]    => secondEdgeFunction
+            case _: AllBottomEdgeFunction[V @unchecked] => secondEdgeFunction
 
             case _ =>
                 throw new UnsupportedOperationException(s"Composing $this with $secondEdgeFunction is not implemented!")
@@ -83,9 +80,9 @@ class ObjectEdgeFunction(
                         ))
                 )
 
-            case IdentityEdgeFunction        => this
-            case _: AllTopEdgeFunction[V]    => this
-            case _: AllBottomEdgeFunction[V] => otherEdgeFunction
+            case IdentityEdgeFunction                   => this
+            case _: AllTopEdgeFunction[V @unchecked]    => this
+            case _: AllBottomEdgeFunction[V @unchecked] => otherEdgeFunction
 
             case _ =>
                 throw new UnsupportedOperationException(s"Meeting $this with $otherEdgeFunction is not implemented!")
@@ -155,9 +152,9 @@ case class PutFieldEdgeFunction(
             case PutFieldEdgeFunction(fieldName2, value2)                       =>
                 ObjectEdgeFunction(Map(fieldName -> value, fieldName2 -> value2))
 
-            case IdentityEdgeFunction        => this
-            case _: AllTopEdgeFunction[V]    => secondEdgeFunction
-            case _: AllBottomEdgeFunction[V] => secondEdgeFunction
+            case IdentityEdgeFunction                   => this
+            case _: AllTopEdgeFunction[V @unchecked]    => secondEdgeFunction
+            case _: AllBottomEdgeFunction[V @unchecked] => secondEdgeFunction
 
             case _ =>
                 throw new UnsupportedOperationException(s"Composing $this with $secondEdgeFunction is not implemented!")
@@ -185,9 +182,9 @@ case class PutFieldEdgeFunction(
                     fieldName2 -> linear_constant_propagation.problem.VariableValue
                 ))
 
-            case IdentityEdgeFunction        => this
-            case _: AllTopEdgeFunction[V]    => this
-            case _: AllBottomEdgeFunction[V] => otherEdgeFunction
+            case IdentityEdgeFunction                   => this
+            case _: AllTopEdgeFunction[V @unchecked]    => this
+            case _: AllBottomEdgeFunction[V @unchecked] => otherEdgeFunction
 
             case _ =>
                 throw new UnsupportedOperationException(s"Meeting $this with $otherEdgeFunction is not implemented!")
@@ -247,9 +244,9 @@ class ArrayEdgeFunction(
                         ArrayEdgeFunction(linear_constant_propagation.problem.VariableValue)
                 }
 
-            case IdentityEdgeFunction        => this
-            case _: AllTopEdgeFunction[V]    => secondEdgeFunction
-            case _: AllBottomEdgeFunction[V] => secondEdgeFunction
+            case IdentityEdgeFunction                   => this
+            case _: AllTopEdgeFunction[V @unchecked]    => secondEdgeFunction
+            case _: AllBottomEdgeFunction[V @unchecked] => secondEdgeFunction
 
             case _ =>
                 throw new UnsupportedOperationException(s"Composing $this with $secondEdgeFunction is not implemented!")
@@ -284,9 +281,9 @@ class ArrayEdgeFunction(
                         ArrayEdgeFunction(linear_constant_propagation.problem.VariableValue)
                 }
 
-            case IdentityEdgeFunction        => this
-            case _: AllTopEdgeFunction[V]    => this
-            case _: AllBottomEdgeFunction[V] => otherEdgeFunction
+            case IdentityEdgeFunction                   => this
+            case _: AllTopEdgeFunction[V @unchecked]    => this
+            case _: AllBottomEdgeFunction[V @unchecked] => otherEdgeFunction
 
             case _ =>
                 throw new UnsupportedOperationException(s"Meeting $this with $otherEdgeFunction is not implemented!")
@@ -387,9 +384,9 @@ case class PutElementEdgeFunction(
                 ArrayEdgeFunction(linear_constant_propagation.problem.UnknownValue)
                     .composeWith(this).composeWith(secondEdgeFunction)
 
-            case IdentityEdgeFunction        => this
-            case _: AllTopEdgeFunction[V]    => secondEdgeFunction
-            case _: AllBottomEdgeFunction[V] => secondEdgeFunction
+            case IdentityEdgeFunction                   => this
+            case _: AllTopEdgeFunction[V @unchecked]    => secondEdgeFunction
+            case _: AllBottomEdgeFunction[V @unchecked] => secondEdgeFunction
 
             case _ =>
                 throw new UnsupportedOperationException(s"Composing $this with $secondEdgeFunction is not implemented!")
@@ -417,9 +414,9 @@ case class PutElementEdgeFunction(
                     LinearConstantPropagationLattice.meet(value, value2)
                 )
 
-            case IdentityEdgeFunction        => this
-            case _: AllTopEdgeFunction[V]    => this
-            case _: AllBottomEdgeFunction[V] => otherEdgeFunction
+            case IdentityEdgeFunction                   => this
+            case _: AllTopEdgeFunction[V @unchecked]    => this
+            case _: AllBottomEdgeFunction[V @unchecked] => otherEdgeFunction
 
             case _ =>
                 throw new UnsupportedOperationException(s"Meeting $this with $otherEdgeFunction is not implemented!")
@@ -453,9 +450,9 @@ case class PutStaticFieldEdgeFunction(
         secondEdgeFunction match {
             case PutStaticFieldEdgeFunction(_) => secondEdgeFunction
 
-            case IdentityEdgeFunction        => this
-            case _: AllTopEdgeFunction[V]    => secondEdgeFunction
-            case _: AllBottomEdgeFunction[V] => secondEdgeFunction
+            case IdentityEdgeFunction                   => this
+            case _: AllTopEdgeFunction[V @unchecked]    => secondEdgeFunction
+            case _: AllBottomEdgeFunction[V @unchecked] => secondEdgeFunction
 
             case _ =>
                 throw new UnsupportedOperationException(s"Composing $this with $secondEdgeFunction is not implemented!")
@@ -469,9 +466,9 @@ case class PutStaticFieldEdgeFunction(
                     LinearConstantPropagationLattice.meet(value, value2)
                 )
 
-            case IdentityEdgeFunction        => this
-            case _: AllTopEdgeFunction[V]    => this
-            case _: AllBottomEdgeFunction[V] => otherEdgeFunction
+            case IdentityEdgeFunction                   => this
+            case _: AllTopEdgeFunction[V @unchecked]    => this
+            case _: AllBottomEdgeFunction[V @unchecked] => otherEdgeFunction
 
             case _ =>
                 throw new UnsupportedOperationException(s"Meeting $this with $otherEdgeFunction is not implemented!")
@@ -506,8 +503,8 @@ object UnknownValueEdgeFunction extends AllTopEdgeFunction[LCPOnFieldsValue](Unk
             case VariableValueEdgeFunction => secondEdgeFunction
             case UnknownValueEdgeFunction  => secondEdgeFunction
 
-            case IdentityEdgeFunction     => this
-            case _: AllTopEdgeFunction[V] => this
+            case IdentityEdgeFunction                => this
+            case _: AllTopEdgeFunction[V @unchecked] => this
 
             case _ =>
                 throw new UnsupportedOperationException(s"Composing $this with $secondEdgeFunction is not implemented!")
@@ -516,9 +513,9 @@ object UnknownValueEdgeFunction extends AllTopEdgeFunction[LCPOnFieldsValue](Unk
 
     override def meet[V >: LCPOnFieldsValue <: IDEValue](otherEdgeFunction: EdgeFunction[V]): EdgeFunction[V] = {
         otherEdgeFunction match {
-            case _: AllTopEdgeFunction[V] => this
-            case IdentityEdgeFunction     => this
-            case _                        => otherEdgeFunction
+            case _: AllTopEdgeFunction[V @unchecked] => this
+            case IdentityEdgeFunction                => this
+            case _                                   => otherEdgeFunction
         }
     }
 

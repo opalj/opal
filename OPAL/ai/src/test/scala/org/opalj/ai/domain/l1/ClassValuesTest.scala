@@ -4,13 +4,15 @@ package ai
 package domain
 package l1
 
+import scala.compiletime.uninitialized
+
 import org.junit.runner.RunWith
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.junit.JUnitRunner
 
 import org.opalj.bi.TestResources.locateTestResources
-import org.opalj.br._
+import org.opalj.br.*
 import org.opalj.br.reader.Java8Framework.ClassFiles
 
 /**
@@ -21,7 +23,7 @@ import org.opalj.br.reader.Java8Framework.ClassFiles
 @RunWith(classOf[JUnitRunner])
 class ClassValuesTest extends AnyFlatSpec with Matchers {
 
-    import PlainClassesTest._
+    import PlainClassesTest.*
 
     behavior of "ClassValues"
 
@@ -108,9 +110,9 @@ class ClassValuesTest extends AnyFlatSpec with Matchers {
         c1.join(-1, c2) should be(c2.join(-1, c1))
     }
 
-    it should ("be able to trace static class values of primitves") in {
+    it should ("be able to trace static class values of primitives") in {
         val domain = new RecordingDomain
-        val method = classFile.methods.find(m => m.name == "staticPrimitveClassValue").get
+        val method = classFile.methods.find(m => m.name == "staticPrimitiveClassValue").get
         BaseAI(method, domain)
         domain.returnedValue.map(_.asInstanceOf[domain.DomainClassValue].value) should be(Some(IntegerType))
     }
@@ -138,7 +140,7 @@ object PlainClassesTest {
         with l0.TypeLevelDynamicLoads
         with l1.DefaultClassValuesBinding {
 
-        var returnedValue: Option[DomainValue] = _
+        var returnedValue: Option[DomainValue] = uninitialized
         override def areturn(pc: Int, value: DomainValue): Computation[Nothing, ExceptionValue] = {
             returnedValue = Some(value)
             super.areturn(pc, value)

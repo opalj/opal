@@ -41,6 +41,6 @@ object ComputeTAC extends ProjectsAnalysisApplication {
         } { t => println("Loading the project and computing the tac for all methods took: " + t.toSeconds) }
 
         // Now, you can use the TACProvider to get the TAC for a specific method.
-        (project, BasicReport(tacProvider.asInstanceOf[scala.collection.Map[_, _]].size.toString))
+        (project, BasicReport(tacProvider.asInstanceOf[scala.collection.Map[?, ?]].size.toString))
     }
 }

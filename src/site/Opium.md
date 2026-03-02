@@ -11,7 +11,7 @@ Purity results for the JOlden benchmark are available
 [here](https://bitbucket.org/delors/opal/downloads/JOlden-Purity-Results.zip).
 
 ## Obtaining OPIUM
-A version of OPIUM ready to to be executed can be downloaded 
+A version of OPIUM ready to be executed can be downloaded 
 [here](https://bitbucket.org/delors/opal/downloads/OPIUM.jar).
 
 A current state of OPIUM can be obtained from 

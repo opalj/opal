@@ -5,6 +5,7 @@ package fpcf
 package properties
 
 import org.opalj.br.fpcf.analyses.ContextProvider
+import org.opalj.util.elidedAssert
 
 package object pointsto {
     // we encode allocation sites (method, pc, emptyArray, typeid tuples) as longs
@@ -20,9 +21,9 @@ package object pointsto {
         val contextId = if (context eq NoContext) 0x3FFFFFF else context.id
         val typeId = tpe.id
         val emptyArray = if (isEmptyArray) 1L else 0L
-        assert(pc >= -0x10000 && pc <= 0xFFFF)
-        assert(contextId >= 0 && contextId <= 0x3FFFFFF)
-        assert(typeId >= -0x80000 && typeId <= 0x7FFFF)
+        elidedAssert(pc >= -0x10000 && pc <= 0xFFFF)
+        elidedAssert(contextId >= 0 && contextId <= 0x3FFFFFF)
+        elidedAssert(typeId >= -0x80000 && typeId <= 0x7FFFF)
         contextId.toLong | ((pc.toLong & 0x1FFFF) << 26) | (emptyArray << 43) | (typeId.toLong << 44)
     }
 

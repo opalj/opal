@@ -85,7 +85,7 @@ object ForeachRefIterator {
         def foreach[U](f: T => U): Unit = { f(v) }
     }
 
-    def fromNonNullValues[T <: AnyRef](data: Array[_ <: T]): ForeachRefIterator[T] = {
+    def fromNonNullValues[T <: AnyRef](data: Array[? <: T]): ForeachRefIterator[T] = {
         new ForeachRefIterator[T] {
             def foreach[U](f: T => U): Unit = {
                 var i = 0

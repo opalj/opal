@@ -28,8 +28,8 @@ import org.opalj.util.InMemoryClassLoader
  */
 object FirstInstrumentation extends App {
 
-    val PrintStreamType = ClassType("java/io/PrintStream")
-    val SystemType = ClassType("java/lang/System")
+    val PrintStreamType = ClassType.PrintStream
+    val SystemType = ClassType.System
 
     val TheType = ClassType("org/opalj/ba/SimpleInstrumentationDemo")
 
@@ -48,7 +48,7 @@ object FirstInstrumentation extends App {
                     val lCode = LabeledCode(code)
                     var modified = false
                     for {
-                        PCAndInstruction(pc, INVOKEVIRTUAL(_, "toString", JustReturnsString)) <- code
+                        case PCAndInstruction(pc, INVOKEVIRTUAL(_, "toString", JustReturnsString)) <- code
                     } {
                         modified = true
                         lCode.insert(

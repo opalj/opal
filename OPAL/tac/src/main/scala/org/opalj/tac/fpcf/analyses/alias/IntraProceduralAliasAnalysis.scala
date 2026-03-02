@@ -5,6 +5,9 @@ package fpcf
 package analyses
 package alias
 
+import scala.util.boundary
+import scala.util.boundary.break
+
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.BasicFPCFLazyAnalysisScheduler
@@ -21,10 +24,10 @@ import org.opalj.tac.fpcf.properties.TACAI
 
 class IntraProceduralAliasAnalysis(final val project: SomeProject) extends AllocationSiteAndTacBasedAliasAnalysis {
 
-    override type AnalysisState = TacBasedAliasAnalysisState with AllocationSiteBasedAliasAnalysisState
+    override type AnalysisState = TacBasedAliasAnalysisState & AllocationSiteBasedAliasAnalysisState
     override type AnalysisContext = AliasAnalysisContext
 
-    protected[this] def analyzeTAC()(
+    protected def analyzeTAC()(
         implicit
         context: AnalysisContext,
         state:   AnalysisState
@@ -42,7 +45,7 @@ class IntraProceduralAliasAnalysis(final val project: SomeProject) extends Alloc
      * It is responsible for calculating the points-to set of the given [[AliasSourceElement]] and handling it
      * by updating the analysis state accordingly.
      */
-    private[this] def handleElement(ase: AliasSourceElement, tac: Option[Tac])(
+    private def handleElement(ase: AliasSourceElement, tac: Option[Tac])(
         implicit
         state:   AnalysisState,
         context: AnalysisContext
@@ -58,17 +61,17 @@ class IntraProceduralAliasAnalysis(final val project: SomeProject) extends Alloc
      * by updating the analysis state accordingly. It assumes that it can point to any allocation site
      * if the variable interacts with constructs outside the current method.
      */
-    private[this] def handleUVar(uVar: AliasUVar, tac: Tac)(
+    private def handleUVar(uVar: AliasUVar, tac: Tac)(
         implicit
         state:   AnalysisState,
         context: AnalysisContext
-    ): Unit = {
+    ): Unit = boundary {
 
         uVar.persistentUVar.defPCs.foreach(pc => {
 
             if (pc < 0) {
                 state.setPointsToAny(uVar)
-                return
+                break();
             }
 
             tac.stmts(tac.pcToIndex(pc)) match {
@@ -76,7 +79,7 @@ class IntraProceduralAliasAnalysis(final val project: SomeProject) extends Alloc
                     state.addPointsTo(uVar, context.contextOf(uVar), pc)
                 case _ =>
                     state.setPointsToAny(uVar)
-                    return
+                    break();
             }
 
         })
@@ -89,7 +92,7 @@ class IntraProceduralAliasAnalysis(final val project: SomeProject) extends Alloc
      * Because we are only performing an intraprocedural analysis, we cannot handle it further and simply set,
      * that the element can point to any arbitrary object.
      */
-    private[this] def handleOther(ase: AliasSourceElement)(
+    private def handleOther(ase: AliasSourceElement)(
         implicit
         state:   AnalysisState,
         context: AnalysisContext
@@ -97,10 +100,10 @@ class IntraProceduralAliasAnalysis(final val project: SomeProject) extends Alloc
         state.setPointsToAny(ase)
     }
 
-    override protected[this] def createState: AnalysisState =
+    override protected def createState: AnalysisState =
         new AllocationSiteBasedAliasAnalysisState with TacBasedAliasAnalysisState
 
-    override protected[this] def createContext(
+    override protected def createContext(
         entity: AliasEntity
     ): AliasAnalysisContext =
         new AliasAnalysisContext(entity, project, propertyStore)

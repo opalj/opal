@@ -3,8 +3,6 @@ package org.opalj
 package br
 package reader
 
-import scala.reflect.ClassTag
-
 import scala.collection.immutable.ArraySeq
 
 import org.opalj.bi.reader.Module_attributeReader
@@ -22,21 +20,17 @@ trait Module_attributeBinding
     type Module_attribute = br.Module
 
     type RequiresEntry = br.Requires
-    override implicit val requiresEntryType: ClassTag[RequiresEntry] = ClassTag(classOf[br.Requires])
 
     type ExportsEntry = br.Exports
-    override implicit val exportsEntryType: ClassTag[ExportsEntry] = ClassTag(classOf[br.Exports])
     type ExportsToIndexEntry = String
 
     type OpensEntry = br.Opens
-    override implicit val opensEntryType: ClassTag[OpensEntry] = ClassTag(classOf[br.Opens])
 
     type OpensToIndexEntry = String // module name
 
     type UsesEntry = ClassType
 
     type ProvidesEntry = br.Provides
-    override implicit val providesEntryType: ClassTag[ProvidesEntry] = ClassTag(classOf[br.Provides])
 
     type ProvidesWithIndexEntry = ClassType
 

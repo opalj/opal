@@ -34,7 +34,7 @@ public class Main {
 
         Object o4 = new
                 @EscapeViaStaticField(
-                        value = "the defualt impl. let it escape",
+                        value = "the default impl. let it escape",
                         analyses = InterProceduralEscapeAnalysis.class
                 ) Object();
         a1.bazz(o4);

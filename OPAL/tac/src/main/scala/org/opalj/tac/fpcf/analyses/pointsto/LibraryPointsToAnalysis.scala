@@ -52,15 +52,14 @@ abstract class LibraryPointsToAnalysis(final val project: SomeProject)
 
     def assignInitialPointsToSets(p: SomeProject, ps: PropertyStore): Unit = {
         val packageIsClosed = p.get(ClosedPackagesKey)
-        val declaredMethods = p.get(DeclaredMethodsKey)
         val entryPoints = p.get(InitialEntryPointsKey)
         val formalParameters = p.get(VirtualFormalParametersKey)
         val initialInstantiatedTypes =
-            UIDSet[ReferenceType](p.get(InitialInstantiatedTypesKey).toSeq: _*)
+            UIDSet[ReferenceType](p.get(InitialInstantiatedTypesKey).toSeq*)
 
         // While processing entry points and fields, we keep track of all array types we see, as
         // well as subtypes and lower-dimensional types. These types also need to be
-        // pre-initialized. Note: This set only contains ArrayTypes whose element type is an
+        // pre-initialized. Note: This set only contains ArrayTypes whose element-type is an
         // ClassType. Arrays of primitive types can be ignored.
         val seenArrayTypes = UIDSet.newBuilder[ArrayType]
 
@@ -70,13 +69,12 @@ abstract class LibraryPointsToAnalysis(final val project: SomeProject)
 
         def initialize(param: Entity, types: UIDSet[ReferenceType]): Unit = {
             val pts = types.foldLeft(emptyPointsToSet) { (all, tpe) => all.included(createExternalAllocation(tpe)) }
-            ps.preInitialize(param, pointsToPropertyKey) {
-                case UBP(oldPts) =>
-                    InterimEUBP(param, oldPts.included(pts))
-                case _: EPK[_, _] =>
-                    InterimEUBP(param, pts)
-                case eps =>
-                    sys.error(s"unexpected property: $eps")
+            ps.preInitialize(param, pointsToPropertyKey) { pc =>
+                (pc: @unchecked) match
+                    case UBP(oldPts: PointsToSet @unchecked) =>
+                        InterimEUBP(param, oldPts.included(pts))
+                    case _: EPK[_, _] =>
+                        InterimEUBP(param, pts)
             }
         }
 
@@ -86,19 +84,18 @@ abstract class LibraryPointsToAnalysis(final val project: SomeProject)
         // For each method which is also an entry point, we assume that the caller has passed all
         // subtypes of the method's parameter types to the method.
         for {
-            ep <- entryPoints;
-            dm = declaredMethods(ep)
+            ep <- entryPoints
         } {
-            val fps = formalParameters(dm)
-            val context = typeIterator.newContext(dm)
+            val fps = formalParameters(ep)
+            val context = typeIterator.newContext(ep)
 
-            if (!dm.definedMethod.isStatic) {
-                if (initialInstantiatedTypes.contains(dm.declaringClassType))
-                    initialize(getFormalParameter(0, fps, context), UIDSet(dm.declaringClassType))
+            if (!ep.definedMethod.isStatic) {
+                if (initialInstantiatedTypes.contains(ep.declaringClassType))
+                    initialize(getFormalParameter(0, fps, context), UIDSet(ep.declaringClassType))
             }
 
-            for (i <- 0 until dm.descriptor.parametersCount) {
-                val pt = dm.descriptor.parameterType(i)
+            for (i <- 0 until ep.descriptor.parametersCount) {
+                val pt = ep.descriptor.parameterType(i)
                 val fp = getFormalParameter(i + 1, fps, context)
 
                 if (pt.isClassType) {
@@ -122,7 +119,7 @@ abstract class LibraryPointsToAnalysis(final val project: SomeProject)
         @inline def fieldIsRelevant(f: Field): Boolean = {
             // Only fields which are ArrayType or ClassType are relevant.
             f.fieldType.isReferenceType &&
-            // If the field is an ArrayType, then the array's element type must be a ClassType.
+            // If the field is an ArrayType, then the array's element-type must be a ClassType.
             // In other words: We don't care about arrays of primitive types (e.g. int[]) which
             // do not have to be pre-initialized.
             (!f.fieldType.isArrayType || f.fieldType.asArrayType.elementType.isClassType)

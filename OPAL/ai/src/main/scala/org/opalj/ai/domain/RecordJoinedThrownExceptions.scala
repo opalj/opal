@@ -14,18 +14,18 @@ package domain
  * @author Michael Eichberg
  */
 trait RecordJoinedThrownExceptions extends RecordThrownExceptions {
-    domain: ValuesDomain with Configuration with ExceptionsFactory =>
+    domain: ValuesDomain & Configuration & ExceptionsFactory =>
 
     type ThrownException = ExceptionValue
 
-    override protected[this] def recordThrownException(
+    override protected def recordThrownException(
         pc:    Int,
         value: ExceptionValue
     ): ThrownException = {
         value
     }
 
-    override protected[this] def joinThrownExceptions(
+    override protected def joinThrownExceptions(
         pc:                        Int,
         previouslyThrownException: ThrownException,
         thrownException:           ExceptionValue

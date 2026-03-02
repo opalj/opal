@@ -3,8 +3,6 @@ package org.opalj
 package br
 package reader
 
-import scala.reflect.ClassTag
-
 import org.opalj.bi.reader.InnerClasses_attributeReader
 
 /**
@@ -19,7 +17,6 @@ trait InnerClasses_attributeBinding
 
     type InnerClasses_attribute = br.InnerClassTable
     type InnerClassesEntry = br.InnerClass
-    override implicit val innerClassesEntryType: ClassTag[InnerClassesEntry] = ClassTag(classOf[br.InnerClass])
 
     def InnerClasses_attribute(
         cp:                   Constant_Pool,

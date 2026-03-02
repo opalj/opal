@@ -21,8 +21,7 @@ trait MethodParameters_attributeReader extends AttributeReader {
 
     type MethodParameters_attribute >: Null <: Attribute
 
-    type MethodParameter <: AnyRef
-    implicit val methodParameterType: ClassTag[MethodParameter] // TODO: Replace in Scala 3 by `type MethodParameter : ClassTag`
+    type MethodParameter <: AnyRef: ClassTag
     type MethodParameters = ArraySeq[MethodParameter]
 
     def MethodParameters_attribute(
@@ -55,7 +54,7 @@ trait MethodParameters_attributeReader extends AttributeReader {
      * }
      * </pre>
      */
-    private[this] def parserFactory() = (
+    private def parserFactory() = (
         cp:                   Constant_Pool,
         ap:                   AttributeParent,
         ap_name_index:        Constant_Pool_Index,

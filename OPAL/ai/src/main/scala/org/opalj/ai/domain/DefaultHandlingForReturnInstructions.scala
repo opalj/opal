@@ -5,7 +5,7 @@ package domain
 
 /**
  * Provides default implementations for a `Domain`'s return methods that always throw
- * an `IllegalMonitorStateExceptoin`.
+ * an `IllegalMonitorStateException`.
  *
  * You can mix in this trait if you are not interested in a method's return values or if
  * you need some default implementations.
@@ -13,7 +13,7 @@ package domain
  * @author Michael Eichberg
  */
 trait DefaultHandlingForReturnInstructions extends ReturnInstructionsDomain {
-    domain: ValuesDomain with ExceptionsFactory with Configuration =>
+    domain: ValuesDomain & ExceptionsFactory & Configuration =>
 
     /*base impl.*/
     def areturn(pc: Int, value: DomainValue): Computation[Nothing, ExceptionValue] = {

@@ -21,7 +21,7 @@ case class RuntimeVisibleTypeAnnotations_attribute(
             <summary class="attribute_name">Runtime Visible Type Annotations [size: {
                 typeAnnotations.size
             } item(s)]</summary>
-            {typeAnnotationsToXHTML(cp)}
+            {typeAnnotationsToXHTML}
         </details>
     }
 

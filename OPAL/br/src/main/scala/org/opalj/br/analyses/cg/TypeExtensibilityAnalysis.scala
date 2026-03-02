@@ -33,7 +33,7 @@ class TypeExtensibilityAnalysis(val project: SomeProject) extends (ClassType => 
     import classHierarchy.foreachDirectSupertype
     // format: on
 
-    @tailrec private[this] def determineExtensibility(
+    @tailrec private def determineExtensibility(
         typesToProcess:       mutable.Queue[ClassType],
         subtypeExtensibility: Array[Answer],
         isEnqueued:           Array[Boolean],
@@ -48,24 +48,24 @@ class TypeExtensibilityAnalysis(val project: SomeProject) extends (ClassType => 
             val thisSubtypeExtensibility = subtypeExtensibility(cid)
             if (thisSubtypeExtensibility eq null) No else thisSubtypeExtensibility
         }
-        val thisTypeExtensbility = isClassExtensible(classType) match {
+        val thisTypeExtensibility = isClassExtensible(classType) match {
             case Yes     => Yes
             case Unknown => if (thisSubtypeExtensibility.isYes) Yes else Unknown
             case No      => thisSubtypeExtensibility
         }
-        typeExtensibility(cid) = thisTypeExtensbility
+        typeExtensibility(cid) = thisTypeExtensibility
         var update = false
         foreachDirectSupertype(classType) { st =>
             val scid = st.id
             subtypeExtensibility(scid) match {
                 case null | No => {
-                    update = subtypeExtensibility(scid) ne thisTypeExtensbility
-                    subtypeExtensibility(scid) = thisTypeExtensbility
+                    update = subtypeExtensibility(scid) ne thisTypeExtensibility
+                    subtypeExtensibility(scid) = thisTypeExtensibility
                 }
                 case Yes     => // do nothing
                 case Unknown => {
-                    update = subtypeExtensibility(scid) ne thisTypeExtensbility
-                    if (thisTypeExtensbility.isYes) subtypeExtensibility(scid) = Yes
+                    update = subtypeExtensibility(scid) ne thisTypeExtensibility
+                    if (thisTypeExtensibility.isYes) subtypeExtensibility(scid) = Yes
                 }
             }
 
@@ -89,7 +89,7 @@ class TypeExtensibilityAnalysis(val project: SomeProject) extends (ClassType => 
         }
     }
 
-    private[this] val typeExtensibility: ArrayMap[Answer] = {
+    private val typeExtensibility: ArrayMap[Answer] = {
         implicit val isClassExtensible: ClassExtensibility = project.get(ClassExtensibilityKey)
 
         val leafTypes = classHierarchy.leafTypes

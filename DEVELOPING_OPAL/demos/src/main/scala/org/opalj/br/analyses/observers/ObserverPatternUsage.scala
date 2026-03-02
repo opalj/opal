@@ -38,8 +38,8 @@ object ObserverPatternUsage extends ProjectsAnalysisApplication {
         val appClassFiles = project.allProjectClassFiles
         val libClassFiles = project.allLibraryClassFiles
         println("Application:\n\tClasses:" + appClassFiles.size)
-        println("\tMethods:" + appClassFiles.foldLeft(0)(_ + _.methods.filter(!_.isSynthetic).size))
-        println("\tNon-final Fields:" + appClassFiles.foldLeft(0)(_ + _.fields.filter(!_.isFinal).size))
+        println("\tMethods:" + appClassFiles.foldLeft(0)(_ + _.methods.count(!_.isSynthetic)))
+        println("\tNon-final Fields:" + appClassFiles.foldLeft(0)(_ + _.fields.count(!_.isFinal)))
         println("Library:\n\tClasses:" + libClassFiles.size)
         println("Overall " + project.statistics)
 
@@ -86,7 +86,7 @@ object ObserverPatternUsage extends ProjectsAnalysisApplication {
         }
 
         val allObserverTypes = allObserverInterfaces ++
-            // we also want to include classes such as WindowAdapater which are
+            // we also want to include classes such as WindowAdapter which are
             // pure implementations of an observer interface
             (allObservers filter { observerType =>
                 if (project.classFile(observerType).isDefined) { // check that the project is complete

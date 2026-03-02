@@ -188,8 +188,8 @@ class FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
         }
 
         def checkTypeImmutability(result: EOptionP[FieldType, TypeImmutability]): Unit = result match {
-            case LBP(TransitivelyImmutableType)                => // transitively immutable type is set as default
-            case ep @ EUBPS(t, DependentlyImmutableType(_), _) =>
+            case LBP(TransitivelyImmutableType)                           => // transitively immutable type is set as default
+            case ep @ EUBPS(t: FieldType, DependentlyImmutableType(_), _) =>
                 // if the inner type of a generic field is dependently immutable
                 if (state.innerTypes.contains(t.asReferenceType) ||
                     // or there are no generic information it is over-approximated to non-transitively immutable
@@ -220,10 +220,10 @@ class FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
         def checkClassImmutability(result: EOptionP[ReferenceType, ClassImmutability])(implicit state: State): Unit =
             result match {
 
-                case LBP(TransitivelyImmutableClass)            => // transitively immutable is default
-                case ep @ EUBP(t, DependentlyImmutableClass(_)) =>
+                case LBP(TransitivelyImmutableClass)                           => // transitively immutable is default
+                case ep @ EUBP(t: ReferenceType, DependentlyImmutableClass(_)) =>
                     // if the inner type of a generic field is dependently immutable
-                    if (state.innerTypes.contains(t.asReferenceType) ||
+                    if (state.innerTypes.contains(t) ||
                         // or there are no generic information it is over-approximated to non-transitively immutable
                         (state.genericTypeParameters.isEmpty && state.innerTypes.isEmpty)
                     )

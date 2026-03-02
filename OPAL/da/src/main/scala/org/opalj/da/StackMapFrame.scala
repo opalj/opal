@@ -91,7 +91,7 @@ case class SameLocals1StackItemFrame(
                 <td>{frame_type - 64}</td>
                 <td>
                     Stack:&nbsp;<i>&lt;Empty&gt;</i>
-                    ,&nbsp;{verification_type_info_stack.toXHTML(cp)}<br/>
+                    ,&nbsp;{verification_type_info_stack.toXHTML}<br/>
                     Locals:&nbsp;Unchanged
                 </td>
             </tr>,
@@ -122,7 +122,7 @@ case class SameLocals1StackItemFrameExtended(
                 <td>{offset_delta}</td>
                 <td>
                     Stack:&nbsp;<i>&lt;Empty&gt;</i>
-                    ,&nbsp;{verification_type_info_stack.toXHTML(cp)}<br/>
+                    ,&nbsp;{verification_type_info_stack.toXHTML}<br/>
                     Locals:&nbsp;Unchanged
                 </td>
             </tr>,

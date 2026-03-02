@@ -9,9 +9,6 @@ package l2
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.FPCFLazyAnalysisScheduler
-import org.opalj.br.fpcf.properties.SystemProperties
-import org.opalj.br.fpcf.properties.cg.Callees
-import org.opalj.br.fpcf.properties.fieldaccess.FieldWriteAccessInformation
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyStore
 import org.opalj.tac.fpcf.analyses.string.flowanalysis.LazyMethodStringFlowAnalysis
@@ -31,11 +28,7 @@ object LazyL2StringFlowAnalysis extends LazyStringFlowAnalysis {
         LazyL2StringFlowAnalysis
     )
 
-    override final def uses: Set[PropertyBounds] = super.uses ++ PropertyBounds.ubs(
-        Callees,
-        FieldWriteAccessInformation,
-        SystemProperties
-    )
+    override final def uses: Set[PropertyBounds] = super.uses ++ L2InterpretationHandler.uses
 
     override final def init(p: SomeProject, ps: PropertyStore): InitializationData = L2InterpretationHandler(p)
 

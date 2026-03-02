@@ -4,7 +4,7 @@ package br
 package instructions
 
 /**
- * Trait that can be mixed in if the value of a instruction is implicitly defined.
+ * Trait that can be mixed in if the value of an instruction is implicitly defined.
  *
  * @author Michael Eichberg
  */

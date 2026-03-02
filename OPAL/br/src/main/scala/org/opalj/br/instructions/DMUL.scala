@@ -14,7 +14,7 @@ case object DMUL extends MultiplyInstruction {
 
     final val mnemonic = "dmul"
 
-    final val computationalType = ComputationalTypeDouble
+    final val computationalType: ComputationalTypeDouble.type = ComputationalTypeDouble
 
     final def stackSlotsChange: Int = -2
 }

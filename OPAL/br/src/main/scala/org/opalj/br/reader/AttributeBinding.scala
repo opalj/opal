@@ -3,8 +3,6 @@ package org.opalj
 package br
 package reader
 
-import scala.reflect.ClassTag
-
 import org.opalj.bi.reader.AttributesAbstractions
 
 /**
@@ -15,5 +13,4 @@ import org.opalj.bi.reader.AttributesAbstractions
 trait AttributeBinding extends AttributesAbstractions {
 
     type Attribute = br.Attribute
-    override implicit val attributeType: ClassTag[Attribute] = ClassTag(classOf[br.Attribute])
 }

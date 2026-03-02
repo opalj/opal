@@ -35,7 +35,7 @@ final class CatchNode(
     def this(handler: ExceptionHandler, index: Int) =
         this(index, handler.startPC, handler.endPC, handler.handlerPC, handler.catchType)
 
-    override final def nodeId: Int = {
+    override def nodeId: Int = {
         // OLD: the offset is required to ensure that catch node ids do not collide with basic
         // OLD: block ids (even if the index is zero!)
         // OLD: 0xFFFFFF + startPC + (index << 16)

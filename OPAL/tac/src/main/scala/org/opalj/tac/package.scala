@@ -23,6 +23,7 @@ import org.opalj.br.cfg.CFG
 import org.opalj.collection.immutable.EmptyIntTrieSet
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.graphs.Node
+import org.opalj.util.elidedAssert
 import org.opalj.value.ValueInformation
 
 /**
@@ -75,7 +76,7 @@ package object tac {
 
     /**
      * Identifies the implicit `this` reference in the 3-address code representation.
-     * -1 always identifies the origin of the self reference(`this`) if the the method is
+     * -1 always identifies the origin of the self reference(`this`) if the method is
      * an instance method; if the method is not an instance method the origin -1 is not used.
      */
     final val OriginOfThis /*: ValueOrigin*/ = -1
@@ -120,7 +121,7 @@ package object tac {
         oldEH:      ExceptionHandler,
         newIndexes: Array[Int]
     )(
-        implicit aiResult: AIResult { val domain: Domain with RecordDefUse }
+        implicit aiResult: AIResult { val domain: Domain & RecordDefUse }
     ): (Int, Int) = {
         val oldStartPC = oldEH.startPC
         var newStartIndex = newIndexes(oldStartPC)
@@ -149,7 +150,7 @@ package object tac {
              */
 
             var lastPC = oldEH.endPC
-            do {
+            while {
                 newEndIndex = newIndexes(lastPC)
                 // it may be the case that an exception handler - which covers the start
                 // of a class file collapses; in this case, we have to make sure that
@@ -158,11 +159,12 @@ package object tac {
                 // 2) decrement lastPC
                 lastPC -= 1
 
-            } while (newEndIndex <= 0 && lastPC >= oldStartPC)
+                newEndIndex <= 0 && lastPC >= oldStartPC
+            } do ()
 
             if (lastPC < oldStartPC) {
                 // the EH is totally dead... i.e., all code in the try block is dead
-                assert(
+                elidedAssert(
                     (oldEH.startPC until oldEH.endPC) forall { tryPC =>
                         aiResult.domain.exceptionHandlerSuccessorsOf(tryPC).isEmpty
                     },
@@ -178,7 +180,7 @@ package object tac {
 
         }
 
-        assert(
+        elidedAssert(
             newEndIndex >= newStartIndex, // both equal => EH is dead!
             s"the end of the try block $newEndIndex is before the start $newStartIndex"
         )
@@ -201,7 +203,7 @@ package object tac {
     def updateExceptionHandlers(
         newIndexes: Array[Int]
     )(
-        implicit aiResult: AIResult { val domain: Domain with RecordDefUse }
+        implicit aiResult: AIResult { val domain: Domain & RecordDefUse }
     ): ExceptionHandlers = {
         val code = aiResult.code
         val exceptionHandlers = code.exceptionHandlers

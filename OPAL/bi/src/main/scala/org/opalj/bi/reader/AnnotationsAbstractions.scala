@@ -17,8 +17,7 @@ trait AnnotationsAbstractions extends Constant_PoolAbstractions {
     //
 
     // A TypeAnnotation's/an Annotation's element value can be an annotation.
-    type Annotation <: AnyRef
-    implicit val annotationType: ClassTag[Annotation] // TODO: Replace in Scala 3 with `type Annotation: ClassTag`
+    type Annotation <: AnyRef: ClassTag
 
     type ElementValuePairs
 

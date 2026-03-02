@@ -17,7 +17,7 @@ trait AIBasedCommandLineConfig extends OPALCommandLineConfig { self: ScallopConf
         DomainArg !
     )
 
-    args(aiArgs: _*)
+    args(aiArgs*)
 
     aiArgs.foreach { arg => argGroups += arg -> aiArgGroup }
 }

@@ -23,7 +23,7 @@ class InstructionsBuilder private (private val buffer: ArrayBuffer[Instruction])
     /**
      * Adds the given instruction to the buffer and adds the appropriate number of `null`
      * values to the array such that the instruction occupies exactly so many slots as
-     * specified by `slots`. Hence, `slotes` has to be >= 1.
+     * specified by `slots`. Hence, `slots` has to be >= 1.
      */
     def ++=(value: Instruction, slots: Int): Unit = {
         //        if (slots > 1) buffer.ensureAdditionalCapacity(slots)
@@ -49,7 +49,7 @@ class InstructionsBuilder private (private val buffer: ArrayBuffer[Instruction])
     def ++=(instructions: Array[Instruction]): Unit = buffer ++= instructions
 
     /**
-     * Returns the build instructions array; this builder is not to be used afterwards.
+     * Returns the build instructions array; this builder is not to be used afterward.
      */
     def result(): Array[Instruction] = buffer.toArray
 }

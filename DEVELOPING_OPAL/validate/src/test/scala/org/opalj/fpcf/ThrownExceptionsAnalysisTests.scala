@@ -21,7 +21,7 @@ class ThrownExceptionsAnalysisTests extends PropertiesTest {
 
     override def init(p: Project[URL]): Unit = {
         p.updateProjectInformationKeyInitializationData(AIDomainFactoryKey)(_ =>
-            Set[Class[_ <: AnyRef]](classOf[l1.DefaultDomainWithCFGAndDefUse[URL]])
+            Set[Class[? <: AnyRef]](classOf[l1.DefaultDomainWithCFGAndDefUse[URL]])
         )
 
         p.get(RTACallGraphKey)
@@ -31,7 +31,7 @@ class ThrownExceptionsAnalysisTests extends PropertiesTest {
         List("org/opalj/fpcf/fixtures/thrown_exceptions")
     }
 
-    describe("L1ThrownExceptionsAnalysis and VirtualMethodThrownExceptionsAnalysis are executed") {
+    describe("L1ThrownExceptionsAnalysis is executed") {
         val as = executeAnalyses(Set(
             EagerL1ThrownExceptionsAnalysis
         ))

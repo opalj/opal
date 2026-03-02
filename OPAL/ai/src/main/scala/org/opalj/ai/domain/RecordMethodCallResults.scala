@@ -34,7 +34,7 @@ trait RecordMethodCallResults
 
     type ReturnedValue <: DomainValue
 
-    private[this] var hasReturnedNormally: Boolean = false
+    private var hasReturnedNormally: Boolean = false
 
     abstract override def returnVoid(pc: Int): Computation[Nothing, ExceptionValue] = {
         hasReturnedNormally = true
@@ -111,8 +111,9 @@ trait RecordMethodCallResults
                     summarizedValue = originalParameter
                 } else {
                     summarizedValue.join(callerPC, originalParameter) match {
-                        case SomeUpdate(newSummarizedValue) => summarizedValue = newSummarizedValue
-                        case _                              => summarizedValue
+                        case SomeUpdate(newSummarizedValue: callerDomain.DomainValue) =>
+                            summarizedValue = newSummarizedValue
+                        case _ => summarizedValue
                     }
                 }
             }

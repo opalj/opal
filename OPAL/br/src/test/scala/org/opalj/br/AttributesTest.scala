@@ -32,7 +32,7 @@ class AttributesTest extends AnyFunSuite {
 
     test("test that the source file attribute is present") {
         val cf1 = ClassFile(attributesJARFile, "deprecated/DeprecatedByAnnotation.class").head
-        assert(cf1.sourceFile != None)
+        assert(cf1.sourceFile.isDefined)
     }
 
 }

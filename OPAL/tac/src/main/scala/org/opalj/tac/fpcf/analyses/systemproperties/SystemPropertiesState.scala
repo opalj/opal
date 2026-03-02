@@ -19,11 +19,11 @@ import org.opalj.tac.fpcf.properties.TACAI
  * @author Maximilian Rüsch
  */
 final class SystemPropertiesState[ContextType <: Context](
-    override val callContext:                  ContextType,
-    override protected[this] var _tacDependee: EOptionP[Method, TACAI]
+    override val callContext:   ContextType,
+    protected var _tacDependee: EOptionP[Method, TACAI]
 ) extends BaseAnalysisState with TACAIBasedAnalysisState[ContextType] {
 
-    private[this] var _stringConstancyDependees: Map[
+    private var _stringConstancyDependees: Map[
         VariableContext,
         EOptionP[VariableContext, StringConstancyProperty]
     ] =

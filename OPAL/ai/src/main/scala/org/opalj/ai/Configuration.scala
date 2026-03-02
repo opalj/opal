@@ -16,7 +16,7 @@ package ai
  *
  * In general, the [[org.opalj.ai.domain.ThrowAllPotentialExceptionsConfiguration]]
  * should be used as a foundation as it generates all exceptions that may be thrown; however,
- * configuring the behavior of method calls may be worth while.
+ * configuring the behavior of method calls may be worthwhile.
  *
  * @author Michael Eichberg
  */
@@ -72,7 +72,7 @@ trait Configuration {
      * Determines the behavior how method calls are handled when the exceptions that the
      * called method may throw are unknown.
      *
-     * @note Used by domains which handle method invokations.
+     * @note Used by domains which handle method invocations.
      */
     def throwExceptionsOnMethodCall: ExceptionsRaisedByCalledMethod
 
@@ -89,7 +89,7 @@ trait Configuration {
      * }
      * }}}
      *
-     * @note Used by domains which handle method invokations.
+     * @note Used by domains which handle method invocations.
      */
     def throwNullPointerExceptionOnMethodCall: Boolean
 
@@ -154,7 +154,7 @@ trait Configuration {
     def throwNegativeArraySizeException: Boolean
 
     /**
-     * Throw a `ClassNotFoundException` if the a specific reference type is not
+     * Throw a `ClassNotFoundException` if the specific reference type is not
      * known in the current context. The context is typically a specific `Project`.
      */
     def throwClassNotFoundException: Boolean

@@ -14,5 +14,5 @@ case object IREM extends IntegerRemainderInstruction {
 
     final val mnemonic = "irem"
 
-    final val computationalType = ComputationalTypeInt
+    final val computationalType: ComputationalTypeInt.type = ComputationalTypeInt
 }

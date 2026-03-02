@@ -7,6 +7,7 @@ import com.typesafe.config.ConfigFactory
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger.info
+import org.opalj.util.elidedAssert
 
 /**
  * @author Robin Körkemeier
@@ -18,7 +19,7 @@ package object ide {
     {
         implicit val logContext: LogContext = GlobalLogContext
         try {
-            assert(false) // <= test whether assertions are turned on or off...
+            elidedAssert(false) // <= test whether assertions are turned on or off...
             info(FrameworkName, "Production Build")
         } catch {
             case _: AssertionError => info(FrameworkName, "Development Build with Assertions")

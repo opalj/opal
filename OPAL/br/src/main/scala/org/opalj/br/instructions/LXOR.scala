@@ -16,6 +16,6 @@ case object LXOR extends BitwiseInstruction {
 
     final val operator = "^"
 
-    final val computationalType = ComputationalTypeLong
+    final val computationalType: ComputationalTypeLong.type = ComputationalTypeLong
 
 }

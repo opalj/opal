@@ -4,7 +4,7 @@ package tac
 
 import java.util.concurrent.ConcurrentLinkedQueue
 import scala.collection.mutable
-import scala.jdk.CollectionConverters._
+import scala.jdk.CollectionConverters.*
 
 import org.opalj.ai.BaseAI
 import org.opalj.ai.Domain
@@ -25,7 +25,7 @@ import org.opalj.value.ValueInformation
  *
  * @author Michael Eichberg
  */
-object EagerDetachedTACAIKey extends TACAIKey[Method => Domain with RecordDefUse] {
+object EagerDetachedTACAIKey extends TACAIKey[Method => Domain & RecordDefUse] {
 
     /**
      * TACAI code has no special prerequisites.
@@ -33,7 +33,7 @@ object EagerDetachedTACAIKey extends TACAIKey[Method => Domain with RecordDefUse
     override def requirements(project: SomeProject): Seq[ProjectInformationKey[Nothing, Nothing]] = Nil
 
     /**
-     * Returns an factory which computes and caches the 3-address code of a method when required.
+     * Returns a factory which computes and caches the 3-address code of a method when required.
      *
      * All methods belonging to a project are converted using the same `domainFactory`. Hence,
      * the `domainFactory` needs to be set (using `setProjectInformationKeyInitializationData`)

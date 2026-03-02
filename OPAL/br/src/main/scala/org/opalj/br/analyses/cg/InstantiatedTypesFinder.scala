@@ -7,7 +7,7 @@ package cg
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
 
-import net.ceedubs.ficus.Ficus._
+import net.ceedubs.ficus.Ficus.*
 
 /**
  * @author Florian Kuebler
@@ -22,8 +22,8 @@ sealed trait InstantiatedTypesFinder {
 }
 
 /**
- * This trait considers only the type java.lang.String as instantiated that is the type that is
- * be instantiated for command line applications for their command line parameters.
+ * This trait considers only the types java.lang.String and java.lang.Class as instantiated, which can be introduced by
+ * constants.
  *
  * @author Florian Kuebler
  */
@@ -86,7 +86,7 @@ trait LibraryInstantiatedTypesFinder extends InstantiatedTypesFinder {
 trait ConfigurationInstantiatedTypesFinder extends InstantiatedTypesFinder {
 
     // don't make this a val for initialization reasons
-    @inline private[this] def additionalInstantiatedTypesKey: String = {
+    @inline private def additionalInstantiatedTypesKey: String = {
         InitialInstantiatedTypesKey.ConfigKeyPrefix + "instantiatedTypes"
     }
 
@@ -119,7 +119,7 @@ trait ConfigurationInstantiatedTypesFinder extends InstantiatedTypesFinder {
         configInstantiatedTypes foreach { configuredType =>
             val considerSubtypes = configuredType.endsWith("+")
             val typeName = if (considerSubtypes) {
-                configuredType.substring(0, configuredType.size - 1)
+                configuredType.substring(0, configuredType.length - 1)
             } else {
                 configuredType
             }

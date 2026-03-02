@@ -7,6 +7,7 @@ package l1
 import scala.reflect.ClassTag
 
 import org.opalj.br.ArrayType
+import org.opalj.util.elidedAssert
 
 /**
  * Enables the tracking of the length of arrays in the most common cases.
@@ -17,21 +18,21 @@ import org.opalj.br.ArrayType
  * @author   Michael Eichberg
  */
 trait ArrayValues extends l1.ReferenceValues {
-    domain: CorrelationalDomain with ConcreteIntegerValues =>
+    domain: CorrelationalDomain & ConcreteIntegerValues =>
 
     // We do not refine the type DomainArrayValue any further since we also want
     // to use the super level ArrayValue class to represent arrays for which we have
     // no further knowledge about the size.
     // DON'T DO: type DomainArrayValue <: ArrayValue with DomainSingleOriginReferenceValue
 
-    type DomainInitializedArrayValue <: InitializedArrayValue with DomainArrayValue
+    type DomainInitializedArrayValue <: InitializedArrayValue & DomainArrayValue
     val DomainInitializedArrayValueTag: ClassTag[DomainInitializedArrayValue]
 
     // IMPROVE Extend MultipleReferenceValues to handle the case that we reference multiple arrays.
     // IMPROVE Add support to track the size of arrays independent of a concrete instance
 
     /**
-     * Represents some (multi-dimensional) array where the (initialized) dimensions have
+     * Represents some (multidimensional) array where the (initialized) dimensions have
      * the given size.
      */
     // NOTE THAT WE CANNOT STORE SIZE INFORMATION FOR AlL DIMENSIONS BEYOND THE FIRST ONE;
@@ -43,7 +44,7 @@ trait ArrayValues extends l1.ReferenceValues {
          */
         def theLength: Int
 
-        assert(length.get >= 0, "impossible length")
+        elidedAssert(length.get >= 0, "impossible length")
 
         override final def length: Option[Int] = Some(theLength)
 
@@ -130,7 +131,7 @@ trait ArrayValues extends l1.ReferenceValues {
         override def equals(other: Any): Boolean = other match {
             case DomainInitializedArrayValueTag(that) =>
                 (that eq this) || (
-                    (that canEqual this) &&
+                    that.canEqual(this) &&
                     this.origin == that.origin &&
                     this.theLength == that.theLength &&
                     (this.theUpperTypeBound eq that.theUpperTypeBound)

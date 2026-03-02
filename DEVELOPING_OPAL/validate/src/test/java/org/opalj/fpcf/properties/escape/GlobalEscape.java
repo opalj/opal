@@ -34,5 +34,5 @@ public @interface GlobalEscape {
     Class<? extends FPCFAnalysis>[] analyses() default { SimpleEscapeAnalysis.class,
             InterProceduralEscapeAnalysis.class };
 
-    boolean requiresPerformInvokationsDomain() default false;
+    boolean performInvocationsDomain() default false;
 }

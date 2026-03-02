@@ -2,6 +2,8 @@
 package org.opalj
 package br
 
+import org.opalj.util.elidedAssert
+
 /**
  * Common instruction sequences.
  *
@@ -226,7 +228,7 @@ package object instructions {
                     null
                 )
 
-            private[this] lazy val unboxInstructions: Array[Array[Instruction]] = {
+            private lazy val unboxInstructions: Array[Array[Instruction]] = {
                 val a = new Array[Array[Instruction]](ClassType.Double.id + 1)
                 a(ClassType.Boolean.id) = LangBooleanToPrimitiveBoolean
                 a(ClassType.Byte.id) = LangByteToPrimitiveByte
@@ -241,7 +243,7 @@ package object instructions {
 
             def unboxValue(wrapperType: Type): Array[Instruction] = {
                 val wid = wrapperType.id
-                assert(wid >= ClassType.Boolean.id && wid <= ClassType.Double.id)
+                elidedAssert(wid >= ClassType.Boolean.id && wid <= ClassType.Double.id)
 
                 unboxInstructions(wid)
             }

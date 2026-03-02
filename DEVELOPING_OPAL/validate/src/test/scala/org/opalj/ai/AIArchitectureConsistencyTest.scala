@@ -75,23 +75,34 @@ class AIArchitectureConsistencyTest extends AnyFlatSpec with Matchers with Befor
                 }
                 ensemble(Symbol("Analyses")) { "org.opalj.fpcf.analyses.**" }
 
-                Symbol("Util") is_only_allowed_to (USE, empty)
+                Symbol("Util").is_only_allowed_to(USE, empty)
 
-                Symbol("AI") is_only_allowed_to (USE, Symbol("Util"))
+                Symbol("AI").is_only_allowed_to(USE, Symbol("Util"))
 
-                Symbol("Issues") is_only_allowed_to (USE, Symbol("AI"))
+                Symbol("Issues").is_only_allowed_to(USE, Symbol("AI"))
 
-                Symbol("Domain") is_only_allowed_to (USE, Symbol("Util"), Symbol("AI"))
+                Symbol("Domain").is_only_allowed_to(USE, Symbol("Util"), Symbol("AI"))
 
-                Symbol("DomainL0") is_only_allowed_to (USE, Symbol("Util"), Symbol("AI"), Symbol("Domain"))
-                Symbol("DomainL1") is_only_allowed_to
-                    (USE, Symbol("Util"), Symbol("AI"), Symbol("Domain"), Symbol("DomainL0"))
-                Symbol("DomainL2") is_only_allowed_to
-                    (USE, Symbol("Util"), Symbol("AI"), Symbol("Domain"), Symbol("DomainL0"), Symbol("DomainL1"))
+                Symbol("DomainL0").is_only_allowed_to(USE, Symbol("Util"), Symbol("AI"), Symbol("Domain"))
+                Symbol("DomainL1").is_only_allowed_to(
+                    USE,
+                    Symbol("Util"),
+                    Symbol("AI"),
+                    Symbol("Domain"),
+                    Symbol("DomainL0")
+                )
+                Symbol("DomainL2").is_only_allowed_to(
+                    USE,
+                    Symbol("Util"),
+                    Symbol("AI"),
+                    Symbol("Domain"),
+                    Symbol("DomainL0"),
+                    Symbol("DomainL1")
+                )
 
-                Symbol("DomainTracing") is_only_allowed_to (USE, Symbol("Util"), Symbol("AI"), Symbol("Domain"))
+                Symbol("DomainTracing").is_only_allowed_to(USE, Symbol("Util"), Symbol("AI"), Symbol("Domain"))
 
-                Symbol("Project") is_only_allowed_to (
+                Symbol("Project").is_only_allowed_to(
                     USE,
                     Symbol("Util"),
                     Symbol("AI"),
@@ -104,7 +115,7 @@ class AIArchitectureConsistencyTest extends AnyFlatSpec with Matchers with Befor
                 // we have a cyclic dependency between code in ..ai.domain.la and
                 // ai.analyses.** which is "intended" since we do fix-point
                 // computations
-                Symbol("DomainLA") is_only_allowed_to (
+                Symbol("DomainLA").is_only_allowed_to(
                     USE,
                     Symbol("Util"),
                     Symbol("AI"),
@@ -114,7 +125,7 @@ class AIArchitectureConsistencyTest extends AnyFlatSpec with Matchers with Befor
                     Symbol("DomainL2"),
                     Symbol("Analyses")
                 )
-                Symbol("Analyses") is_only_allowed_to (
+                Symbol("Analyses").is_only_allowed_to(
                     USE,
                     Symbol("Util"),
                     Symbol("AI"),

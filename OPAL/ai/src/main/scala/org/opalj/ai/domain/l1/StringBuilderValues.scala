@@ -4,9 +4,10 @@ package ai
 package domain
 package l1
 
-import java.lang.{StringBuilder => JStringBuilder}
+import java.lang.StringBuilder as JStringBuilder
 
 import org.opalj.br.ClassType
+import org.opalj.util.elidedAssert
 
 /**
  * Enables the tracing of `StringBuilders`.
@@ -38,8 +39,7 @@ import org.opalj.br.ClassType
  * @author Michael Eichberg
  */
 trait StringBuilderValues extends StringValues {
-    domain: Domain with CorrelationalDomainSupport with Configuration with IntegerValuesDomain
-        with TypedValuesFactory =>
+    domain: Domain & CorrelationalDomainSupport & Configuration & IntegerValuesDomain & TypedValuesFactory =>
 
     // TODO Move concrete class to DefaultBindingClass...
     protected class StringBuilderValue(
@@ -50,8 +50,8 @@ trait StringBuilderValues extends StringValues {
     ) extends SObjectValue {
         this: DomainStringValue =>
 
-        assert(builder != null)
-        assert((builderType eq ClassType.StringBuffer) || (builderType eq ClassType.StringBuilder))
+        elidedAssert(builder != null)
+        elidedAssert((builderType eq ClassType.StringBuffer) || (builderType eq ClassType.StringBuilder))
 
         override final def isNull: No.type = No
         override final def isPrecise: Boolean = true

@@ -82,7 +82,7 @@ sealed trait PurityPropertyMetaInformation extends PropertyMetaInformation {
  * any side effects.
  * In single-threaded execution, this means that the object graph of the program may not
  * have changed between invocation of the method and its return, except for potentially additional
- * objects allocated by the method. For multi-threaded execution, the object graph may not change
+ * objects allocated by the method. For multithreaded execution, the object graph may not change
  * due to the invocation of the method, again except allocation of new objects. Note that the object
  * graph may change during execution of the method due to other methods executing on concurrent
  * threads. The method must not have any effects (besides consumption of resources like memory and
@@ -106,7 +106,7 @@ sealed trait PurityPropertyMetaInformation extends PropertyMetaInformation {
  *      s eq "Demo";
  * }
  * }}}
- * In multi-threaded execution, pure methods can not depend on any mutable state of their
+ * In multithreaded execution, pure methods can not depend on any mutable state of their
  * parameters if that state might be mutated by concurrently executing methods.
  *
  * Analyses may return [[Pure]] only if they are able to guarantee that a method fulfills these
@@ -122,7 +122,7 @@ sealed trait PurityPropertyMetaInformation extends PropertyMetaInformation {
  * These properties may be used to detect changes that are confined because the receiver object is
  * under the control of the caller.
  *
- * [[ContextuallySideEffectFree]] and [[ContextuallyPure]] methods may modifiy not only their
+ * [[ContextuallySideEffectFree]] and [[ContextuallyPure]] methods may modify not only their
  * receiver object but all of their parameters. Therefore, these properties can be used to detect
  * confined changes because all parameters are under the control of the caller.
  *
@@ -219,7 +219,7 @@ object Purity extends PurityPropertyMetaInformation {
     /**
      * Returns the purity level matching the given flags for internal use by the combine operation
      * and unconditional/withoutExternal.
-     * This will not return Impure/LBImpure as they have to be handled seperately.
+     * This will not return Impure/LBImpure as they have to be handled separately.
      */
     private def apply(flags: Int): Purity = (flags: @switch) match {
         case CompileTimePure.flags => CompileTimePure
@@ -350,7 +350,7 @@ case class ContextuallyPure(override val modifiedParams: IntTrieSet) extends Pur
  * The respective method may modify its parameters, but otherwise it is side-effect free, i.e. it
  * does not have side effects but its results may still be non-deterministic.
  *
- * A method calling a `ConteuxtuallySideEffectFree` method can be `SideEffectFree` if the parameters
+ * A method calling a `ContextuallySideEffectFree` method can be `SideEffectFree` if the parameters
  * of the call are confined inside that method.
  *
  * @see [[Purity]] for further details regarding the purity levels.
@@ -379,7 +379,7 @@ case class ContextuallySideEffectFree(override val modifiedParams: IntTrieSet) e
 
 /**
  * The respective method may perform actions that are generally considered impure or
- * non-deterministic that some clients may wish to treat as pure. Otherwise it is pure.
+ * non-deterministic that some clients may wish to treat as pure. Otherwise, it is pure.
  *
  * @see [[Purity]] for further details regarding the purity levels.
  */
@@ -389,7 +389,7 @@ case object DPure extends Purity {
 
 /**
  * The respective method may perform actions that are generally considered impure that some clients
- * may wish to treat as pure. Otherwise it is side-effect free.
+ * may wish to treat as pure. Otherwise, it is side-effect free.
  *
  * @see [[Purity]] for further details regarding the purity levels.
  */
@@ -400,7 +400,7 @@ case object DSideEffectFree extends Purity {
 /**
  * The respective method may perform actions that are generally considered impure or
  * non-deterministic that some clients may wish to treat as pure and it may modify its receiver.
- * Otherwise it is pure.
+ * Otherwise, it is pure.
  *
  * @see [[Purity]] for further details regarding the purity levels.
  */
@@ -410,7 +410,7 @@ case object DExternallyPure extends Purity {
 
 /**
  * The respective method may perform actions that are generally considered impure that some clients
- * may wish to treat as pure and it may modify its receiver. Otherwise it is side-effect free.
+ * may wish to treat as pure and it may modify its receiver. Otherwise, it is side-effect free.
  *
  * @see [[Purity]] for further details regarding the purity levels.
  */
@@ -421,7 +421,7 @@ case object DExternallySideEffectFree extends Purity {
 /**
  * The respective method may perform actions that are generally considered impure or
  * non-deterministic that some clients may wish to treat as pure and it may modify its parameters.
- * Otherwise it is pure.
+ * Otherwise, it is pure.
  *
  * @see [[Purity]] for further details regarding the purity levels.
  */
@@ -449,7 +449,7 @@ case class DContextuallyPure(override val modifiedParams: IntTrieSet) extends Pu
 
 /**
  * The respective method may perform actions that are generally considered impure that some clients
- * may wish to treat as pure and it may modify its parameters. Otherwise it is side-effect free.
+ * may wish to treat as pure and it may modify its parameters. Otherwise, it is side-effect free.
  *
  * @see [[Purity]] for further details regarding the purity levels.
  */

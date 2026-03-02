@@ -6,19 +6,18 @@ package cg
 
 import org.opalj.util.getObjectReflectively
 
-import net.ceedubs.ficus.Ficus._
+import net.ceedubs.ficus.Ficus.*
 
 /**
- * The ''key'' object to get a traversable of entry points. Entry points are particularly relevant
+ * The ''key'' object to get an Iterable of entry points. Entry points are particularly relevant
  * to construct call graphs.
  * See [[InitialEntryPointsKey]] for further details.
  *
  * This ''key'' reflectively instantiates the analysis that determines the program's entry points.
  * The respective analysis has to extend the trait [[InitialEntryPointsKey]] class.
  *
- * To configure which analysis is used use the key
- * `org.opalj.br.analyses.cg.InitialEntryPointKey.analysis` to specify the name of the class which
- * implements the analysis.
+ * To configure which analysis is used, use the key `org.opalj.br.analyses.cg.InitialEntryPointKey.analysis`
+ * to specify the name of the class which implements the analysis.
  *
  * @example
  *      {{{
@@ -34,14 +33,14 @@ import net.ceedubs.ficus.Ficus._
  *
  * @author Michael Reif
  */
-object InitialEntryPointsKey extends ProjectInformationKey[Iterable[Method], Nothing] {
+object InitialEntryPointsKey extends ProjectInformationKey[Iterable[DeclaredMethod], Nothing] {
 
     final val ConfigKeyPrefix = "org.opalj.br.analyses.cg.InitialEntryPointsKey."
     final val ConfigKey = ConfigKeyPrefix + "analysis"
 
     /**
      * The [[InitialEntryPointsKey]] depends on three other keys and queries information about closed
-     * packages, must answer the question whether a method can be overridden by unknown code, and
+     * packages, must answer whether a method can be overridden by unknown code, and
      * performs checks whether types are extensible or not. Additionally, required keys from the configured
      * EntryPointFinder are added.
      *
@@ -52,12 +51,12 @@ object InitialEntryPointsKey extends ProjectInformationKey[Iterable[Method], Not
         Seq(TypeExtensibilityKey, ClosedPackagesKey, IsOverridableMethodKey) ++ entryPointFinderRequiredKeys
     }
 
-    override def compute(project: SomeProject): Iterable[Method] = {
+    override def compute(project: SomeProject): Iterable[DeclaredMethod] = {
         val epFinder: EntryPointFinder = getEntryPointFinder(project)
         epFinder.collectEntryPoints(project)
     }
 
-    private[this] def getEntryPointFinder(project: SomeProject): EntryPointFinder = {
+    private def getEntryPointFinder(project: SomeProject): EntryPointFinder = {
         val configuredAnalysis = project.config.as[Option[String]](ConfigKey)
         val entryPointFinder = configuredAnalysis
         if (entryPointFinder.isEmpty) {

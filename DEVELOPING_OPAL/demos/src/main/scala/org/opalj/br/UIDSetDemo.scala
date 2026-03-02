@@ -2,8 +2,8 @@
 package org.opalj
 package br
 
-import org.opalj.collection.immutable._
-import org.opalj.util.{Nanoseconds => NS}
+import org.opalj.collection.immutable.*
+import org.opalj.util.Nanoseconds as NS
 
 object UIDSetDemo extends App {
 
@@ -108,6 +108,7 @@ object UIDSetDemo extends App {
                     i += 1
                 }
                 runs += 1
+                println(s"Built Scala Set of SUIDs with ${s.size} entries")
             }
             println("Using Set: " + NS(System.nanoTime - t).toSeconds)
         }
@@ -211,7 +212,7 @@ object UIDSetDemo extends App {
         )
     }
 
-    for { i <- 0 until 5 } {
+    for { _ <- 0 until 5 } {
         org.opalj.util.gc()
         eval(scala.collection.immutable.Set.empty)
         org.opalj.util.gc()

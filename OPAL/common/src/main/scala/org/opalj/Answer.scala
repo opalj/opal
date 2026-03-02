@@ -119,7 +119,7 @@ object Answer {
     /**
      * Returns [[org.opalj.Yes]] if `result` is `defined` and [[org.opalj.No]] otherwise.
      */
-    def apply(result: Option[_]): Answer = if (result.isDefined) Yes else No
+    def apply(result: Option[?]): Answer = if (result.isDefined) Yes else No
 }
 
 /**

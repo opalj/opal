@@ -4,7 +4,7 @@ package br
 package instructions
 
 /**
- * Fetch ﬁeld from object.
+ * Fetch field from object.
  *
  * ==NOTE==
  * Getting an Array's length is translated to the special `arraylength` instruction.

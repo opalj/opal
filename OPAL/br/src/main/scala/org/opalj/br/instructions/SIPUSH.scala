@@ -16,7 +16,7 @@ case class SIPUSH(value: Int) extends LoadConstantInstruction[Int] {
 
     final def length: Int = 3
 
-    final def computationalType = ComputationalTypeInt
+    final def computationalType: ComputationalTypeInt.type = ComputationalTypeInt
 
     final def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = {
         val other = code.instructions(otherPC)

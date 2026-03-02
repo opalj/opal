@@ -6,16 +6,14 @@ package analyses
 package cg
 package xta
 
-import scala.annotation.elidable
-
 import java.io.File
 import java.io.FileOutputStream
 import java.io.PrintWriter
 import java.time.Instant
 import scala.collection.mutable
+import scala.compiletime.uninitialized
 
 import org.opalj.br.DeclaredMethod
-import org.opalj.br.DefinedMethod
 import org.opalj.br.Method
 import org.opalj.br.ReferenceType
 import org.opalj.br.fpcf.properties.Context
@@ -25,6 +23,7 @@ import org.opalj.collection.immutable.UIDSet
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.PropertyStore
 import org.opalj.tac.fpcf.analyses.cg.xta.TypePropagationTrace.Trace
+import org.opalj.util.elidedAssert
 
 /**
  * This is used in [[TypePropagationAnalysis]] and logs all individual steps of the type propagation
@@ -59,15 +58,14 @@ private[xta] class TypePropagationTrace {
     }
 
     private def simplifiedName(e: Any): String = e match {
-        case defM: DefinedMethod => s"${simplifiedName(defM.declaringClassType)}.${defM.name}(...)"
-        case m: Method           => s"${simplifiedName(m.classFile.thisType)}.${m.name}(...)"
-        case rt: ReferenceType   => rt.toJava.substring(rt.toJava.lastIndexOf('.') + 1)
-        case _                   => e.toString
+        case defM: DeclaredMethod => s"${simplifiedName(defM.declaringClassType)}.${defM.name}(...)"
+        case m: Method            => s"${simplifiedName(m.classFile.thisType)}.${m.name}(...)"
+        case rt: ReferenceType    => rt.toJava.substring(rt.toJava.lastIndexOf('.') + 1)
+        case _                    => e.toString
     }
 
-    @elidable(elidable.ASSERTION)
     def traceInit(
-        method: DefinedMethod
+        method: DeclaredMethod
     )(implicit ps: PropertyStore, typeIterator: TypeIterator): Unit = {
         val initialTypes = {
             val typeEOptP = ps(method, InstantiatedTypes.key)
@@ -78,33 +76,30 @@ private[xta] class TypePropagationTrace {
             val calleesEOptP = ps(method, Callees.key)
             if (calleesEOptP.hasUBP)
                 calleesEOptP.ub.callSites(typeIterator.newContext(method)).flatMap(_._2)
-            else Iterator.empty
+            else Iterable.empty[Context]
         }
         traceMsg(
-            s"init: ${simplifiedName(method)} (initial types: {${initialTypes.map(simplifiedName).mkString(", ")}}, initial callees: {${initialCallees.map(simplifiedName).mkString(", ")}})"
+            s"init: ${simplifiedName(method)} (initial types: {${initialTypes.map(simplifiedName).mkString(", ")}}, " +
+                s"initial callees: {${initialCallees.map(simplifiedName).mkString(", ")}})"
         )
         _trace.events += TypePropagationTrace.Init(method, initialTypes, initialCallees.toSet)
     }
 
-    @elidable(elidable.ASSERTION)
-    def traceCalleesUpdate(receiver: DefinedMethod): Unit = {
+    def traceCalleesUpdate(receiver: DeclaredMethod): Unit = {
         traceMsg(s"callee property update: ${simplifiedName(receiver)}")
         _trace.events += TypePropagationTrace.CalleesUpdate(receiver)
     }
 
-    @elidable(elidable.ASSERTION)
     def traceReadAccessUpdate(receiver: Method): Unit = {
         traceMsg(s"read access property update: ${simplifiedName(receiver)}")
         _trace.events += TypePropagationTrace.ReadAccessUpdate(receiver)
     }
 
-    @elidable(elidable.ASSERTION)
     def traceWriteAccessUpdate(receiver: Method): Unit = {
         traceMsg(s"write access property update: ${simplifiedName(receiver)}")
         _trace.events += TypePropagationTrace.WriteAccessUpdate(receiver)
     }
 
-    @elidable(elidable.ASSERTION)
     def traceTypeUpdate(receiver: DeclaredMethod, source: Entity, types: UIDSet[ReferenceType]): Unit = {
         traceMsg(
             s"type set update: for ${simplifiedName(receiver)}, from ${simplifiedName(source)}, with types: {${types.map(simplifiedName).mkString(", ")}}"
@@ -112,7 +107,6 @@ private[xta] class TypePropagationTrace {
         _trace.events += TypePropagationTrace.TypeSetUpdate(receiver, source, types)
     }
 
-    @elidable(elidable.ASSERTION)
     def traceTypePropagation(targetEntity: Entity, propagatedTypes: UIDSet[ReferenceType]): Unit = {
         traceMsg(s"propagate {${propagatedTypes.map(simplifiedName).mkString(", ")}} to ${simplifiedName(targetEntity)}")
         _trace.events.last.typePropagations += TypePropagationTrace.TypePropagation(targetEntity, propagatedTypes)
@@ -125,7 +119,7 @@ object TypePropagationTrace {
     trait Event {
         val typePropagations: mutable.ArrayBuffer[TypePropagation] = new mutable.ArrayBuffer[TypePropagation]()
     }
-    case class Init(method: DefinedMethod, initialTypes: UIDSet[ReferenceType], initialCallees: Set[Context])
+    case class Init(method: DeclaredMethod, initialTypes: UIDSet[ReferenceType], initialCallees: Set[Context])
         extends Event
     trait UpdateEvent extends Event
     case class TypeSetUpdate(receiver: Entity, source: Entity, sourceTypes: UIDSet[ReferenceType]) extends UpdateEvent
@@ -134,14 +128,14 @@ object TypePropagationTrace {
     case class WriteAccessUpdate(receiver: Entity) extends UpdateEvent
 
     // Global variable holding the type propagation trace of the last executed XTA analysis.
-    var LastTrace: Trace = _
+    var LastTrace: Trace = uninitialized
     var WriteTextualTrace: Boolean = false
 
     // Tracing and assert are on the same level of elision. Thus, if assertions are turned on, the tracing is also
     // turned on.
     def isEnabled: Boolean = {
         try {
-            assert(false)
+            elidedAssert(false)
             false
         } catch {
             case _: AssertionError => true

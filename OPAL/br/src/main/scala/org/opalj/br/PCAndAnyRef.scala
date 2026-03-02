@@ -14,7 +14,7 @@ final class PCAndAnyRef[T <: AnyRef](val pc: Int /* PC */, val value: T) {
 
     override def equals(other: Any): Boolean = {
         other match {
-            case that: PCAndAnyRef[_] => this.pc == that.pc && this.value == that.value
+            case that: PCAndAnyRef[?] => this.pc == that.pc && this.value == that.value
             case _                    => false
         }
     }

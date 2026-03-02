@@ -4,7 +4,8 @@ package tac
 package cg
 
 import scala.collection.mutable.ArrayBuffer
-import scala.jdk.CollectionConverters._
+import scala.compiletime.uninitialized
+import scala.jdk.CollectionConverters.*
 
 import org.opalj.ai.domain.RecordCFG
 import org.opalj.ai.domain.RecordDefUse
@@ -42,9 +43,9 @@ import org.opalj.util.getObjectReflectively
  */
 trait CallGraphKey extends ProjectInformationKey[CallGraph, Nothing] {
 
-    private[this] val CallBySignatureConfigKey = "org.opalj.br.analyses.cg.callBySignatureResolution"
+    private val CallBySignatureConfigKey = "org.opalj.br.analyses.cg.callBySignatureResolution"
 
-    private[this] var typeIterator: TypeIterator = null
+    private var typeIterator: TypeIterator = uninitialized
 
     /**
      * Lists the call graph specific schedulers that must be run to compute the respective call
@@ -55,7 +56,7 @@ trait CallGraphKey extends ProjectInformationKey[CallGraph, Nothing] {
     ): Iterable[FPCFAnalysisScheduler]
 
     override def requirements(project: SomeProject): ProjectInformationKeys = {
-        val requiredDomains: Set[Class[_ <: AnyRef]] = Set(classOf[RecordCFG], classOf[RecordDefUse])
+        val requiredDomains: Set[Class[? <: AnyRef]] = Set(classOf[RecordCFG], classOf[RecordDefUse])
         project.updateProjectInformationKeyInitializationData(AIDomainFactoryKey) {
             case None               => requiredDomains
             case Some(requirements) => requirements ++ requiredDomains
@@ -95,7 +96,7 @@ trait CallGraphKey extends ProjectInformationKey[CallGraph, Nothing] {
             allCallGraphAnalyses(project).flatMap(_.requiredProjectInformation)
     }
 
-    protected[this] def registeredAnalyses(project: SomeProject): scala.collection.Seq[FPCFAnalysisScheduler] = {
+    protected def registeredAnalyses(project: SomeProject): scala.collection.Seq[FPCFAnalysisScheduler] = {
         implicit val logContext: LogContext = project.logContext
         val config = project.config
 
@@ -144,17 +145,17 @@ trait CallGraphKey extends ProjectInformationKey[CallGraph, Nothing] {
         cg
     }
 
-    protected[this] def runAnalyses(project: SomeProject, ps: PropertyStore): Unit = {
+    protected def runAnalyses(project: SomeProject, ps: PropertyStore): Unit = {
         val manager = project.get(FPCFAnalysesManagerKey)
         manager.runAll(allCallGraphAnalyses(project))
     }
-    protected[this] def resolveAnalysisRunner(className: String)(implicit
+    protected def resolveAnalysisRunner(className: String)(implicit
         logContext: LogContext
     ): Option[FPCFAnalysisScheduler] = {
         getObjectReflectively[FPCFAnalysisScheduler](className, this, "call graph")
     }
 
-    private[this] def requiresCallBySignatureKey(p: SomeProject): ProjectInformationKeys = {
+    private def requiresCallBySignatureKey(p: SomeProject): ProjectInformationKeys = {
         val config = p.config
         if (config.hasPath(CallBySignatureConfigKey) && config.getBoolean(CallBySignatureConfigKey)) {
             return Seq(CallBySignatureKey);

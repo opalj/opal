@@ -11,7 +11,7 @@ import scala.collection.immutable.ArraySeq
  */
 class LineNumberTableBuilder {
 
-    private[this] var lineNumbers: br.LineNumbers = ArraySeq.empty
+    private var lineNumbers: br.LineNumbers = ArraySeq.empty
 
     def add(element: LINENUMBER, pc: br.PC): this.type = {
         lineNumbers :+= br.LineNumber(pc, element.lineNumber)

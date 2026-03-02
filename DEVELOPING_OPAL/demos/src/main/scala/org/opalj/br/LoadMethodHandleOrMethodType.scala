@@ -42,7 +42,7 @@ object LoadMethodHandleOrMethodType extends ProjectsAnalysisApplication {
             for {
                 classFile <- project.allProjectClassFiles.par
                 method <- classFile.methodsWithBody
-                pcAndInstruction <- method.body.get collect ({
+                pcAndInstruction <- method.body.get.collect({
                     case LoadMethodHandle(mh)   => mh
                     case LoadMethodHandle_W(mh) => mh
                     case LoadMethodType(md)     => md

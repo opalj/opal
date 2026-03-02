@@ -23,9 +23,9 @@ class DefaultDomain[Source](
     def this(project: Project[Source], method: Method) =
         this(project, method, 256, 2)
 
-    final val coordinatingDomain = new CoordinatingValuesDomain(project)
+    final val coordinatingDomain: CoordinatingValuesDomain[Source] = new CoordinatingValuesDomain(project)
 
-    def calledMethodAI = BaseAI
+    def calledMethodAI: BaseAI = BaseAI
 
     def calledMethodDomain(method: Method) = {
         new ChildDefaultDomain(project, method, callingDomain, maxCallChainLength - 1)
@@ -68,7 +68,7 @@ class ChildDefaultDomain[Source](
 
     type CalledMethodDomain = callerDomain.CalledMethodDomain
 
-    final def calledMethodAI: AI[_ >: CalledMethodDomain] = callerDomain.calledMethodAI
+    final def calledMethodAI: AI[Domain] = callerDomain.calledMethodAI
 
     def shouldInvocationBePerformed(method: Method): Boolean = {
         maxCallChainLength > 0 && !method.returnType.isVoidType

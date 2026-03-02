@@ -33,6 +33,7 @@ import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.UBP
 import org.opalj.tac.fpcf.properties.TACAI
+import org.opalj.util.elidedAssert
 
 /**
  * For a reachable methods (see [[Callers]]) this class computes the
@@ -53,7 +54,7 @@ class LoadedClassesAnalysis(
      * In case there are definitively some callers, we remove the potential existing dependency
      * and handle the method as being newly reachable (i.e. analyse the field accesses of the method
      * and update its declaring class type as reachable)
-     * Here we add ne classes as being loaded.
+     * Here we add new classes as being loaded.
      */
     def handleCaller(
         declaredMethod: DeclaredMethod
@@ -82,7 +83,7 @@ class LoadedClassesAnalysis(
                 if (declClassType ne method.classFile.thisType)
                     return NoResult;
 
-                val currentLoadedClasses = getCurrentLoadedClasses()
+                val currentLoadedClasses = getCurrentLoadedClasses
                 if (method.body.isEmpty) {
                     if (!currentLoadedClasses.contains(declClassType)) {
                         // todo only for interfaces with default methods
@@ -112,7 +113,7 @@ class LoadedClassesAnalysis(
         }
     }
 
-    private[this] def continuationForTAC(
+    private def continuationForTAC(
         method: DeclaredMethod
     )(eps: SomeEPS): PropertyComputationResult = {
         eps match {
@@ -127,11 +128,11 @@ class LoadedClassesAnalysis(
         }
     }
 
-    private[this] def processMethod(
+    private def processMethod(
         declaredMethod: DeclaredMethod,
         tacaiEP:        EPS[Method, TACAI]
     ): PropertyComputationResult = {
-        assert(tacaiEP.hasUBP && tacaiEP.ub.tac.isDefined)
+        elidedAssert(tacaiEP.hasUBP && tacaiEP.ub.tac.isDefined)
 
         // the method has callers. we have to analyze it
         val newLoadedClasses =
@@ -157,10 +158,10 @@ class LoadedClassesAnalysis(
         }
     }
 
-    private[this] def update(
+    private def update(
         newLoadedClasses: UIDSet[ClassType]
     )(
-        eop: EOptionP[_, LoadedClasses]
+        eop: EOptionP[?, LoadedClasses]
     ): Option[InterimEP[SomeProject, LoadedClasses]] = eop match {
         case InterimUBP(ub: LoadedClasses) =>
             val newUb = ub.classes ++ newLoadedClasses
@@ -193,7 +194,7 @@ class LoadedClassesAnalysis(
         stmts:         Array[Stmt[V]]
     ): UIDSet[ClassType] = {
         var newLoadedClasses = UIDSet.empty[ClassType]
-        val currentLoadedClasses = getCurrentLoadedClasses()
+        val currentLoadedClasses = getCurrentLoadedClasses
 
         @inline def isNewLoadedClass(dc: ClassType): Boolean = {
             !currentLoadedClasses.contains(dc) && !newLoadedClasses.contains(dc)
@@ -222,14 +223,14 @@ class LoadedClassesAnalysis(
         newLoadedClasses
     }
 
-    private[this] def getSuperclassesNotYetLoaded(
+    private def getSuperclassesNotYetLoaded(
         declClassType:        ClassType,
         currentLoadedClasses: UIDSet[ClassType]
     ): UIDSet[ClassType] = {
         ch.allSupertypes(declClassType, reflexive = true).filterNot(currentLoadedClasses.contains)
     }
 
-    private[this] def getCurrentLoadedClasses(): UIDSet[ClassType] = {
+    private def getCurrentLoadedClasses: UIDSet[ClassType] = {
         val currentLoadedClassesEPS: EOptionP[SomeProject, LoadedClasses] =
             propertyStore(project, LoadedClasses.key)
 

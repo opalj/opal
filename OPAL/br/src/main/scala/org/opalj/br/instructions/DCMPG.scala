@@ -16,6 +16,6 @@ case object DCMPG extends ComparisonInstruction {
 
     final val operator = "cmpg"
 
-    final val computationalType = ComputationalTypeDouble
+    final val computationalType: ComputationalTypeDouble.type = ComputationalTypeDouble
 
 }

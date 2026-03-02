@@ -3,6 +3,7 @@ package org.opalj
 package fpcf
 
 import java.net.URL
+import scala.compiletime.uninitialized
 
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigValueFactory
@@ -21,11 +22,9 @@ import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.cg.XTACallGraphKey
 import org.opalj.tac.fpcf.analyses.cg.CallGraphAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.reflection.ReflectionRelatedCallsAnalysisScheduler
-import org.opalj.tac.fpcf.analyses.cg.rta.InstantiatedTypesAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.xta.ArrayInstantiationsAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.xta.CTASetEntitySelector
 import org.opalj.tac.fpcf.analyses.cg.xta.FTASetEntitySelector
-import org.opalj.tac.fpcf.analyses.cg.xta.InstantiatedTypesAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.xta.MTASetEntitySelector
 import org.opalj.tac.fpcf.analyses.cg.xta.TypePropagationAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.xta.TypeSetEntitySelector
@@ -56,7 +55,7 @@ class CallGraphTests extends PropertiesTest {
         List("org/opalj/fpcf/fixtures/callgraph/")
     }
 
-    var cgKey: CallGraphKey = null
+    var cgKey: CallGraphKey = uninitialized
 
     override def init(p: Project[URL]): Unit = {
         p.updateProjectInformationKeyInitializationData(ContextProviderKey) {
@@ -84,7 +83,7 @@ class CallGraphTests extends PropertiesTest {
 
         val as = executeAnalyses(
             Set(
-                InstantiatedTypesAnalysisScheduler,
+                org.opalj.tac.fpcf.analyses.cg.rta.InstantiatedTypesAnalysisScheduler,
                 CallGraphAnalysisScheduler
             )
         )
@@ -103,7 +102,7 @@ class CallGraphTests extends PropertiesTest {
             // Handles array instantiations.
             new ArrayInstantiationsAnalysisScheduler(selector),
             // Handles type instantiations.
-            new InstantiatedTypesAnalysisScheduler(selector),
+            new org.opalj.tac.fpcf.analyses.cg.xta.InstantiatedTypesAnalysisScheduler(selector),
             // Creates callers/callees based on locally available types.
             CallGraphAnalysisScheduler,
             // Handles type propagation.

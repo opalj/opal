@@ -12,7 +12,7 @@ package domain
  */
 trait RecordConstraints extends ReifiedConstraints { domain: ValuesDomain =>
 
-    private[this] var constraints: Set[ReifiedConstraint] = Set.empty
+    private var constraints: Set[ReifiedConstraint] = Set.empty
 
     /**
      * Returns the set of constraints.

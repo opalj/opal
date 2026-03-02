@@ -55,7 +55,7 @@ class Main {
 ```
 
 ## InheritedInterfaceMethods
-The following is **pseudo-code** to facilitate comprehension of the test case:
+The following is **pseudocode** to facilitate comprehension of the test case:
 ***(The code is not valid Java code!)***
 
 The engineered classes are found in `bc/src/test/resources/InheritedInterfaceMethods/mr/inheritedinterfacemethods`.
@@ -87,7 +87,7 @@ public class Sub extends Top implements Intf { }
 
 
 ### StaticAndDefaultInterfaceMethods
-The following is **pseudo-code** to facilitate comprehension of the test case:
+The following is **pseudocode** to facilitate comprehension of the test case:
 ***(The code is not valid Java code!)***
 
 The engineered classes are found in `bc/src/test/resources/StaticAndDefaultInterfaceMethods/mr/staticanddefaultinterfacemethods`.
@@ -129,7 +129,7 @@ public class Main {
 ```
 
 ### MaximallySpecificInterfaceMethods
-The following is **pseudo-code** to facilitate comprehension of the test case:
+The following is **pseudocode** to facilitate comprehension of the test case:
 ***(The code is not valid Java code!)***
 
 The engineered classes are found in `bc/src/test/resources/MaximallySpecificInterfaceMethods/mr/maximallyspecificinterfacemethods`.

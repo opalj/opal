@@ -49,28 +49,28 @@ object UnnecessarySynchronizationAnalysis extends ProjectsAnalysisApplication {
     ): (Project[URL], BasicReport) = {
         val (project, _) = analysisConfig.setupProject(cp)
         val (propertyStore, _) = analysisConfig.setupPropertyStore(project)
-        analysisConfig.setupCallGaph(project)
+        analysisConfig.setupCallGraph(project)
 
         time {
             project.get(FPCFAnalysesManagerKey).runAll(
                 EagerInterProceduralEscapeAnalysis
             )
-        } { t => info("progress", s"escape analysis took ${t.toSeconds}")(project.logContext) }
+        } { t => info("progress", s"escape analysis took ${t.toSeconds}")(using project.logContext) }
 
         val allocationSites = project.get(DefinitionSitesKey).getAllocationSites
         val objects = time {
             for {
                 as <- allocationSites
                 method = as.method
-                FinalP(escape) = propertyStore(as, EscapeProperty.key)
-                if EscapeViaNormalAndAbnormalReturn lessOrEqualRestrictive escape
-                FinalP(tacai) = propertyStore(method, TACAI.key)
+                FinalP(escape) = propertyStore(as, EscapeProperty.key): @unchecked
+                if EscapeViaNormalAndAbnormalReturn.lessOrEqualRestrictive(escape)
+                FinalP(tacai) = propertyStore(method, TACAI.key): @unchecked
                 code = tacai.tac.get.stmts
                 defSite = code indexWhere (stmt => stmt.pc == as.pc)
                 if defSite != -1
                 stmt = code(defSite)
                 if stmt.astID == Assignment.ASTID
-                Assignment(_, DVar(_, uses), New(_, _) | NewArray(_, _, _)) = code(defSite)
+                Assignment(_, DVar(_, uses), New(_, _) | NewArray(_, _, _)) = code(defSite): @unchecked
                 if uses exists { use =>
                     code(use) match {
                         case MonitorEnter(_, v) if v.asVar.definedBy.contains(defSite) => true
@@ -78,7 +78,7 @@ object UnnecessarySynchronizationAnalysis extends ProjectsAnalysisApplication {
                     }
                 }
             } yield as
-        } { t => info("progress", s"unnecessary synchronization analysis took ${t.toSeconds}")(project.logContext) }
+        } { t => info("progress", s"unnecessary synchronization analysis took ${t.toSeconds}")(using project.logContext) }
 
         val message =
             s"""|Objects that were unnecessarily synchronized:

@@ -17,7 +17,7 @@ import scalax.collection.edges.DiEdge
 import scalax.collection.generic.Edge
 import scalax.collection.hyperedges.DiHyperEdge
 import scalax.collection.immutable.Graph
-import scalax.collection.mutable.{Graph => MutableGraph}
+import scalax.collection.mutable.Graph as MutableGraph
 
 /**
  * An algorithm that identifies several different types of flow regions in a given flow graph and reduces them to a
@@ -66,7 +66,7 @@ object StructuralAnalysis {
         var currentEntry = entry
         val controlTree: MControlTree = MutableGraph.empty[FlowGraphNode, DiEdge[FlowGraphNode]]
 
-        var (immediateDominators, allDominators) = computeDominators(flowGraph, entry)
+        var (_, allDominators) = computeDominators(flowGraph, entry)
         /**
          * @return True when the given node n strictly dominates the node w.
          */
@@ -101,7 +101,7 @@ object StructuralAnalysis {
                 val newRegion = Region(regionType, subNodes.flatMap(_.nodeIds), entry)
 
                 // Compact
-                // Note that adding the new region to the graph and superGraph is done anyways since we add edges later
+                // Note that adding the new region to the graph and superGraph is done anyway since we add edges later
                 val maxPost = post.indexOf(subNodes.maxBy(post.indexOf))
                 post(maxPost) = newRegion
                 // Removing old regions from the graph is done later
@@ -149,7 +149,6 @@ object StructuralAnalysis {
                         }
                     )
                 )
-                immediateDominators = allDominators.map(kv => (kv._1, kv._2.head))
 
                 // Update remaining graph state
                 controlTree.addAll(subNodes.map(node =>
@@ -175,11 +174,9 @@ object StructuralAnalysis {
                 var n = post(postCtr)
 
                 val gPostMap =
-                    post.reverse.zipWithIndex.map(ni =>
-                        (flowGraph.get(ni._1).asInstanceOf[MFlowGraph#NodeT], ni._2)
-                    ).toMap
+                    post.reverse.zipWithIndex.map(ni => (flowGraph.get(ni._1), ni._2)).toMap
                 val (newStartingNode, acyclicRegionOpt) =
-                    locateAcyclicRegion[FlowGraphNode, MFlowGraph](flowGraph, gPostMap, allDominators)(n)
+                    locateAcyclicRegion[FlowGraphNode, flowGraph.type](flowGraph, allDominators)(gPostMap)(n)
                 n = newStartingNode
                 if (acyclicRegionOpt.isDefined) {
                     val (arType, nodes, entry) = acyclicRegionOpt.get
@@ -305,10 +302,9 @@ object StructuralAnalysis {
      *         region, 2. a set containing all region nodes and 3. the entry node to the region.
      */
     private def locateAcyclicRegion[A <: FlowGraphNode, G <: MutableGraph[A, DiEdge[A]]](
-        graph:              G,
-        postOrderTraversal: Map[G#NodeT, Int],
-        allDominators:      mutable.Map[A, Seq[A]]
-    )(startingNode: A): (A, Option[(AcyclicRegionType, Set[A], A)]) = {
+        graph:         G,
+        allDominators: mutable.Map[A, Seq[A]]
+    )(postOrderTraversal: Map[graph.NodeT, Int])(startingNode: A): (A, Option[(AcyclicRegionType, Set[A], A)]) = {
         var nSet = Set.empty[graph.NodeT]
         var entry: graph.NodeT = graph.get(startingNode)
 

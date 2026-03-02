@@ -16,10 +16,10 @@ import org.opalj.collection.immutable.IntTrieSet
  */
 class PurityPropertyTest extends AnyFlatSpec with Matchers {
 
-    val contextuallyPure = ContextuallyPure(IntTrieSet(1))
-    val contextuallySideEffectFree = ContextuallySideEffectFree(IntTrieSet(1))
-    val dContextuallyPure = DContextuallyPure(IntTrieSet(1))
-    val dContextuallySideEffectFree = DContextuallySideEffectFree(IntTrieSet(1))
+    val contextuallyPure: Purity = ContextuallyPure(IntTrieSet(1))
+    val contextuallySideEffectFree: Purity = ContextuallySideEffectFree(IntTrieSet(1))
+    val dContextuallyPure: Purity = DContextuallyPure(IntTrieSet(1))
+    val dContextuallySideEffectFree: Purity = DContextuallySideEffectFree(IntTrieSet(1))
 
     val allPurities: List[Purity] = List(
         CompileTimePure,
@@ -83,7 +83,7 @@ class PurityPropertyTest extends AnyFlatSpec with Matchers {
         for (prop <- allPurities) {
             assert(
                 prop.usesDomainSpecificActions != doesntUseDomainSpecificActions.contains(prop),
-                s"$prop.usesDomainSpecicifActions was ${prop.usesDomainSpecificActions}"
+                s"$prop.usesDomainSpecificActions was ${prop.usesDomainSpecificActions}"
             )
         }
     }
@@ -105,10 +105,10 @@ class PurityPropertyTest extends AnyFlatSpec with Matchers {
 
     "the meet operator" should "be reflexive and symmetric" in {
         for (prop1 <- allPurities) {
-            assert((prop1 meet prop1) == prop1, s"meet was not reflexive for $prop1")
+            assert(prop1.meet(prop1) == prop1, s"meet was not reflexive for $prop1")
             for (prop2 <- allPurities) {
-                val meet12 = prop1 meet prop2
-                val meet21 = prop2 meet prop1
+                val meet12 = prop1.meet(prop2)
+                val meet21 = prop2.meet(prop1)
                 assert(
                     meet12 == meet21,
                     s"$prop1 meet $prop2 was not symmetric (was $meet12 / $meet21)"
@@ -119,37 +119,37 @@ class PurityPropertyTest extends AnyFlatSpec with Matchers {
 
     it should "return the correct purity levels" in {
         for (prop <- allPurities) {
-            val result = CompileTimePure meet prop
+            val result = CompileTimePure.meet(prop)
             assert(
                 result == prop,
                 s"CompileTimePure meet $prop was not $prop (was $result)"
             )
         }
 
-        assert((Pure meet SideEffectFree) == SideEffectFree)
-        assert((Pure meet DPure) == DPure)
-        assert((Pure meet DSideEffectFree) == DSideEffectFree)
-        assert((Pure meet ImpureByAnalysis) == ImpureByAnalysis)
+        assert(Pure.meet(SideEffectFree) == SideEffectFree)
+        assert(Pure.meet(DPure) == DPure)
+        assert(Pure.meet(DSideEffectFree) == DSideEffectFree)
+        assert(Pure.meet(ImpureByAnalysis) == ImpureByAnalysis)
 
-        assert((SideEffectFree meet DPure) == DSideEffectFree)
-        assert((SideEffectFree meet DSideEffectFree) == DSideEffectFree)
-        assert((SideEffectFree meet ImpureByAnalysis) == ImpureByAnalysis)
+        assert(SideEffectFree.meet(DPure) == DSideEffectFree)
+        assert(SideEffectFree.meet(DSideEffectFree) == DSideEffectFree)
+        assert(SideEffectFree.meet(ImpureByAnalysis) == ImpureByAnalysis)
 
         assert(
-            (DPure meet DSideEffectFree) == DSideEffectFree,
+            DPure.meet(DSideEffectFree) == DSideEffectFree,
             "LBDPure meet LBDSideEffectFree was not LBDSideEffectFree" +
-                s" (was ${DPure meet DSideEffectFree})"
+                s" (was ${DPure.meet(DSideEffectFree)})"
         )
         assert(
-            (DPure meet ImpureByAnalysis) == ImpureByAnalysis,
+            DPure.meet(ImpureByAnalysis) == ImpureByAnalysis,
             "LBDPure meet LBImpure was not LBImpure" +
-                s" (was ${DPure meet ImpureByAnalysis})"
+                s" (was ${DPure.meet(ImpureByAnalysis)})"
         )
 
         assert(
-            (DSideEffectFree meet ImpureByAnalysis) == ImpureByAnalysis,
+            DSideEffectFree.meet(ImpureByAnalysis) == ImpureByAnalysis,
             "LBDSideEffectFree meet LBImpure was not LBImpure" +
-                s" (was ${DSideEffectFree meet ImpureByAnalysis})"
+                s" (was ${DSideEffectFree.meet(ImpureByAnalysis)})"
         )
 
     }

@@ -3,8 +3,6 @@ package org.opalj
 package br
 package reader
 
-import scala.reflect.ClassTag
-
 import scala.collection.immutable.ArraySeq
 
 import org.opalj.bi.reader.TypeAnnotationPathReader
@@ -24,18 +22,14 @@ trait TypeAnnotationsBinding
     with AttributeBinding {
 
     type TypeAnnotation = br.TypeAnnotation
-    override implicit val typeAnnotationType: ClassTag[TypeAnnotation] = ClassTag(classOf[br.TypeAnnotation])
 
     type TypeAnnotationTarget = br.TypeAnnotationTarget
 
     type TypeAnnotationPath = br.TypeAnnotationPath
 
     type TypeAnnotationPathElement = br.TypeAnnotationPathElement
-    override implicit val typeAnnotationPathElementType: ClassTag[TypeAnnotationPathElement] =
-        ClassTag(classOf[br.TypeAnnotationPathElement])
 
     type LocalvarTableEntry = br.LocalvarTableEntry
-    override implicit val localvarTableEntryType: ClassTag[LocalvarTableEntry] = ClassTag(classOf[br.LocalvarTableEntry])
 
     //
     // TypeAnnotation

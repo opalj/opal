@@ -10,9 +10,11 @@ import scala.collection.immutable.SortedSet
 import org.opalj.br.AnnotationLike
 import org.opalj.br.ClassType
 import org.opalj.br.analyses.Project
-import org.opalj.br.fpcf.properties
 import org.opalj.br.fpcf.properties.immutability.ClassImmutability
 import org.opalj.br.fpcf.properties.immutability.DependentlyImmutableClass
+import org.opalj.br.fpcf.properties.immutability.MutableClass
+import org.opalj.br.fpcf.properties.immutability.NonTransitivelyImmutableClass
+import org.opalj.br.fpcf.properties.immutability.TransitivelyImmutableClass
 
 class ClassImmutabilityMatcher(val property: ClassImmutability) extends AbstractPropertyMatcher {
 
@@ -34,7 +36,7 @@ class ClassImmutabilityMatcher(val property: ClassImmutability) extends Abstract
     }
 
     override def validateProperty(
-        project:    Project[_],
+        project:    Project[?],
         as:         Set[ClassType],
         entity:     scala.Any,
         a:          AnnotationLike,
@@ -48,31 +50,27 @@ class ClassImmutabilityMatcher(val property: ClassImmutability) extends Abstract
     }
 }
 
-class TransitivelyImmutableClassMatcher
-    extends ClassImmutabilityMatcher(properties.immutability.TransitivelyImmutableClass)
+class TransitivelyImmutableClassMatcher extends ClassImmutabilityMatcher(TransitivelyImmutableClass)
 
 class DependentlyImmutableClassMatcher
-    extends ClassImmutabilityMatcher(properties.immutability.DependentlyImmutableClass(SortedSet.empty)) {
+    extends ClassImmutabilityMatcher(DependentlyImmutableClass(SortedSet.empty)) {
     override def validateProperty(
-        project:    Project[_],
+        project:    Project[?],
         as:         Set[ClassType],
         entity:     scala.Any,
         a:          AnnotationLike,
         properties: Iterable[Property]
     ): Option[String] = {
-        if (!properties.exists(p =>
-                p match {
-                    case DependentlyImmutableClass(latticeParameters) =>
-                        val annotationType = a.annotationType.asFieldType.asClassType
-                        val annotationParameters =
-                            getValue(project, annotationType, a.elementValuePairs, "parameter").asArrayValue.values.map(
-                                x =>
-                                    x.asStringValue.value
-                            )
-                        annotationParameters.toSet.equals(latticeParameters.toSet)
-                    case _ => p == property
-                }
-            )
+        if (!properties.exists {
+                case DependentlyImmutableClass(latticeParameters) =>
+                    val annotationType = a.annotationType.asFieldType.asClassType
+                    val annotationParameters =
+                        getValue(project, annotationType, a.elementValuePairs, "parameter").asArrayValue.values.map(x =>
+                            x.asStringValue.value
+                        )
+                    annotationParameters.toSet.equals(latticeParameters)
+                case p => p == property
+            }
         ) {
             Some(a.elementValuePairs.head.value.asStringValue.value)
         } else {
@@ -81,7 +79,6 @@ class DependentlyImmutableClassMatcher
     }
 }
 
-class NonTransitivelyImmutableClassMatcher
-    extends ClassImmutabilityMatcher(properties.immutability.NonTransitivelyImmutableClass)
+class NonTransitivelyImmutableClassMatcher extends ClassImmutabilityMatcher(NonTransitivelyImmutableClass)
 
-class MutableClassMatcher extends ClassImmutabilityMatcher(properties.immutability.MutableClass)
+class MutableClassMatcher extends ClassImmutabilityMatcher(MutableClass)

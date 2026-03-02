@@ -158,7 +158,7 @@ private class CallGraphDeserializer private[analyses] (
         Results(results)
     }
 
-    private[this] def getPCFromLineNumber(
+    private def getPCFromLineNumber(
         dm:          DeclaredMethod,
         lineNumber:  Int,
         declaredTgt: DeclaredMethod,

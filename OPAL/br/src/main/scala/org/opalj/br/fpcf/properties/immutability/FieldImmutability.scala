@@ -25,7 +25,7 @@ sealed trait FieldImmutabilityPropertyMetaInformation extends PropertyMetaInform
  * [[NonTransitivelyImmutableField]] A not assignable field and a non-transitively immutable or mutable data type
  *
  * [[DependentlyImmutableField]] A not assignable field with a generic type and parts of it are not
- * substantiated in an non-transitively or transitively immutable
+ * substantiated in a non-transitively or transitively immutable
  *
  * [[TransitivelyImmutableField]] A not assignable field with a transitively immutable field type or
  * a referenced object that can not escape or its state cannot be mutated.

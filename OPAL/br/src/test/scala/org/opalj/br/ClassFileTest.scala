@@ -3,7 +3,7 @@ package org.opalj
 package br
 
 import scala.collection.immutable.ArraySeq
-import scala.util.control.ControlThrowable
+import scala.util.boundary.Break
 
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
@@ -39,7 +39,7 @@ class ClassFileTest extends AnyFunSuite with Matchers {
     }
 
     test("test that all constructors are returned") {
-        assert(immutableList.constructors.size.toInt == 2)
+        assert(immutableList.constructors.size == 2)
     }
 
     test("test that it can find all other methods") {
@@ -105,7 +105,7 @@ class ClassFileTest extends AnyFunSuite with Matchers {
     lazy val formatterClass = innerclassesProject.classFile(ClassType("innerclasses/MyRootClass$Formatter")).get
 
     test("that all direct nested classes of a top-level class are correctly identified") {
-        outerClass.nestedClasses(innerclassesProject).toSet should be(Set(
+        outerClass.nestedClasses(using innerclassesProject).toSet should be(Set(
             ClassType("innerclasses/MyRootClass$1"),
             ClassType("innerclasses/MyRootClass$1MyInnerPrinter"),
             ClassType("innerclasses/MyRootClass$2"),
@@ -115,14 +115,14 @@ class ClassFileTest extends AnyFunSuite with Matchers {
     }
 
     test("that all direct nested classes of a member class are correctly identified") {
-        innerPrinterOfXClass.nestedClasses(innerclassesProject).toSet should be(Set(
+        innerPrinterOfXClass.nestedClasses(using innerclassesProject).toSet should be(Set(
             ClassType("innerclasses/MyRootClass$InnerPrinterOfX$1"),
             ClassType("innerclasses/MyRootClass$InnerPrinterOfX$InnerPrettyPrinter")
         ))
     }
 
     test("that no supertype information is extracted") {
-        formatterClass.nestedClasses(innerclassesProject).toSet should be(Set.empty)
+        formatterClass.nestedClasses(using innerclassesProject).toSet should be(Set.empty)
     }
 
     test("that all direct and indirect nested classes of a top-level class are correctly identified") {
@@ -140,32 +140,33 @@ class ClassFileTest extends AnyFunSuite with Matchers {
         )
 
         var foundNestedTypes: Set[ClassType] = Set.empty
-        outerClass.foreachNestedClass({ nc => foundNestedTypes += nc.thisType })(innerclassesProject)
+        outerClass.foreachNestedClass({ nc => foundNestedTypes += nc.thisType })(using innerclassesProject)
 
         foundNestedTypes.size should be(expectedNestedTypes.size)
         foundNestedTypes should be(expectedNestedTypes)
     }
 
     private def testJARFile(jarFile: java.io.File) = {
-        val project = analyses.Project(jarFile)
+        implicit val project = analyses.Project(jarFile)
         var innerClassesCount = 0
         var failures: List[String] = List.empty
         val nestedTypes = for (classFile <- project.allClassFiles) yield {
             try {
                 // should not time out or crash...
-                classFile.nestedClasses(project)
+                classFile.nestedClasses
                 var nestedClasses: List[Type] = Nil
                 classFile.foreachNestedClass({ c =>
                     nestedClasses = c.thisType :: nestedClasses
                     innerClassesCount += 1
-                })(project)
+                })
                 innerClassesCount += 1
                 Some((classFile.thisType, nestedClasses))
             } catch {
-                case ct: ControlThrowable => throw ct
-                case t: Throwable         =>
+                case b: Break[?]  => throw b
+                case t: Throwable =>
                     failures =
-                        s"cannot calculate inner classes for ${classFile.fqn}: ${t.getClass().getSimpleName()} - ${t.getMessage()}" ::
+                        s"cannot calculate inner classes for ${classFile.fqn}: ${t.getClass.getSimpleName} - ${t
+                                .getMessage}" ::
                             failures
                     None
             }

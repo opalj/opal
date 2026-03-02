@@ -74,6 +74,8 @@ trait ProjectInformationKey[-P <: Project, T <: AnyRef, I <: AnyRef] {
 
     /**
      * Computes the information for the given project.
+     *
+     * @note Classes that inherit from this trait are ''not'' expected to
      *      make this method public. This method is only expected to be called
      *      by an instance of a `Project`.
      */
@@ -90,7 +92,7 @@ trait ProjectInformationKey[-P <: Project, T <: AnyRef, I <: AnyRef] {
  */
 private object ProjectInformationKey {
 
-    private[this] val idGenerator = new AtomicInteger(0)
+    private val idGenerator = new AtomicInteger(0)
 
     private[ProjectInformationKey] def nextId: Int = idGenerator.getAndIncrement()
 

@@ -14,6 +14,6 @@ case object IADD extends AddInstruction {
 
     final val mnemonic = "iadd"
 
-    final val computationalType = ComputationalTypeInt
+    final val computationalType: ComputationalTypeInt.type = ComputationalTypeInt
 
 }

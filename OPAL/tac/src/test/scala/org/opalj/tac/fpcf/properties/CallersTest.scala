@@ -249,14 +249,14 @@ class CallersTest extends AnyFlatSpec with Matchers {
         assert(!withVM.hasCallersWithUnknownContext)
         assert(withVM.hasVMLevelCallers)
 
-        val withUnknwonContext =
+        val withUnknownContext =
             CallersImplWithOtherCalls(encodedCallers, hasVMLevelCallers = false, hasCallersWithUnknownContext = true)
-        assert(withUnknwonContext.size == 1)
-        assert(withUnknwonContext.callers(otherMethod).iterator.exists {
+        assert(withUnknownContext.size == 1)
+        assert(withUnknownContext.callers(otherMethod).iterator.exists {
             case (dm, pc, isDirect) => (dm eq declaredMethod) && (pc == 0) && isDirect
         })
-        assert(withUnknwonContext.hasCallersWithUnknownContext)
-        assert(!withUnknwonContext.hasVMLevelCallers)
+        assert(withUnknownContext.hasCallersWithUnknownContext)
+        assert(!withUnknownContext.hasVMLevelCallers)
 
         val withBoth =
             CallersImplWithOtherCalls(encodedCallers, hasVMLevelCallers = true, hasCallersWithUnknownContext = true)

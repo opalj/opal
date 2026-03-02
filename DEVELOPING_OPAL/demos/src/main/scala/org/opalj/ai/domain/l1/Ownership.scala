@@ -114,7 +114,7 @@ object OwnershipAnalysis extends ProjectsAnalysisApplication {
                                         case domain.DomainSingleOriginReferenceValueTag(sorv) =>
                                             checkValue(sorv)
                                         case domain.DomainMultipleReferenceValuesTag(morv) =>
-                                            morv.values.forall(checkValue(_))
+                                            morv.values.forall { checkValue }
                                     }
                                 }
                         }

@@ -99,7 +99,7 @@ sealed abstract class PurityMatcher(val property: Purity) extends AbstractProper
 
         if (field != "") {
             val cfo = project.classFile(classType)
-            cfo exists { cf => cf findField field exists { field => checkProperty(propertyStore(field, pk)) } }
+            cfo exists { cf => cf.findField(field).exists { field => checkProperty(propertyStore(field, pk)) } }
         } else if (method != "") {
             val declaredMethods = project.get(DeclaredMethodsKey)
             val descriptorIndex = method.indexOf('(')
@@ -109,7 +109,7 @@ sealed abstract class PurityMatcher(val property: Purity) extends AbstractProper
             val simpleContexts = project.get(SimpleContextsKey)
 
             cfo exists { cf =>
-                cf findMethod (methodName, descriptor) exists { method =>
+                cf.findMethod(methodName, descriptor) exists { method =>
                     checkProperty(propertyStore(simpleContexts(declaredMethods(method)), pk))
                 }
             }

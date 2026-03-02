@@ -15,7 +15,7 @@ import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.PropertyMetaInformation
 import org.opalj.fpcf.PropertyStore
 import org.opalj.si.Project
-import org.opalj.tac.{TACAI => TACAIFactory}
+import org.opalj.tac.TACAI as TACAIFactory
 import org.opalj.value.ValueInformation
 
 sealed trait TACAIPropertyMetaInformation extends PropertyMetaInformation {

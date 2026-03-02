@@ -15,14 +15,14 @@ package object analyses {
     /**
      * Type alias for Projects with arbitrary sources.
      */
-    type SomeProject = Project[_]
+    type SomeProject = Project[?]
 
     type ProjectInformationKeys = si.ProjectInformationKeys
 
     type StringConstantsInformation = Map[String, ArraySeq[PCInMethod]]
 
     implicit object MethodDeclarationContextOrdering extends Ordering[MethodDeclarationContext] {
-        def compare(x: MethodDeclarationContext, y: MethodDeclarationContext): Int = x compare y
+        def compare(x: MethodDeclarationContext, y: MethodDeclarationContext): Int = x.compare(y)
     }
 
 }

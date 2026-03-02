@@ -13,7 +13,7 @@ trait ConstantValue_attributeBinding
     with ConstantPoolBinding
     with AttributeBinding {
 
-    type ConstantValue_attribute = ConstantFieldValue[_]
+    type ConstantValue_attribute = ConstantFieldValue[?]
 
     def ConstantValue_attribute(
         cp:                  Constant_Pool,

@@ -31,7 +31,7 @@ class CFGTest extends AbstractCFGTest {
         it("the cfg of a method with no control flow statements should have one BasicBlock node") {
             val m = testClassFile.findMethod("singleBlock").head
             val code = m.body.get
-            val cfg = CFGFactory(code)
+            val cfg = CFGFactory(using code, testClassHierarchy)
             printCFGOnFailure(m, code, cfg) {
                 cfg.allBBs.size should be(1)
                 cfg.startBlock.successors.size should be(2)
@@ -43,7 +43,7 @@ class CFGTest extends AbstractCFGTest {
         it("the cfg of a method with one `if` should have basic blocks for both branches") {
             val m = testClassFile.findMethod("conditionalOneReturn").head
             val code = m.body.get
-            val cfg = CFGFactory(code)
+            val cfg = CFGFactory(using code, testClassHierarchy)
             printCFGOnFailure(m, code, cfg) {
                 cfg.allBBs.size should be(11)
                 cfg.startBlock.successors.size should be(2)
@@ -55,7 +55,7 @@ class CFGTest extends AbstractCFGTest {
         it("a cfg with multiple return statements should have corresponding basic blocks") {
             val m = testClassFile.findMethod("conditionalTwoReturns").head
             val code = m.body.get
-            val cfg = CFGFactory(code)
+            val cfg = CFGFactory(using code, testClassHierarchy)
             printCFGOnFailure(m, code, cfg) {
                 cfg.allBBs.size should be(6)
                 cfg.startBlock.successors.size should be(2)

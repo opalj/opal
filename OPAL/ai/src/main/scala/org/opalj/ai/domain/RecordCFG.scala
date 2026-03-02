@@ -3,10 +3,13 @@ package org.opalj
 package ai
 package domain
 
-import java.lang.ref.{SoftReference => SRef}
+import java.lang.ref.SoftReference as SRef
 import scala.collection.BitSet
 import scala.collection.mutable
-import scala.jdk.CollectionConverters._
+import scala.compiletime.uninitialized
+import scala.jdk.CollectionConverters.*
+import scala.util.boundary
+import scala.util.boundary.break
 
 import org.opalj.br.Code
 import org.opalj.br.ExceptionHandler
@@ -25,6 +28,7 @@ import org.opalj.graphs.DefaultMutableNode
 import org.opalj.graphs.DominanceFrontiers
 import org.opalj.graphs.DominatorTree
 import org.opalj.graphs.PostDominatorTree
+import org.opalj.util.elidedAssert
 
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap
 
@@ -57,28 +61,28 @@ trait RecordCFG
     extends CoreDomainFunctionality
     with CustomInitialization
     with ai.ReturnInstructionsDomain {
-    cfgDomain: ValuesDomain with TheCode =>
+    cfgDomain: ValuesDomain & TheCode =>
 
     //
     // DIRECTLY RECORDED INFORMATION
     //
 
     // ... elements are either null or non-empty
-    private[this] var regularSuccessors: Array[IntTrieSet] = _
+    private var regularSuccessors: Array[IntTrieSet] = uninitialized
 
     // ... elements are either null or non-empty
-    private[this] var exceptionHandlerSuccessors: Array[IntTrieSet] = _
+    private var exceptionHandlerSuccessors: Array[IntTrieSet] = uninitialized
 
-    private[this] var theNormalExitPCs: IntTrieSet = _
+    private var theNormalExitPCs: IntTrieSet = uninitialized
 
-    private[this] var theAbnormalExitPCs: IntTrieSet = _
+    private var theAbnormalExitPCs: IntTrieSet = uninitialized
 
-    private[this] var theSubroutineStartPCs: IntTrieSet = _
+    private var theSubroutineStartPCs: IntTrieSet = uninitialized
 
     /**
      * The set of nodes to which a(n un)conditional jump back is executed.
      */
-    private[this] var theJumpBackTargetPCs: IntTrieSet = _
+    private var theJumpBackTargetPCs: IntTrieSet = uninitialized
 
     //
     // DERIVED INFORMATION
@@ -88,20 +92,20 @@ trait RecordCFG
      * @note    We use the monitor associated with "this" when computing predecessors;
      *          the monitor associated with "this" is not (to be) used otherwise!
      */
-    private[this] var thePredecessors: SRef[Array[IntTrieSet]] = _ // uses regularSuccessors as lock
+    private var thePredecessors: SRef[Array[IntTrieSet]] = uninitialized // uses regularSuccessors as lock
 
     /**
      * @note    We use the monitor associated with regularSuccessors when computing the dominator
      *          tree; the monitor associated with regularSuccessors is not (to be) used otherwise!
      */
-    private[this] var theDominatorTree: SRef[DominatorTree] = _
+    private var theDominatorTree: SRef[DominatorTree] = uninitialized
 
     /**
      * @note    We use the monitor associated with exceptionHandlerSuccessors when computing the
      *          bb based cfg; the monitor associated with exceptionHandlerSuccessors is not (to be)
      *          used otherwise!
      */
-    private[this] var theBBCFG: SRef[CFG[Instruction, Code]] = _
+    private var theBBCFG: SRef[CFG[Instruction, Code]] = uninitialized
 
     //
     // METHODS WHICH RECORD THE AI TIME CFG AND WHICH ARE CALLED BY THE FRAMEWORK
@@ -323,8 +327,8 @@ trait RecordCFG
     ): Unit = {
         super.abstractInterpretationEnded(aiResult)
 
-        assert(exceptionHandlerSuccessors.forall(s => (s eq null) || s.nonEmpty))
-        assert(regularSuccessors.forall(s => (s eq null) || s.nonEmpty))
+        elidedAssert(exceptionHandlerSuccessors.forall(s => (s eq null) || s.nonEmpty))
+        elidedAssert(regularSuccessors.forall(s => (s eq null) || s.nonEmpty))
     }
 
     // ==================================== BASIC QUERIES ==========================================
@@ -334,7 +338,7 @@ trait RecordCFG
     /**
      * Returns all PCs that may lead to the (ab)normal termination of the method. I.e.,
      * those instructions (in particular method call instructions, but potentially also
-     * array access instructions and (I]L)DIV|MOD instructions etc.) that may throw
+     * array access instructions and (I/L)DIV|MOD instructions etc.) that may throw
      * some unhandled exceptions will also be returned; even if the instruction may
      * also have regular and also exception handlers!
      */
@@ -371,8 +375,8 @@ trait RecordCFG
      * Returns `true` if the instruction with the given `pc` was executed.
      * The `pc` has to identify a valid instruction.
      */
-    private[this] final def unsafeWasExecuted(pc: PC): Boolean = {
-        // The following "comparatively expensive" test cannot be replace by a simple
+    private final def unsafeWasExecuted(pc: PC): Boolean = {
+        // The following "comparatively expensive" test cannot be replaced by a simple
         // operandsArray(pc) eq null test as long as we support containing subroutines.
         // In the latter case, a subroutine's (sub) operands array will contain null
         // values directly after the analysis has finished (when the computeBBCFG is
@@ -465,7 +469,7 @@ trait RecordCFG
 
     /**
      * Tests if the instruction with the given `pc` has a successor instruction with
-     * a `pc'` that satisfies the given predicate `p`.
+     * a `pc` that satisfies the given predicate `p`.
      */
     def hasSuccessor(
         pc:                    Int,
@@ -584,7 +588,7 @@ trait RecordCFG
     //
     //
 
-    private[this] def getOrInitField[T >: Null <: AnyRef](
+    private def getOrInitField[T >: Null <: AnyRef](
         getFieldValue: () => SRef[T], // executed concurrently
         setFieldValue: SRef[T] => Unit, // never executed concurrently
         lock:          AnyRef
@@ -601,7 +605,7 @@ trait RecordCFG
                     setFieldValue(new SRef(newValue))
                     newValue
                 } else {
-                    f // initialized by a side-effect of evaluating the if condition
+                    f // initialized by a side effect of evaluating the if condition
                 }
             }
         } else {
@@ -615,7 +619,7 @@ trait RecordCFG
                         setFieldValue(new SRef(newValue))
                         newValue
                     } else {
-                        f // initialized by a side-effect of evaluating the if condition
+                        f // initialized by a side effect of evaluating the if condition
                     }
                 }
             } else {
@@ -624,7 +628,7 @@ trait RecordCFG
         }
     }
 
-    private[this] def predecessors: Array[IntTrieSet] = {
+    private def predecessors: Array[IntTrieSet] = {
         getOrInitField[Array[IntTrieSet]](
             () => this.thePredecessors,
             (predecessors) => this.thePredecessors = predecessors, // to cache the result
@@ -712,7 +716,7 @@ trait RecordCFG
      * instruction.
      * The very vast majority of methods does not have infinite loops.
      */
-    def infiniteLoopHeaders: IntTrieSet = {
+    def infiniteLoopHeaders: IntTrieSet = boundary {
         if (theJumpBackTargetPCs.isEmpty)
             return IntTrieSet.empty;
         // Let's test if the set of nodes reachable from a potential loop header is
@@ -734,7 +738,7 @@ trait RecordCFG
                 nextPredecessors.foreach { predPC =>
                     remainingPotentialInfiniteLoopHeaders -= predPC
                     if (remainingPotentialInfiniteLoopHeaders.isEmpty) {
-                        return IntTrieSet.empty;
+                        break(IntTrieSet.empty);
                     }
                     if (!visitedNodes(predPC)) {
                         nodesToVisit ::= predPC
@@ -758,13 +762,13 @@ trait RecordCFG
                     // pc1 is a regular loop inside an infinite loop
                     remainingPotentialInfiniteLoopHeaders -= pc1
                     if (remainingPotentialInfiniteLoopHeaders.size == 1)
-                        return remainingPotentialInfiniteLoopHeaders;
+                        break(remainingPotentialInfiniteLoopHeaders);
                 } else if (df.transitiveDF(pc2).contains(pc1)) {
                     // 1.b) (same as 1.a, but vice versa)
 
                     remainingPotentialInfiniteLoopHeaders -= pc2
                     if (remainingPotentialInfiniteLoopHeaders.size == 1)
-                        return remainingPotentialInfiniteLoopHeaders;
+                        break(remainingPotentialInfiniteLoopHeaders);
                 } else if (dt.strictlyDominates(pc1, pc2)) {
                     // 2. Given (due to the first checks) that both pcs do not identify
                     //    nested loops (in which case we keep the outer one!), we now have
@@ -773,11 +777,11 @@ trait RecordCFG
 
                     remainingPotentialInfiniteLoopHeaders -= pc1
                     if (remainingPotentialInfiniteLoopHeaders.size == 1)
-                        return remainingPotentialInfiniteLoopHeaders;
+                        break(remainingPotentialInfiniteLoopHeaders);
                 } else if (dt.strictlyDominates(pc2, pc1)) {
                     remainingPotentialInfiniteLoopHeaders -= pc2
                     if (remainingPotentialInfiniteLoopHeaders.size == 1)
-                        return remainingPotentialInfiniteLoopHeaders;
+                        break(remainingPotentialInfiniteLoopHeaders);
                 }
 
             }
@@ -800,7 +804,7 @@ trait RecordCFG
      * (a) to detect dead paths or (b) to identify that a method call may never throw an exception
      * (in the given situation).
      */
-    private[this] def computeBBCFG: CFG[Instruction, Code] = {
+    private def computeBBCFG: CFG[Instruction, Code] = {
 
         val instructions = code.instructions
         val codeSize = instructions.length
@@ -1031,7 +1035,7 @@ trait RecordCFG
      * @note This implementation is for debugging purposes only. It is NOT performance optimized!
      */
     def cfgAsGraph(): DefaultMutableNode[List[Int /*PC*/ ]] = {
-        import scala.collection.immutable.{List => ScalaList}
+        import scala.collection.immutable.List as ScalaList
         val instructions = code.instructions
         val codeSize = instructions.length
         val nodes = new Array[DefaultMutableNode[List[Int /*PC*/ ]]](codeSize)

@@ -38,7 +38,7 @@ import org.opalj.value.TheClassValue
  * class MyDomain
  *  extends DefaultTypeLevelInvokeInstructions
  *  with ClassValues
- *  with <DOES ANAYLZE INVOKE CALLS>
+ *  with <DOES ANALYZE INVOKE CALLS>
  * }}}
  *
  * @author Michael Eichberg (fixes for multi-parameter Class.forName(...) calls)
@@ -49,9 +49,9 @@ trait ClassValues
     with FieldAccessesDomain
     with DynamicLoadsDomain
     with MethodCallsDomain {
-    domain: CorrelationalDomain with IntegerValuesDomain with TypedValuesFactory with Configuration =>
+    domain: CorrelationalDomain & IntegerValuesDomain & TypedValuesFactory & Configuration =>
 
-    type DomainClassValue <: ClassValue with DomainObjectValue
+    type DomainClassValue <: ClassValue & DomainObjectValue
     val DomainClassValueTag: ClassTag[DomainClassValue]
 
     /**
@@ -123,7 +123,7 @@ trait ClassValues
     override def ClassValue(vo: ValueOrigin, value: Type): DomainObjectValue
 
     protected[l1] def simpleClassForNameCall(pc: Int, className: String): MethodCallResult = {
-        if (className.length() == 0)
+        if (className.isEmpty)
             return justThrows(ClassNotFoundException(pc));
 
         val classValue =
@@ -168,7 +168,7 @@ trait ClassValues
         operands:         Operands
     ): MethodCallResult = {
 
-        import org.opalj.ai.domain.l1.ClassValues._
+        import org.opalj.ai.domain.l1.ClassValues.*
 
         if ((declaringClass eq ClassType.Class) && (name == "forName") && operands.nonEmpty) {
 
@@ -182,7 +182,7 @@ trait ClassValues
                         case `forName_String_Class`                     => simpleClassForNameCall(pc, value)
                         case `forName_String_boolean_ClassLoader_Class` => simpleClassForNameCall(pc, value)
                         case _                                          =>
-                            throw new DomainException(
+                            throw DomainException(
                                 s"unsupported Class { ${methodDescriptor.toJava("forName")} }"
                             )
                     }
@@ -196,7 +196,7 @@ trait ClassValues
                         case `forName_Module_String`       => simpleClassForNameCall(pc, value)
                         case `forName_Module_String_Class` => simpleClassForNameCall(pc, value)
                         case _                             =>
-                            throw new DomainException(
+                            throw DomainException(
                                 s"unsupported Class { ${methodDescriptor.toJava("forName")} }"
                             )
                     }
@@ -281,28 +281,28 @@ private object ClassValues {
 
     final val forName_String_boolean_ClassLoader = {
         MethodDescriptor(
-            ArraySeq(ClassType.String, BooleanType, ClassType("java/lang/ClassLoader")),
+            ArraySeq(ClassType.String, BooleanType, ClassType.ClassLoader),
             ClassType.Class
         )
     }
 
     final val forName_String_boolean_ClassLoader_Class = {
         MethodDescriptor(
-            ArraySeq(ClassType.String, BooleanType, ClassType("java/lang/ClassLoader"), ClassType.Class),
+            ArraySeq(ClassType.String, BooleanType, ClassType.ClassLoader, ClassType.Class),
             ClassType.Class
         )
     }
 
     final val forName_Module_String = {
         MethodDescriptor(
-            ArraySeq(ClassType("java/lang/Module"), ClassType.String),
+            ArraySeq(ClassType.Module, ClassType.String),
             ClassType.Class
         )
     }
 
     final val forName_Module_String_Class = {
         MethodDescriptor(
-            ArraySeq(ClassType("java/lang/Module"), ClassType.String, ClassType.Class),
+            ArraySeq(ClassType.Module, ClassType.String, ClassType.Class),
             ClassType.Class
         )
     }

@@ -4,6 +4,7 @@ package br
 package cp
 
 import org.opalj.bi.ConstantPoolTags
+import org.opalj.util.elidedAssert
 
 /**
  * Represents a method handle.
@@ -55,11 +56,11 @@ case class CONSTANT_MethodHandle_info(
 
             case bi.REF_newInvokeSpecial.referenceKind =>
                 val (receiverType, _, name, methodDescriptor) = cp(referenceIndex).asMethodref(cp)
-                assert(
+                elidedAssert(
                     receiverType.isClassType,
                     "receiver for newInvokeSpecial must be classtype"
                 )
-                assert(
+                elidedAssert(
                     name == "<init>",
                     "invalid bytecode: newInvokeSpecial name must be <init> (see JVM spc 4.4.8)"
                 )

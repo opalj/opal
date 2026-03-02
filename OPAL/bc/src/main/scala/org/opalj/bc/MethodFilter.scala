@@ -11,7 +11,7 @@ import org.rogach.scallop.ScallopConf
 import org.opalj.cli.ClassPathArg
 import org.opalj.cli.MethodNameArg
 import org.opalj.cli.OPALCommandLineConfig
-import org.opalj.da._
+import org.opalj.da.*
 import org.opalj.io.write
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.LogContext

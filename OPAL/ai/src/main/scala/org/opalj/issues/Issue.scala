@@ -8,6 +8,8 @@ import scala.xml.Group
 import scala.xml.Node
 import scala.xml.Unparsed
 
+import org.opalj.util.elidedAssert
+
 /**
  * Describes some issue found in source code.
  *
@@ -39,8 +41,8 @@ case class Issue(
     details:    Iterable[IssueDetails] = Nil
 ) extends IssueRepresentations {
 
-    assert(!summary.contains('\n'), s"the summary must not contain new lines:\n$summary")
-    assert(locations.nonEmpty, "at least one location must be specified")
+    elidedAssert(!summary.contains('\n'), s"the summary must not contain new lines:\n$summary")
+    elidedAssert(locations.nonEmpty, "at least one location must be specified")
 
     def toXHTML(basicInfoOnly: Boolean): Node = {
 

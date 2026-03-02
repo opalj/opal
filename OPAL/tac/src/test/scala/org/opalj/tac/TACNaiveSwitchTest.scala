@@ -7,7 +7,7 @@ import scala.collection.immutable.ArraySeq
 import org.junit.runner.RunWith
 import org.scalatestplus.junit.JUnitRunner
 
-import org.opalj.br._
+import org.opalj.br.*
 import org.opalj.br.TestSupport.biProject
 import org.opalj.collection.immutable.IntIntPair
 
@@ -34,7 +34,7 @@ class TACNaiveSwitchTest extends TACNaiveTest {
             val javaLikeCode = ToTxt.stmtsToTxtStmt(statements, true)
 
             assert(statements.nonEmpty)
-            assert(javaLikeCode.length > 0)
+            assert(javaLikeCode.nonEmpty)
 
             val expected = Array(
                 Assignment(
@@ -96,7 +96,7 @@ class TACNaiveSwitchTest extends TACNaiveTest {
             val javaLikeCode = ToTxt.stmtsToTxtStmt(statements, true)
 
             assert(statements.nonEmpty)
-            assert(javaLikeCode.length > 0)
+            assert(javaLikeCode.nonEmpty)
             statements.shouldEqual(Array(
                 Assignment(
                     -1,

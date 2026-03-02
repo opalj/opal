@@ -18,41 +18,41 @@ class TypeRelationTest extends AnyFunSpec with Matchers {
     describe("NumericType.isWiderThan") {
 
         it("should not be reflexive") {
-            assert(!(ByteType isWiderThan ByteType))
-            assert(!(CharType isWiderThan CharType))
-            assert(!(ShortType isWiderThan ShortType))
-            assert(!(IntegerType isWiderThan IntegerType))
-            assert(!(LongType isWiderThan LongType))
-            assert(!(FloatType isWiderThan FloatType))
-            assert(!(DoubleType isWiderThan DoubleType))
+            assert(!ByteType.isWiderThan(ByteType))
+            assert(!CharType.isWiderThan(CharType))
+            assert(!ShortType.isWiderThan(ShortType))
+            assert(!IntegerType.isWiderThan(IntegerType))
+            assert(!LongType.isWiderThan(LongType))
+            assert(!FloatType.isWiderThan(FloatType))
+            assert(!DoubleType.isWiderThan(DoubleType))
         }
 
         it("should be true for \"wider\" types") {
 
-            assert(ShortType isWiderThan ByteType)
-            assert(IntegerType isWiderThan ByteType)
-            assert(LongType isWiderThan ByteType)
-            assert(FloatType isWiderThan ByteType)
-            assert(DoubleType isWiderThan ByteType)
+            assert(ShortType.isWiderThan(ByteType))
+            assert(IntegerType.isWiderThan(ByteType))
+            assert(LongType.isWiderThan(ByteType))
+            assert(FloatType.isWiderThan(ByteType))
+            assert(DoubleType.isWiderThan(ByteType))
 
-            assert(IntegerType isWiderThan CharType)
-            assert(LongType isWiderThan CharType)
-            assert(FloatType isWiderThan CharType)
-            assert(DoubleType isWiderThan CharType)
+            assert(IntegerType.isWiderThan(CharType))
+            assert(LongType.isWiderThan(CharType))
+            assert(FloatType.isWiderThan(CharType))
+            assert(DoubleType.isWiderThan(CharType))
 
-            assert(IntegerType isWiderThan ShortType)
-            assert(LongType isWiderThan ShortType)
-            assert(FloatType isWiderThan ShortType)
-            assert(DoubleType isWiderThan ShortType)
+            assert(IntegerType.isWiderThan(ShortType))
+            assert(LongType.isWiderThan(ShortType))
+            assert(FloatType.isWiderThan(ShortType))
+            assert(DoubleType.isWiderThan(ShortType))
 
-            assert(LongType isWiderThan IntegerType)
-            assert(FloatType isWiderThan IntegerType)
-            assert(DoubleType isWiderThan IntegerType)
+            assert(LongType.isWiderThan(IntegerType))
+            assert(FloatType.isWiderThan(IntegerType))
+            assert(DoubleType.isWiderThan(IntegerType))
 
-            assert(FloatType isWiderThan LongType)
-            assert(DoubleType isWiderThan LongType)
+            assert(FloatType.isWiderThan(LongType))
+            assert(DoubleType.isWiderThan(LongType))
 
-            assert(DoubleType isWiderThan FloatType)
+            assert(DoubleType.isWiderThan(FloatType))
         }
 
         it("should be false for types that are not larger") {

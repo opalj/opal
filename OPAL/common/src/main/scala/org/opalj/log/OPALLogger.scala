@@ -2,8 +2,7 @@
 package org.opalj
 package log
 
-import scala.annotation.elidable
-import scala.annotation.elidable.ASSERTION
+import org.opalj.util.elidedAssert
 
 /**
  * Facilitates the logging of messages that are relevant for the end user.
@@ -14,7 +13,6 @@ import scala.annotation.elidable.ASSERTION
  * @note   The OPALLogger framework is not intended to be used by developers to help
  *         debug analysis; it is intended to be used to inform (end)-users about the
  *         analysis progress.
- *
  * @author Michael Eichberg
  */
 trait OPALLogger {
@@ -70,12 +68,12 @@ trait OPALLogger {
  */
 object OPALLogger extends OPALLogger {
 
-    @volatile private[this] var loggers: Array[OPALLogger] = new Array(32);
+    @volatile private var loggers: Array[OPALLogger] = new Array(32);
 
     def updateLogger(ctx: LogContext, logger: OPALLogger): Unit = this.synchronized {
         val id = ctx.id
-        assert(id != -1, "context is not yet registered")
-        assert(id != -2, "context is already unregistered")
+        elidedAssert(id != -1, "context is not yet registered")
+        elidedAssert(id != -2, "context is already unregistered")
         loggers(id) = logger
     }
 
@@ -145,7 +143,6 @@ object OPALLogger extends OPALLogger {
      * Debug message are only included in the code if assertions are turned on. If
      * debug message are logged, then they are logged as Info-level messages.
      */
-    @elidable(ASSERTION)
     final def debug(category: String, message: String)(implicit ctx: LogContext): Unit = {
         log(Info(category, message))
     }
@@ -155,7 +152,6 @@ object OPALLogger extends OPALLogger {
      * `p` evaluates to `true`.
      * If debug message are logged, then they are logged as Info-level messages.
      */
-    @elidable(ASSERTION)
     final def debug(
         p:        => Boolean,
         category: String,

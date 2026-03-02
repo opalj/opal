@@ -47,7 +47,7 @@ object CovariantEqualsMethodDefined extends ProjectsAnalysisApplication {
         project.parForeachClassFile() { classFile =>
             var definesEqualsMethod = false
             var definesCovariantEqualsMethod = false
-            for (Method(_, "equals", MethodDescriptor(Seq(ct), BooleanType)) <- classFile.methods)
+            for (case Method(_, "equals", MethodDescriptor(Seq(ct), BooleanType)) <- classFile.methods)
                 if (ct == ClassType.Object)
                     definesEqualsMethod = true
                 else

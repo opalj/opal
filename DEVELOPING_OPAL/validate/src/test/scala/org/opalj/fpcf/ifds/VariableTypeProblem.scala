@@ -363,7 +363,7 @@ class VariableTypeProblem(project: SomeProject, override val subsumeFacts: Boole
      * @return True, if `method` can be called from outside the library.
      */
     private def canBeCalledFromOutside(method: Method): Boolean = {
-        val FinalEP(_, callers) = propertyStore(declaredMethods(method), Callers.key)
+        val FinalEP(_, callers) = propertyStore(declaredMethods(method), Callers.key): @unchecked
         callers.hasCallersWithUnknownContext
     }
 

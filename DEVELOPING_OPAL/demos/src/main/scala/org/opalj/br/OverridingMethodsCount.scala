@@ -40,7 +40,7 @@ object OverridingMethodsCount extends ProjectsAnalysisApplication {
                     val overridingMethods = allOverridingMethods.map(m => m.classFile.fqn)
                     val count = overridingMethods.size
                     method.toJava(
-                        overridingMethods.mkString(s"\n\thas $count overridde(s):\n\t\t", "\n\t\t", "\n")
+                        overridingMethods.mkString(s"\n\thas $count override(s):\n\t\t", "\n\t\t", "\n")
                     )
                 }
 

@@ -27,7 +27,7 @@ trait AnnotationsReader extends AnnotationsAbstractions {
     type Annotations = ArraySeq[Annotation]
 
     /**
-     * Reads the annotations of a annotations attributes.
+     * Reads the annotations of an annotation's attributes.
      *
      * ''' From the Specification'''
      * <pre>

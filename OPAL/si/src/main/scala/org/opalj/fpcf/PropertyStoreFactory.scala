@@ -22,7 +22,7 @@ trait PropertyStoreFactory[PS <: PropertyStore] {
 
     /* abstract */
     def apply(
-        context: PropertyStoreContext[_ <: AnyRef]*
+        context: PropertyStoreContext[? <: AnyRef]*
     )(
         implicit logContext: LogContext
     ): PS

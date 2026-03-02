@@ -3,6 +3,7 @@ package org.opalj
 package apk
 
 import java.net.URL
+import scala.compiletime.uninitialized
 
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.Ignore
@@ -20,7 +21,7 @@ import org.opalj.br.analyses.Project
 @Ignore // TODO Does not run @github since docker is missing
 class ApkParserTest extends AnyFunSuite with BeforeAndAfterAll {
 
-    var project: Project[URL] = _
+    var project: Project[URL] = uninitialized
 
     override def beforeAll(): Unit = {
         project = ApkParser.createProject(

@@ -19,12 +19,14 @@ import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.br.fpcf.properties.pointsto.AllocationSitePointsToSet
 import org.opalj.br.fpcf.properties.pointsto.PointsToSetLike
 import org.opalj.br.fpcf.properties.pointsto.TypeBasedPointsToSet
+import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.PropertyMetaInformation
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Results
+import org.opalj.tac.fpcf.properties.NoTACAI
 
 /**
  * Introduces additional allocation sites for serialization methods.
@@ -44,16 +46,16 @@ abstract class SerializationAllocationsAnalysis(
     )
 
     trait PointsToBase extends AbstractPointsToBasedAnalysis {
-        override protected[this] type ElementType = self.ElementType
-        override protected[this] type PointsToSet = self.PointsToSet
-        override protected[this] type DependerType = self.DependerType
+        override protected type ElementType = self.ElementType
+        override protected type PointsToSet = self.PointsToSet
+        override protected type DependerType = self.DependerType
 
-        override protected[this] val pointsToPropertyKey: PropertyKey[PointsToSet] =
+        override protected val pointsToPropertyKey: PropertyKey[PointsToSet] =
             self.pointsToPropertyKey
 
-        override protected[this] def emptyPointsToSet: PointsToSet = self.emptyPointsToSet
+        override protected def emptyPointsToSet: PointsToSet = self.emptyPointsToSet
 
-        override protected[this] def createPointsToSet(
+        override protected def createPointsToSet(
             pc:            Int,
             callContext:   ContextType,
             allocatedType: ReferenceType,
@@ -69,15 +71,15 @@ abstract class SerializationAllocationsAnalysis(
             )
         }
 
-        @inline override protected[this] def getTypeOf(element: ElementType): ReferenceType = {
+        @inline override protected def getTypeOf(element: ElementType): ReferenceType = {
             self.getTypeOf(element)
         }
 
-        @inline override protected[this] def getTypeIdOf(element: ElementType): Int = {
+        @inline override protected def getTypeIdOf(element: ElementType): Int = {
             self.getTypeIdOf(element)
         }
 
-        @inline override protected[this] def isEmptyArray(element: ElementType): Boolean = {
+        @inline override protected def isEmptyArray(element: ElementType): Boolean = {
             self.isEmptyArray(element)
         }
     }
@@ -93,7 +95,7 @@ abstract class SerializationAllocationsAnalysis(
         isDirect:       Boolean
     ): ProperPropertyComputationResult = {
         implicit val state: State =
-            new PointsToAnalysisState[ElementType, PointsToSet, ContextType](callerContext, null)
+            new PointsToAnalysisState[ElementType, PointsToSet, ContextType](callerContext, FinalEP(null, NoTACAI))
 
         if (tgtVarOption.isDefined) {
             handleOISReadObject(callerContext, tgtVarOption.get, pc, tac.stmts)
@@ -101,10 +103,10 @@ abstract class SerializationAllocationsAnalysis(
             state.addIncompletePointsToInfo(pc)
         }
 
-        Results(createResults(state))
+        Results(createResults)
     }
 
-    private[this] def handleOISReadObject(
+    private def handleOISReadObject(
         context:   ContextType,
         targetVar: V,
         pc:        Int,

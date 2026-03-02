@@ -47,10 +47,10 @@ object CountClassForNameCalls extends ProjectsAnalysisApplication {
                 // Let's traverse all methods of all class files that have a
                 // concrete (non-native) implementation.
                 classFile <- project.allProjectClassFiles.par
-                method @ MethodWithBody(code) <- classFile.methods
+                case method @ MethodWithBody(code) <- classFile.methods
                 // Match all invocations of the method:
                 // Class.forName(String) : Class<?>
-                PCAndInstruction(pc, INVOKESTATIC(Class, _, "forName", `descriptor`)) <- code
+                case PCAndInstruction(pc, INVOKESTATIC(Class, _, "forName", `descriptor`)) <- code
             } yield {
                 method.toJava(s"pc=$pc")
             }

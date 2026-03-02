@@ -48,7 +48,7 @@ class ArchitectureConsistencyTest extends AnyFlatSpec with Matchers with BeforeA
             ensemble(Symbol("Mathematics")) { "mathematics.Mathematics*" }
             ensemble(Symbol("Example")) { "mathematics.Example*" }
 
-            Symbol("Example") is_only_allowed_to (USE, Symbol("Mathematics"))
+            Symbol("Example").is_only_allowed_to(USE, Symbol("Mathematics"))
         }
 
         val result = specification.analyze().map(_.toString).toSeq.sorted.mkString("\n")
@@ -65,7 +65,7 @@ class ArchitectureConsistencyTest extends AnyFlatSpec with Matchers with BeforeA
             ensemble(Symbol("Mathematics")) { "mathematics.Mathematics*" }
             ensemble(Symbol("Example")) { "mathematics.Example*" }
 
-            Symbol("Mathematics") is_only_allowed_to (USE, Symbol("Rational"))
+            Symbol("Mathematics").is_only_allowed_to(USE, Symbol("Rational"))
         }
         specification.analyze() should not be (empty) // <= primary test
 
@@ -83,7 +83,7 @@ class ArchitectureConsistencyTest extends AnyFlatSpec with Matchers with BeforeA
             ensemble(Symbol("Mathematics")) { "mathematics.Mathematics*" }
             ensemble(Symbol("Example")) { "mathematics.Example*" }
 
-            Symbol("Example") is_not_allowed_to (USE, Symbol("Rational"))
+            Symbol("Example").is_not_allowed_to(USE, Symbol("Rational"))
         }
         val result = specification.analyze().map(_.toString).toSeq.sorted.mkString("\n")
         result should be(empty)
@@ -99,7 +99,7 @@ class ArchitectureConsistencyTest extends AnyFlatSpec with Matchers with BeforeA
             ensemble(Symbol("Mathematics")) { "mathematics.Mathematics*" }
             ensemble(Symbol("Example")) { "mathematics.Example*" }
 
-            Symbol("Mathematics") is_not_allowed_to (USE, Symbol("Number"))
+            Symbol("Mathematics").is_not_allowed_to(USE, Symbol("Number"))
         }
         specification.analyze() should not be (empty)
 
@@ -117,7 +117,7 @@ class ArchitectureConsistencyTest extends AnyFlatSpec with Matchers with BeforeA
             ensemble(Symbol("Mathematics")) { "mathematics.Mathematics*" }
             ensemble(Symbol("Example")) { "mathematics.Example*" }
 
-            Symbol("Mathematics") is_only_to_be_used_by Symbol("Example")
+            Symbol("Mathematics").is_only_to_be_used_by(Symbol("Example"))
         }
         val result = specification.analyze().map(_.toString).toSeq.sorted.mkString("\n")
         result should be(empty)
@@ -133,7 +133,7 @@ class ArchitectureConsistencyTest extends AnyFlatSpec with Matchers with BeforeA
             ensemble(Symbol("Mathematics")) { "mathematics.Mathematics*" }
             ensemble(Symbol("Example")) { "mathematics.Example*" }
 
-            Symbol("Rational") is_only_to_be_used_by Symbol("Mathematics")
+            Symbol("Rational").is_only_to_be_used_by(Symbol("Mathematics"))
         }
         specification.analyze() should not be (empty)
 
@@ -151,7 +151,7 @@ class ArchitectureConsistencyTest extends AnyFlatSpec with Matchers with BeforeA
             ensemble(Symbol("Mathematics")) { "mathematics.Mathematics*" }
             ensemble(Symbol("Example")) { "mathematics.Example*" }
 
-            Symbol("Mathematics") allows_incoming_dependencies_from Symbol("Example")
+            Symbol("Mathematics").allows_incoming_dependencies_from(Symbol("Example"))
         }
         val result = specification.analyze().map(_.toString).toSeq.sorted.mkString("\n")
         result should be(empty)
@@ -167,7 +167,7 @@ class ArchitectureConsistencyTest extends AnyFlatSpec with Matchers with BeforeA
             ensemble(Symbol("Mathematics")) { "mathematics.Mathematics*" }
             ensemble(Symbol("Example")) { "mathematics.Example*" }
 
-            Symbol("Number") allows_incoming_dependencies_from Symbol("Rational")
+            Symbol("Number").allows_incoming_dependencies_from(Symbol("Rational"))
         }
         specification.analyze() should not be (empty)
 
@@ -183,7 +183,7 @@ class ArchitectureConsistencyTest extends AnyFlatSpec with Matchers with BeforeA
                 ClassMatcher("mathematics.Mathematics", matchPrefix = false, matchMethods = false, matchFields = false)
             )
 
-            Symbol("Mathematics") every_element_should_implement_method MethodWithName("operation1")
+            Symbol("Mathematics").every_element_should_implement_method(MethodWithName("operation1"))
 
         }
         specification.analyze() should be(empty)
@@ -197,7 +197,7 @@ class ArchitectureConsistencyTest extends AnyFlatSpec with Matchers with BeforeA
                 ClassMatcher("mathematics.Operations", matchPrefix = false, matchMethods = false, matchFields = false)
             )
 
-            Symbol("Operations") every_element_should_implement_method MethodWithName("operation1")
+            Symbol("Operations").every_element_should_implement_method(MethodWithName("operation1"))
         }
         specification.analyze() should not be (empty)
 
@@ -222,7 +222,7 @@ class ArchitectureConsistencyTest extends AnyFlatSpec with Matchers with BeforeA
                 ClassMatcher("entity.AbstractEntity", matchPrefix = false, matchMethods = false, matchFields = false)
             )
 
-            Symbol("Address") every_element_should_extend Symbol("AbstractEntity")
+            Symbol("Address").every_element_should_extend(Symbol("AbstractEntity"))
 
         }
 
@@ -246,7 +246,7 @@ class ArchitectureConsistencyTest extends AnyFlatSpec with Matchers with BeforeA
                 ClassMatcher("entity.AbstractEntity", matchPrefix = false, matchMethods = false, matchFields = false)
             )
 
-            Symbol("Address") every_element_should_extend Symbol("User")
+            Symbol("Address").every_element_should_extend(Symbol("User"))
 
         }
 
@@ -264,7 +264,7 @@ class ArchitectureConsistencyTest extends AnyFlatSpec with Matchers with BeforeA
 
             ensemble(Symbol("EntityId"))(FieldMatcher(AllClasses, theName = Some("id")))
 
-            Symbol("EntityId") every_element_should_be_annotated_with (AnnotatedWith("entity.annotation.Id"))
+            Symbol("EntityId").every_element_should_be_annotated_with(AnnotatedWith("entity.annotation.Id"))
         }
 
         specification.analyze() should be(empty)
@@ -279,7 +279,7 @@ class ArchitectureConsistencyTest extends AnyFlatSpec with Matchers with BeforeA
 
             ensemble(Symbol("EntityId"))(FieldMatcher(AllClasses, theName = Some("id")))
 
-            Symbol("EntityId") every_element_should_be_annotated_with (AnnotatedWith("entity.annotation.Entity"))
+            Symbol("EntityId").every_element_should_be_annotated_with(AnnotatedWith("entity.annotation.Entity"))
         }
 
         specification.analyze() should not be (empty)
@@ -297,18 +297,17 @@ class ArchitectureConsistencyTest extends AnyFlatSpec with Matchers with BeforeA
 
             ensemble(Symbol("EntityId"))(FieldMatcher(AllClasses, theName = Some("id")))
 
-            Symbol("EntityId") every_element_should_be_annotated_with
-                (
-                    "(entity.annotation.Id - entity.annotation.Column)",
-                    Seq(
-                        AnnotatedWith("entity.annotation.Id"),
-                        AnnotatedWith(
-                            "entity.annotation.Column",
-                            "name" -> StringValue("id"),
-                            "nullable" -> BooleanValue(false)
-                        )
+            Symbol("EntityId").every_element_should_be_annotated_with(
+                "(entity.annotation.Id - entity.annotation.Column)",
+                Seq(
+                    AnnotatedWith("entity.annotation.Id"),
+                    AnnotatedWith(
+                        "entity.annotation.Column",
+                        "name" -> StringValue("id"),
+                        "nullable" -> BooleanValue(false)
                     )
                 )
+            )
         }
 
         specification.analyze() should be(empty)
@@ -323,18 +322,17 @@ class ArchitectureConsistencyTest extends AnyFlatSpec with Matchers with BeforeA
 
             ensemble(Symbol("EntityId"))(FieldMatcher(AllClasses, theName = Some("id")))
 
-            Symbol("EntityId") every_element_should_be_annotated_with
-                (
-                    "(entity.annotation.Id - entity.annotation.Column)",
-                    Seq(
-                        AnnotatedWith("entity.annotation.Id"),
-                        AnnotatedWith(
-                            "entity.annotation.Column",
-                            "name" -> StringValue("id"),
-                            "nullable" -> BooleanValue(true)
-                        )
+            Symbol("EntityId").every_element_should_be_annotated_with(
+                "(entity.annotation.Id - entity.annotation.Column)",
+                Seq(
+                    AnnotatedWith("entity.annotation.Id"),
+                    AnnotatedWith(
+                        "entity.annotation.Column",
+                        "name" -> StringValue("id"),
+                        "nullable" -> BooleanValue(true)
                     )
                 )
+            )
         }
 
         specification.analyze() should not be (empty)

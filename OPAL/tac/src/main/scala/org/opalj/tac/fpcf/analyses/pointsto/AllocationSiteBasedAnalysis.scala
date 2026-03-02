@@ -36,8 +36,8 @@ import org.opalj.tac.fpcf.analyses.pointsto.AllocationSiteBasedAnalysis.stringCo
 
 trait AllocationSiteBasedAnalysis extends AbstractPointsToBasedAnalysis {
 
-    override protected[this] type ElementType = AllocationSite
-    override protected[this] type PointsToSet = AllocationSitePointsToSet
+    override protected type ElementType = AllocationSite
+    override protected type PointsToSet = AllocationSitePointsToSet
 
     val mergeStringBuilderBuffer: Boolean =
         project.config.getBoolean(mergeStringBuilderBufferConfigKey)
@@ -45,7 +45,7 @@ trait AllocationSiteBasedAnalysis extends AbstractPointsToBasedAnalysis {
     val mergeClassConstants: Boolean = project.config.getBoolean(mergeClassConstsConfigKey)
     val mergeExceptions: Boolean = project.config.getBoolean(mergeExceptionsConfigKey)
 
-    override protected[this] def createPointsToSet(
+    override protected def createPointsToSet(
         pc:            Int,
         callContext:   ContextType,
         allocatedType: ReferenceType,
@@ -95,23 +95,23 @@ trait AllocationSiteBasedAnalysis extends AbstractPointsToBasedAnalysis {
         }
     }
 
-    @inline protected[this] def getTypeOf(element: AllocationSite): ReferenceType = {
+    @inline protected def getTypeOf(element: AllocationSite): ReferenceType = {
         ReferenceType.lookup(allocationSiteLongToTypeId(element))
     }
 
-    @inline protected[this] def getTypeIdOf(element: AllocationSite): Int = {
+    @inline protected def getTypeIdOf(element: AllocationSite): Int = {
         allocationSiteLongToTypeId(element)
     }
 
-    @inline protected[this] def isEmptyArray(element: AllocationSite): Boolean = {
+    @inline protected def isEmptyArray(element: AllocationSite): Boolean = {
         isEmptyArrayAllocationSite(element)
     }
 
-    override protected[this] val pointsToPropertyKey: PropertyKey[AllocationSitePointsToSet] = {
+    override protected val pointsToPropertyKey: PropertyKey[AllocationSitePointsToSet] = {
         AllocationSitePointsToSet.key
     }
 
-    @inline protected[this] def emptyPointsToSet: AllocationSitePointsToSet = {
+    @inline protected def emptyPointsToSet: AllocationSitePointsToSet = {
         NoAllocationSites
     }
 }

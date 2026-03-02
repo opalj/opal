@@ -5,6 +5,9 @@ package fpcf
 package analyses
 package purity
 
+import scala.util.boundary
+import scala.util.boundary.break
+
 import org.opalj.ai.isImmediateVMException
 import org.opalj.br.ClassType
 import org.opalj.br.ComputationalTypeReference
@@ -59,7 +62,7 @@ import org.opalj.fpcf.UBP
 import org.opalj.tac.cg.CallGraphKey
 import org.opalj.tac.fpcf.properties.TACAI
 
-import net.ceedubs.ficus.Ficus._
+import net.ceedubs.ficus.Ficus.*
 
 /**
  * An inter-procedural analysis to determine a method's purity.
@@ -96,7 +99,7 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
      * @param tac The method's three address code
      * @param lbPurity The current minimum purity level for the method
      * @param ubPurity The current maximum purity level for the method that will be assigned by
-     *                  checkPurityOfX methods to aggregrate the purity
+     *                  checkPurityOfX methods to aggregate the purity
      */
     class State(
         var dependees: Set[EOptionP[Entity, Property]],
@@ -170,7 +173,7 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
             // The expression could refer to further expressions in a non-flat representation.
             // In that case it could be, e.g., a GetStatic. In that case the reference is
             // not locally created and/or initialized. To avoid special handling, we just
-            // fallback to false here as the analysis is intended to be used on flat
+            // fall back to false here as the analysis is intended to be used on flat
             // representations anyway.
             atMost(otherwise)
             false
@@ -180,7 +183,7 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
     /**
      * Examines the influence of the purity property of a method on the examined method's purity.
      *
-     * @note Adds dependendies when necessary.
+     * @note Adds dependees when necessary.
      */
     def checkMethodPurity(
         ep:     EOptionP[Context, Purity],
@@ -189,12 +192,12 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         case UBP(_: ClassifiedImpure) =>
             atMost(ImpureByAnalysis)
             false
-        case eps @ LUBP(lb, ub) =>
+        case eps @ LUBP(lb: Purity, ub: Purity) =>
             if (ub.modifiesParameters) {
                 atMost(ImpureByAnalysis)
                 false
             } else {
-                if (eps.isRefinable && ((lb meet state.ubPurity) ne state.ubPurity)) {
+                if (eps.isRefinable && (lb.meet(state.ubPurity) ne state.ubPurity)) {
                     state.dependees += ep // On Conditional, keep dependence
                     reducePurityLB(lb)
                 }
@@ -319,7 +322,7 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
      */
     def determineMethodPurity(
         cfg: CFG[Stmt[V], TACStmts[V]]
-    )(implicit state: State): ProperPropertyComputationResult = {
+    )(implicit state: State): ProperPropertyComputationResult = boundary {
         // Special case: The Throwable constructor is `LBSideEffectFree`, but subtype constructors
         // may not be because of overridable fillInStackTrace method
         if (state.method.isConstructor && state.declClass.isSubtypeOf(ClassType.Throwable)) {
@@ -336,7 +339,7 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
                     val fISTPurity = propertyStore(fISTContext, Purity.key)
                     if (!checkMethodPurity(fISTPurity, Seq.empty))
                         // Early return for impure fillInStackTrace
-                        return Result(state.context, state.ubPurity);
+                        break(Result(state.context, state.ubPurity));
                 }
             }
         }

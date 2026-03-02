@@ -89,7 +89,7 @@ object FieldAccessInformationAnalysis extends ProjectsAnalysisApplication {
             } else {
                 BasicReport(
                     accessInformation.statistics
-                        .mkString(s"determing field access information required $memoryUsage :\n", "\n", "\n")
+                        .mkString(s"determining field access information required $memoryUsage :\n", "\n", "\n")
                 )
             }
 

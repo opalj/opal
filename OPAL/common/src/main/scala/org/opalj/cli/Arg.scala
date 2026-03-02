@@ -6,7 +6,7 @@ import com.typesafe.config.Config
 
 import org.rogach.scallop.ValueConverter
 
-trait Arg[T, R] {
+trait Arg[+T, R] {
     def name: String
     def argName: String = name
     def description: String
@@ -23,7 +23,7 @@ trait Arg[T, R] {
 
     def apply(opalConfig: Config, value: Option[R]): Config = opalConfig
 
-    def commands(): IterableOnce[Arg[_, _]] = Iterator(this)
+    def commands(): IterableOnce[Arg[?, ?]] = Iterator(this)
 }
 
 abstract class ConvertedArg[T: ValueConverter, R] extends Arg[T, R] {
@@ -31,11 +31,24 @@ abstract class ConvertedArg[T: ValueConverter, R] extends Arg[T, R] {
 }
 
 abstract class PlainArg[T: ValueConverter] extends ConvertedArg[T, T] {
-    override final val choices = Seq.empty
+    override final val choices: Seq[String] = Seq.empty
 }
 
 abstract class ParsedArg[T: ValueConverter, R] extends ConvertedArg[T, R] {
     def parse(arg: T): R
+}
+
+abstract class PropertyArg[T: ValueConverter] extends ConvertedArg[T, Map[String, T]] {
+    def char: Char
+    def keyName: String = "key"
+    def valueName: String = "value"
+
+    override final val name = char.toString
+    override final val argName: String = null
+    override final val defaultValue: Option[T] = None
+    override final val short: Char = '\u0000'
+    override final val noshort: Boolean = true
+    override final val choices: Seq[String] = Seq.empty
 }
 
 trait ChoiceArg[R] extends Arg[String, R] {

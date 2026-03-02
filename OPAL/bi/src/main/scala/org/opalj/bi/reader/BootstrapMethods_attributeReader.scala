@@ -26,12 +26,10 @@ trait BootstrapMethods_attributeReader extends AttributeReader {
 
     type BootstrapMethods_attribute >: Null <: Attribute
 
-    type BootstrapMethod <: AnyRef
-    implicit val bootstrapMethodType: ClassTag[BootstrapMethod] // TODO: Replace in Scala 3 with `type BootstrapMethod: ClassTag`
+    type BootstrapMethod <: AnyRef: ClassTag
     type BootstrapMethods = ArraySeq[BootstrapMethod]
 
-    type BootstrapArgument <: AnyRef
-    implicit val bootstrapArgumentType: ClassTag[BootstrapArgument] // TODO: Replace in Scala 3 with `type BootstrapArgument: ClassTag`
+    type BootstrapArgument <: AnyRef: ClassTag
     type BootstrapArguments = ArraySeq[BootstrapArgument]
 
     def BootstrapMethods_attribute(
@@ -84,7 +82,7 @@ trait BootstrapMethods_attributeReader extends AttributeReader {
      * }
      * </pre>
      */
-    private[this] def parserFactory() = (
+    private def parserFactory() = (
         cp:                   Constant_Pool,
         ap:                   AttributeParent,
         ap_name_index:        Constant_Pool_Index,

@@ -9,6 +9,7 @@ package interpretation
 
 import org.opalj.br.analyses.SomeProject
 import org.opalj.fpcf.ProperPropertyComputationResult
+import org.opalj.fpcf.PropertyBounds
 import org.opalj.tac.fpcf.analyses.string.interpretation.InterpretationHandler
 import org.opalj.tac.fpcf.analyses.string.interpretation.InterpretationState
 import org.opalj.tac.fpcf.properties.string.StringFlowFunctionProperty
@@ -32,7 +33,7 @@ class L0InterpretationHandler(implicit override val project: SomeProject) extend
 
         case ExprStmt(_, call: FunctionCall[V])           => StringInterpreter.uninterpretedCall(call)
         case Assignment(_, target, call: FunctionCall[V]) =>
-            StringInterpreter.uninterpretedCall(call, Some(target.asVar.toPersistentForm(state.tac.stmts)))
+            StringInterpreter.uninterpretedCall(call, Some(target.asVar.toPersistentForm(using state.tac.stmts)))
         case call: MethodCall[V] => StringInterpreter.uninterpretedCall(call)
 
         case Assignment(_, target, _) => StringInterpreter.failure(target)
@@ -40,7 +41,7 @@ class L0InterpretationHandler(implicit override val project: SomeProject) extend
         case ReturnValue(pc, expr) =>
             StringInterpreter.computeFinalResult(StringFlowFunctionProperty.identityForVariableAt(
                 pc,
-                expr.asVar.toPersistentForm(state.tac.stmts)
+                expr.asVar.toPersistentForm(using state.tac.stmts)
             ))
 
         case _ =>
@@ -50,5 +51,7 @@ class L0InterpretationHandler(implicit override val project: SomeProject) extend
 
 object L0InterpretationHandler {
 
-    def apply(project: SomeProject): L0InterpretationHandler = new L0InterpretationHandler()(project)
+    def uses: Set[PropertyBounds] = InterpretationHandler.uses
+
+    def apply(project: SomeProject): L0InterpretationHandler = new L0InterpretationHandler()(using project)
 }

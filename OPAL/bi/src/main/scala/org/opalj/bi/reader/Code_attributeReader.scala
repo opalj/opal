@@ -23,8 +23,7 @@ trait Code_attributeReader extends AttributeReader {
     // TYPE DEFINITIONS AND FACTORY METHODS
     //
 
-    type ExceptionTableEntry <: AnyRef
-    implicit val exceptionTableEntryType: ClassTag[ExceptionTableEntry] // TODO: Replace in Scala 3 by `type ExceptionTableEntry : ClassTag`
+    type ExceptionTableEntry <: AnyRef: ClassTag
     type ExceptionHandlers = ArraySeq[ExceptionTableEntry]
 
     type Instructions
@@ -90,7 +89,7 @@ trait Code_attributeReader extends AttributeReader {
      * }
      * </pre>
      */
-    private[this] def parserFactory() = (
+    private def parserFactory() = (
         cp:                   Constant_Pool,
         ap:                   AttributeParent,
         ap_name_index:        Constant_Pool_Index,

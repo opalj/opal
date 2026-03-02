@@ -11,6 +11,7 @@ import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.InterimResult
 import org.opalj.fpcf.ProperPropertyComputationResult
+import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.SomeEPS
 import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.tac.fpcf.properties.string.StringFlowFunctionProperty
@@ -45,10 +46,10 @@ abstract class InterpretationHandler extends FPCFAnalysis with StringAnalysisCon
         eps match {
             case FinalEP(_, _) if eps.pk.equals(TACAI.key) =>
                 state.tacDependee = eps.asInstanceOf[FinalEP[Method, TACAI]]
-                processStatementForState(state)
+                processStatementForState(using state)
 
             case _ =>
-                createResult()(state)
+                createResult()(using state)
         }
     }
 
@@ -68,13 +69,15 @@ abstract class InterpretationHandler extends FPCFAnalysis with StringAnalysisCon
             throw new IllegalArgumentException(s"Obtained a pc that does not represent a definition site: ${state.pc}")
         }
 
-        processStatement(state)(state.tac.stmts(defSiteOpt.get))
+        processStatement(using state)(state.tac.stmts(defSiteOpt.get))
     }
 
     protected def processStatement(implicit state: InterpretationState): Stmt[V] => ProperPropertyComputationResult
 }
 
 object InterpretationHandler {
+
+    def uses: Set[PropertyBounds] = PropertyBounds.ubs(TACAI)
 
     def getEntity(implicit state: InterpretationState): MethodPC = MethodPC(state.pc, state.dm)
 }

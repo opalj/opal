@@ -59,7 +59,7 @@ object InterpretAllMethods extends ProjectsAnalysisApplication {
                 analysisConfig(DomainArg),
                 verbose,
                 6d
-            )(project.logContext)
+            )(using project.logContext)
 
         (
             project,
@@ -79,7 +79,7 @@ object InterpretMethodsAnalysis {
 
     def interpret[Source](
         project:             Project[Source],
-        domainClass:         Class[_ <: Domain],
+        domainClass:         Class[? <: Domain],
         beVerbose:           Boolean,
         maxEvaluationFactor: Double = 3d
     )(
@@ -121,7 +121,7 @@ object InterpretMethodsAnalysis {
                                     RED + "[aborted after evaluating " +
                                         ai.currentEvaluationCount +
                                         " instructions (size of instructions array=" +
-                                        body.instructions.size +
+                                        body.instructions.length +
                                         "; max=" + ai.maxEvaluationCount + ")]" +
                                         RESET
                                 )
@@ -205,12 +205,12 @@ object InterpretMethodsAnalysis {
                     methodsCount.get + " methods (of " + project.methodsCount + ") in " +
                     project.classFilesCount + " classes (real time: " + getTime(Symbol("OVERALL")).toSeconds +
                     ", ai (∑CPU Times): " + getTime(Symbol("AI")).toSeconds +
-                    ")" + collectedExceptions.size + " exceptions occured.",
+                    ")" + collectedExceptions.size + " exceptions occurred.",
                 Some(file)
             )
         } else {
             (
-                "No exceptions occured during the interpretation of " +
+                "No exceptions occurred during the interpretation of " +
                     methodsCount.get + " methods (of " + project.methodsCount + ") in " +
                     project.classFilesCount + " classes\nreal time: " + getTime(Symbol("OVERALL")).toSeconds + "\n" +
                     "ai (∑CPU Times): " + getTime(Symbol("AI")).toSeconds +

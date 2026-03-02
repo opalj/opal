@@ -25,7 +25,7 @@ sealed trait LDC[@specialized(Int, Float) T]
         val other = code.instructions(otherPC)
         (this eq other) || (
             this.opcode == other.opcode &&
-            this.value == other.asInstanceOf[LDC[_]].value
+            this.value == other.asInstanceOf[LDC[?]].value
         )
     }
 }
@@ -38,7 +38,7 @@ sealed abstract class PrimitiveLDC[@specialized(Int, Float) T] extends LDC[T]
  */
 final case class LoadInt(value: Int) extends PrimitiveLDC[Int] {
 
-    final def computationalType = ComputationalTypeInt
+    final def computationalType: ComputationalTypeInt.type = ComputationalTypeInt
 
 }
 
@@ -47,7 +47,7 @@ final case class LoadInt(value: Int) extends PrimitiveLDC[Int] {
  */
 final case class LoadFloat(value: Float) extends PrimitiveLDC[Float] {
 
-    final def computationalType = ComputationalTypeFloat
+    final def computationalType: ComputationalTypeFloat.type = ComputationalTypeFloat
 
     override def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = {
         val other = code.instructions(otherPC)
@@ -77,7 +77,7 @@ final case class LoadFloat(value: Float) extends PrimitiveLDC[Float] {
  * @note To match [[LoadClass]] and [[LoadClass_W]] instructions you can use [[LDCClass]].
  */
 final case class LoadClass(value: ReferenceType) extends LDC[ReferenceType] {
-    final def computationalType = ComputationalTypeReference
+    final def computationalType: ComputationalTypeReference.type = ComputationalTypeReference
 }
 
 /**
@@ -85,7 +85,7 @@ final case class LoadClass(value: ReferenceType) extends LDC[ReferenceType] {
  * can use [[LDCMethodHandle]].
  */
 final case class LoadMethodHandle(value: MethodHandle) extends LDC[MethodHandle] {
-    final def computationalType = ComputationalTypeReference
+    final def computationalType: ComputationalTypeReference.type = ComputationalTypeReference
 }
 
 /**
@@ -93,7 +93,7 @@ final case class LoadMethodHandle(value: MethodHandle) extends LDC[MethodHandle]
  * [[LDCMethodType]].
  */
 final case class LoadMethodType(value: MethodDescriptor) extends LDC[MethodDescriptor] {
-    final def computationalType = ComputationalTypeReference
+    final def computationalType: ComputationalTypeReference.type = ComputationalTypeReference
 }
 
 /**
@@ -101,7 +101,7 @@ final case class LoadMethodType(value: MethodDescriptor) extends LDC[MethodDescr
  */
 final case class LoadString(value: String) extends PrimitiveLDC[String] {
 
-    final def computationalType = ComputationalTypeReference
+    final def computationalType: ComputationalTypeReference.type = ComputationalTypeReference
 
     override def toString: String = "LoadString(\"" + value + "\")"
 
@@ -120,7 +120,7 @@ final case class LoadDynamic(
 
     def computationalType: ComputationalType = descriptor.computationalType
 
-    override final def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = {
+    override def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = {
         val other = code.instructions(otherPC)
         (this eq other) || this == other
     }
@@ -133,7 +133,7 @@ case object INCOMPLETE_LDC extends LDC[Any] {
         throw BytecodeProcessingFailedException(message)
     }
 
-    final def computationalType = error
+    final def computationalType: Nothing = error
 
     final def value: Any = error
 
@@ -147,7 +147,7 @@ case object INCOMPLETE_LDC extends LDC[Any] {
  */
 object LDC {
 
-    def apply(constantValue: ConstantValue[_]): LDC[_] = {
+    def apply(constantValue: ConstantValue[?]): LDC[?] = {
         constantValue.value match {
             case i: Int               => LoadInt(i)
             case f: Float             => LoadFloat(f)

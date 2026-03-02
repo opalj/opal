@@ -12,6 +12,7 @@ import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.properties.DPure
 import org.opalj.br.fpcf.properties.Pure
 import org.opalj.br.fpcf.properties.Purity
+import org.opalj.util.elidedAssert
 import org.opalj.value.ValueInformation
 
 /**
@@ -98,7 +99,7 @@ class BaseDomainSpecificRater extends DomainSpecificRater {
  * Mixin that rates whether a call or GetStatic is part of using `System.out` or `System.err`
  */
 trait SystemOutErrRater extends DomainSpecificRater {
-    private final val printStream = ClassType("java/io/PrintStream")
+    private final val printStream = ClassType.PrintStream
 
     abstract override def handleCall(
         call:     Call[V],
@@ -135,10 +136,10 @@ trait SystemOutErrRater extends DomainSpecificRater {
             if (defSite < 0) false
             else {
                 val stmt = code(defSite)
-                assert(stmt.astID == Assignment.ASTID, "defSite should be assignment")
+                elidedAssert(stmt.astID == Assignment.ASTID, "defSite should be assignment")
                 if (stmt.asAssignment.expr.astID != GetStatic.ASTID) false
                 else {
-                    val GetStatic(_, declaringClass, name, _) = stmt.asAssignment.expr
+                    val GetStatic(_, declaringClass, name, _) = stmt.asAssignment.expr: @unchecked
                     declaringClass == ClassType.System && (name == "out" || name == "err")
                 }
             }
@@ -176,7 +177,7 @@ trait LoggingRater extends DomainSpecificRater {
     ): Option[Purity] = {
         if (call.declaringClass.isClassType) {
             val declClass = call.declaringClass.asClassType
-            if (loggers.exists(declClass.isSubtypeOf(_)(project.classHierarchy)))
+            if (loggers.exists(declClass.isSubtypeOf(_)(using project.classHierarchy)))
                 Some(DPure)
             else super.handleCall(call, receiver)
         } else super.handleCall(call, receiver)
@@ -245,9 +246,9 @@ trait ExceptionRater extends DomainSpecificRater {
 trait AssertionExceptionRater extends DomainSpecificRater {
 
     private final val exceptionTypes = Set(
-        ClassType("java/lang/AssertionError"),
-        ClassType("java/lang/IllegalArgumentException"),
-        ClassType("java/lang/IllegalStateException")
+        ClassType.AssertionError,
+        ClassType.IllegalArgumentException,
+        ClassType.IllegalStateException
     )
 
     abstract override def handleCall(

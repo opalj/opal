@@ -23,8 +23,8 @@ import org.opalj.cli.PlainArg
 import org.opalj.cli.TempFileArg
 import org.opalj.cli.VerboseArg
 import org.opalj.io.writeAndOpen
-import org.opalj.log.{Error => ErrorLogLevel}
 import org.opalj.log.ConsoleOPALLogger
+import org.opalj.log.Error as ErrorLogLevel
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.OPALLogger
 
@@ -36,7 +36,7 @@ import org.opalj.log.OPALLogger
  * {{{
  * import org.opalj.io.write
  * import org.opalj.util.PerformanceEvaluation.time
- * import org.opalj.tac._
+ * import org.opalj.tac.*
  * val f = new java.io.File("OPAL/bi/target/scala-2.12/resource_managed/test/ai.jar")
  * val p = org.opalj.br.analyses.Project(f)
  * var i = 0
@@ -142,9 +142,9 @@ object TAC extends ProjectsAnalysisApplication {
                         )
                     } else {
                         val d = analysisConfig(DomainArg).getConstructor(
-                            classOf[Project[_]],
+                            classOf[Project[?]],
                             classOf[Method]
-                        ).newInstance(project, m).asInstanceOf[Domain with RecordDefUse]
+                        ).newInstance(project, m).asInstanceOf[Domain & RecordDefUse]
 
                         val aiResult = BaseAI(m, d)
                         val classHierarchy = project.classHierarchy

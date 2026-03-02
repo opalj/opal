@@ -14,6 +14,6 @@ case object AALOAD extends ArrayLoadInstruction with InstructionMetaInformation 
 
     final val mnemonic = "aaload"
 
-    final val elementTypeComputationalType = ComputationalTypeReference
+    final val elementTypeComputationalType: ComputationalTypeReference.type = ComputationalTypeReference
 
 }

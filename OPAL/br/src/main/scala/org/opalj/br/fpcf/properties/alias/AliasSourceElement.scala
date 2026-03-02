@@ -198,7 +198,7 @@ case class AliasStaticField(field: Field) extends AliasSourceElement {
  */
 case class AliasReturnValue(override val method: Method, project: SomeProject) extends AliasSourceElement {
 
-    private[this] val dm = project.get(DeclaredMethodsKey)(method)
+    private val dm = project.get(DeclaredMethodsKey)(method)
 
     override def element: AnyRef = method
 
@@ -252,7 +252,7 @@ case class AliasUVar(
     project:             SomeProject
 ) extends AliasSourceElement {
 
-    private[this] val dm = project.get(DeclaredMethodsKey)(method)
+    private val dm = project.get(DeclaredMethodsKey)(method)
 
     override def element: (PUVar[ValueInformation], Method) = (persistentUVar, method)
 

@@ -14,6 +14,6 @@ case object FREM extends FloatingPointRemainderInstruction {
 
     final val mnemonic = "frem"
 
-    final val computationalType = ComputationalTypeFloat
+    final val computationalType: ComputationalTypeFloat.type = ComputationalTypeFloat
 
 }

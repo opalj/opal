@@ -29,8 +29,8 @@ document.addEventListener("DOMContentLoaded", function(e) {
         e.target.documentElement.classList.add("noDetails");
         var parameters = document.querySelector("details#analysis_parameters_summary");
         parameters.setAttribute("open","");
-        var summarys = document.querySelectorAll("details summary");
-        summarys.forEach(function(e) {
+        var summaries = document.querySelectorAll("details summary");
+        summaries.forEach(function(e) {
             e.addEventListener("click", toggleDetailsOpen);
         });
     }
@@ -154,7 +154,7 @@ var IssueFilter = function () {
          */
         update: function () {
             if (!init) {
-                log("[IssueFilter] Update cancelled. IssueFilter not yet initialzed!",
+                log("[IssueFilter] Update cancelled. IssueFilter not yet initialized!",
                     debug_WARNING);
                 return;
             }

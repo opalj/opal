@@ -4,7 +4,7 @@ package org.opalj.fpcf.fixtures.immutability.openworld.assignability;
 import org.opalj.fpcf.properties.immutability.field_assignability.EffectivelyNonAssignableField;
 
 /**
- * Class encompasses two possible cases of assigning the effectively non assignable field object.
+ * Class encompasses two possible cases of assigning the effectively non-assignable field object.
  */
 public class DifferentAssignmentPossibilitiesOfEffectivelyNonAssignableField {
 

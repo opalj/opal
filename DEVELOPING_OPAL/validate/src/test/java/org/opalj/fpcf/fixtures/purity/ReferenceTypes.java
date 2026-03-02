@@ -126,7 +126,7 @@ final public class ReferenceTypes {
     @Pure(value = "Returns new object, but type (-> mutability) is not precisely known anymore",
             eps = @EP(cf = ReferenceTypes.class, pk = "ReturnValueFreshness",
             method = "getNewObject()Ljava/lang/Object;", p = "FreshReturnValue"))
-    @SideEffectFree(value = "Anaylsis doesn't recognize new object/freshness not recognized",
+    @SideEffectFree(value = "Analysis doesn't recognize new object/freshness not recognized",
             eps = @EP(cf = ReferenceTypes.class, pk = "ReturnValueFreshness",
                     method = "getNewObject()Ljava/lang/Object;", p = "FreshReturnValue",
                     analyses = L2PurityAnalysis.class), negate = true)
@@ -144,7 +144,7 @@ final public class ReferenceTypes {
     @Pure(value = "Returns a new object", analyses = L2PurityAnalysis.class,
             eps = @EP(cf = ReferenceTypes.class, pk = "ReturnValueFreshness",
                     method = "getNewObject()Ljava/lang/Object;", p = "FreshReturnValue"))
-    @SideEffectFree(value = "Anaylsis doesn't recognize new object/freshness not recognized",
+    @SideEffectFree(value = "Analysis doesn't recognize new object/freshness not recognized",
             eps = @EP(cf = ReferenceTypes.class, pk = "ReturnValueFreshness",
                     method = "getNewObject()Ljava/lang/Object;", p = "FreshReturnValue",
                     analyses = L2PurityAnalysis.class), negate = true)
@@ -303,7 +303,7 @@ final public class ReferenceTypes {
     }
 
     @SideEffectFree("hashCode is not deterministic on new objects")
-    @Impure(value = "Analysis doesn't recognize side-effect free methods",
+    @Impure(value = "Analysis doesn't recognize side-effect-free methods",
             analyses = L0PurityAnalysis.class)
     private int newHashCode(){
         return new Object().hashCode();

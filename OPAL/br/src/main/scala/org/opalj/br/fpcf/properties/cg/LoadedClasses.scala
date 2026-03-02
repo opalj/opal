@@ -14,6 +14,7 @@ import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.PropertyMetaInformation
 import org.opalj.fpcf.PropertyStore
 import org.opalj.log.OPALLogger
+import org.opalj.util.elidedAssert
 
 sealed trait LoadedClassesMetaInformation extends PropertyMetaInformation {
     final type Self = LoadedClasses
@@ -30,7 +31,7 @@ sealed class LoadedClasses private[properties] (
     final val classes:        UIDSet[ClassType]
 ) extends OrderedProperty with LoadedClassesMetaInformation {
 
-    assert(orderedClasses == null || orderedClasses.size == classes.size)
+    elidedAssert(orderedClasses == null || orderedClasses.size == classes.size)
 
     override def checkIsEqualOrBetterThan(e: Entity, other: LoadedClasses): Unit = {
         if (other.classes != null && !classes.subsetOf(other.classes)) {
@@ -80,7 +81,7 @@ object LoadedClasses extends LoadedClassesMetaInformation {
             (ps: PropertyStore, reason: FallbackReason, _: Entity) =>
                 reason match {
                     case PropertyIsNotDerivedByPreviouslyExecutedAnalysis =>
-                        OPALLogger.error("call graph analysis", "there was no class loaded")(ps.logContext)
+                        OPALLogger.error("call graph analysis", "there was no class loaded")(using ps.logContext)
                         NoLoadedClasses
                     case _ =>
                         throw new IllegalStateException(s"analysis required for property: $name")

@@ -19,8 +19,8 @@ object IssueOrdering extends scala.math.Ordering[Issue] {
             if (xUniques.isEmpty) {
                 0
             } else {
-                val xUniqueHead = xUniques.toSeq.sorted.head
-                val yUniqueHead = (y -- x).toSeq.sorted.head
+                val xUniqueHead = xUniques.toSeq.min
+                val yUniqueHead = (y -- x).toSeq.min
                 xUniqueHead compare yUniqueHead
             }
         }
@@ -33,9 +33,9 @@ object IssueOrdering extends scala.math.Ordering[Issue] {
         if (x.locations.size != y.locations.size) return x.locations.size - y.locations.size;
         else {
             x.locations.zip(y.locations).collectFirst {
-                case (l1, l2) if (l1 compareTo l2) != 0 => l1 compareTo l2
+                case (l1, l2) if l1.compareTo(l2) != 0 => l1.compareTo(l2)
             } match {
-                case Some(result) => result
+                case Some(result) => return result;
                 case _            => // let's continue the comparison
             }
         }

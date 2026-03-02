@@ -11,7 +11,7 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.junit.JUnitRunner
 
-import org.opalj.av.checking.Specification._
+import org.opalj.av.checking.Specification.*
 
 /**
  * Systematic tests created to check the behavior of the Specification package.

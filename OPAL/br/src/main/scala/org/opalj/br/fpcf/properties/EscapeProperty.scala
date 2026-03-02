@@ -17,7 +17,7 @@ sealed trait EscapePropertyMetaInformation extends PropertyMetaInformation {
 }
 
 /**
- * Specifies the lifetime and accessability of object instance. This is classically used for
+ * Specifies the lifetime and accessibility of object instance. This is classically used for
  * compiler optimizations such as scalar replacement, stack allocation or removal of
  * synchronization.
  * However, other usages such as finding bugs or helping to identify immutable data-structures
@@ -33,7 +33,7 @@ sealed trait EscapePropertyMetaInformation extends PropertyMetaInformation {
  * "Let O be an object instance and T be a thread (instance). O is said to escape T, again
  * denoted as Escapes(O, T), if another thread, T’ != T, may access O."
  *
- * Furthermore it holds that "For any object O, !Escapes(O, M) implies !Escapes(O, T), where method
+ * Furthermore, it holds that "For any object O, !Escapes(O, M) implies !Escapes(O, T), where method
  * M is invoked in thread T." [1]
  *
  * In contrast to this, Kotzmann and Mössenböck [2] describe the escape of an object with the access
@@ -71,7 +71,7 @@ sealed trait EscapePropertyMetaInformation extends PropertyMetaInformation {
  * The property [[EscapeViaParameter]] describes objects that gets assigned to a parameter of its
  * method of creation (M). If O gets assigned to p.f for a parameter p of M, it could be the case
  * that the actual parameter of p already escaped T. In this case O would also escape T directly
- * via this assignment. Therefore no synchronization for O can be removed.
+ * via this assignment. Therefore, no synchronization for O can be removed.
  * As it could be also the case that O gets assigned to a parameter and returned by M, there are
  * also properties representing the combinations of this kind of escapes. They are
  * [[EscapeViaParameterAndAbnormalReturn]], [[EscapeViaParameterAndReturn]],
@@ -99,17 +99,14 @@ sealed trait EscapePropertyMetaInformation extends PropertyMetaInformation {
  * words, P' is less restrictive than P).
  *
  * If they simply don't know the actual property they should use [[AtMost]]([[NoEscape]]).
- * If we know that the actual property is at most [[EscapeInCallee (i.e. not [[NoEscape]]),
+ * If we know that the actual property is at most [[EscapeInCallee]] (i.e. not [[NoEscape]]),
  * [[AtMost]]([[EscapeInCallee]]) should be used.
  * The same holds for every other non-bottom property.
  * E.g. [[AtMost]]([[EscapeViaParameter]]) should be used if we know that the actual property is at
- * most [[EscapeViaParameter]] (i.e. neither [[NoEscape]] nor [[EscapeInCallee]].
+ * most [[EscapeViaParameter]] (i.e. neither [[NoEscape]] nor [[EscapeInCallee]]).
  *
  * `org.opalj.ai.DefinitionSiteLike` and [[org.opalj.br.analyses.VirtualFormalParameter]] are
  * generally used as [[org.opalj.fpcf.Entity]] in combination with this property.
- *
- * [[VirtualMethodEscapeProperty]] provides a wrapper of this property addressing aggregated escape
- * information for parameters of methods in a type hierarchy.
  *
  * [1] Choi, Jong-Deok, Manish Gupta, Mauricio Serrano, Vugranam C. Sreedhar, and Sam Midkiff.
  * "Escape Analysis for Java." In Proceedings of the 14th ACM SIGPLAN Conference on
@@ -128,9 +125,9 @@ sealed abstract class EscapeProperty extends OrderedProperty with EscapeProperty
 
     override def checkIsEqualOrBetterThan(e: Entity, other: Self): Unit = {
         other match {
-            case _: AtMost                                                  => // TODO this is not correct -> fix me!
-            case other: EscapeProperty if other lessOrEqualRestrictive this =>
-            case p                                                          =>
+            case _: AtMost                                                   => // TODO this is not correct -> fix me!
+            case other: EscapeProperty if other.lessOrEqualRestrictive(this) =>
+            case p                                                           =>
                 throw new IllegalArgumentException(s"$e: illegal refinement of property $p to $this")
         }
     }
@@ -271,9 +268,9 @@ case object EscapeInCallee extends FinalEscapeProperty {
     override def isTop: Boolean = false
 
     override def meet(that: EscapeProperty): EscapeProperty = that match {
-        case that: FinalEscapeProperty => this meet that
+        case that: FinalEscapeProperty => this.meet(that)
         case _: GlobalEscape           => that
-        case AtMost(property)          => AtMost(property meet this)
+        case AtMost(property)          => AtMost(property.meet(this))
     }
     override def meet(that: FinalEscapeProperty): FinalEscapeProperty = {
         (that.propertyValueID: @switch) match {
@@ -287,7 +284,7 @@ case object EscapeInCallee extends FinalEscapeProperty {
  * Characterizes escapes via an assignment to a field of a method parameter. It may also escape
  * [[EscapeInCallee]].
  * For a given entity this characterizes only the escape state within its method of creation (M),
- * i.e. it could escape globally in a caller of M. As the actual parameter could escaped globally
+ * i.e. it could escape globally in a caller of M. As the actual parameter could have escaped globally
  * before the call of M, the entity could also be global within M. Analyses are expected to be
  * context insensitive and do not check all callers of M.
  *
@@ -319,9 +316,9 @@ case object EscapeViaParameter extends FinalEscapeProperty {
     override def isTop: Boolean = false
 
     override def meet(that: EscapeProperty): EscapeProperty = that match {
-        case that: FinalEscapeProperty => this meet that
+        case that: FinalEscapeProperty => this.meet(that)
         case _: GlobalEscape           => that
-        case AtMost(property)          => AtMost(property meet this)
+        case AtMost(property)          => AtMost(property.meet(this))
     }
     override def meet(that: FinalEscapeProperty): FinalEscapeProperty = {
         (that.propertyValueID: @switch) match {
@@ -368,9 +365,9 @@ case object EscapeViaReturn extends FinalEscapeProperty {
     override def isTop: Boolean = false
 
     override def meet(that: EscapeProperty): EscapeProperty = that match {
-        case that: FinalEscapeProperty => this meet that
+        case that: FinalEscapeProperty => this.meet(that)
         case _: GlobalEscape           => that
-        case AtMost(property)          => AtMost(property meet this)
+        case AtMost(property)          => AtMost(property.meet(this))
     }
 
     override def meet(that: FinalEscapeProperty): FinalEscapeProperty = {
@@ -421,9 +418,9 @@ case object EscapeViaAbnormalReturn extends FinalEscapeProperty {
     override def isTop: Boolean = false
 
     override def meet(that: EscapeProperty): EscapeProperty = that match {
-        case that: FinalEscapeProperty => this meet that
+        case that: FinalEscapeProperty => this.meet(that)
         case _: GlobalEscape           => that
-        case AtMost(property)          => AtMost(property meet this)
+        case AtMost(property)          => AtMost(property.meet(this))
     }
 
     override def meet(that: FinalEscapeProperty): FinalEscapeProperty = (that.propertyValueID: @switch) match {
@@ -459,9 +456,9 @@ case object EscapeViaParameterAndReturn extends FinalEscapeProperty {
     override def isTop: Boolean = false
 
     override def meet(that: EscapeProperty): EscapeProperty = that match {
-        case that: FinalEscapeProperty => this meet that
+        case that: FinalEscapeProperty => this.meet(that)
         case _: GlobalEscape           => that
-        case AtMost(property)          => AtMost(property meet this)
+        case AtMost(property)          => AtMost(property.meet(this))
     }
 
     override def meet(that: FinalEscapeProperty): FinalEscapeProperty = (that.propertyValueID: @switch) match {
@@ -498,9 +495,9 @@ case object EscapeViaParameterAndAbnormalReturn extends FinalEscapeProperty {
     override def isTop: Boolean = false
 
     override def meet(that: EscapeProperty): EscapeProperty = that match {
-        case that: FinalEscapeProperty => this meet that
+        case that: FinalEscapeProperty => this.meet(that)
         case _: GlobalEscape           => that
-        case AtMost(property)          => AtMost(property meet this)
+        case AtMost(property)          => AtMost(property.meet(this))
     }
 
     override def meet(that: FinalEscapeProperty): FinalEscapeProperty = (that.propertyValueID: @switch) match {
@@ -537,9 +534,9 @@ case object EscapeViaNormalAndAbnormalReturn extends FinalEscapeProperty {
     override def isTop: Boolean = false
 
     override def meet(that: EscapeProperty): EscapeProperty = that match {
-        case that: FinalEscapeProperty => this meet that
+        case that: FinalEscapeProperty => this.meet(that)
         case _: GlobalEscape           => that
-        case AtMost(property)          => AtMost(property meet this)
+        case AtMost(property)          => AtMost(property.meet(this))
     }
 
     override def meet(that: FinalEscapeProperty): FinalEscapeProperty = (that.propertyValueID: @switch) match {
@@ -582,7 +579,7 @@ case object EscapeViaParameterAndNormalAndAbnormalReturn extends FinalEscapeProp
     override def meet(that: EscapeProperty): EscapeProperty = that match {
         case _: GlobalEscape        => that
         case _: FinalEscapeProperty => this
-        case AtMost(property)       => AtMost(property meet this)
+        case AtMost(property)       => AtMost(property.meet(this))
     }
 
     override def meet(that: FinalEscapeProperty): FinalEscapeProperty = this
@@ -595,8 +592,8 @@ case object EscapeViaParameterAndNormalAndAbnormalReturn extends FinalEscapeProp
  * This property should be used if and only if the analysis is conclusive and could determine
  * that the value definitively escapes globally.
  * If a more advanced analysis – potentially run later – could identify an object
- * as only [[EscapeViaParameter]], [[EscapeInCallee]] or even [[NoEscape]] then the refineable
- * property AtMost(NoEscape) (or another non final property) should be used.
+ * as only [[EscapeViaParameter]], [[EscapeInCallee]] or even [[NoEscape]] then the refinable
+ * property AtMost(NoEscape) (or another non-final property) should be used.
  *
  * @example
  * Given the following library code:
@@ -710,23 +707,23 @@ case object EscapeViaStaticField extends GlobalEscape {
 }
 
 /**
- * A refineable property that provides an upper bound. Only refinements to values below or equal to
+ * A refinable property that provides an upper bound. Only refinements to values below or equal to
  * `property` are allowed to perform.
  * This property should be used, if the analysis is not able to compute a more precise property.
  */
 case class AtMost private (property: FinalEscapeProperty) extends EscapeProperty {
     override def propertyValueID: Int = property.propertyValueID + 20
     override def lessOrEqualRestrictive(that: EscapeProperty): Boolean = that match {
-        case _: FinalEscapeProperty => property lessOrEqualRestrictive that
-        case AtMost(thatProperty)   => property lessOrEqualRestrictive thatProperty
+        case _: FinalEscapeProperty => property.lessOrEqualRestrictive(that)
+        case AtMost(thatProperty)   => property.lessOrEqualRestrictive(thatProperty)
         case _                      => false
     }
     override def isBottom = false
     override def isTop = false
 
     override def meet(that: EscapeProperty): EscapeProperty = that match {
-        case AtMost(thatProperty)      => AtMost(thatProperty meet property)
-        case that: FinalEscapeProperty => AtMost(property meet that)
+        case AtMost(thatProperty)      => AtMost(thatProperty.meet(property))
+        case that: FinalEscapeProperty => AtMost(property.meet(that))
         case _: GlobalEscape           => that
     }
     // TODO REMOVE ME

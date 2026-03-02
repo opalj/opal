@@ -3,7 +3,7 @@ package org.opalj
 package tac
 package common
 
-import org.opalj.br.Method
+import org.opalj.br.DeclaredMethod
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.value.ValueInformation
 
@@ -23,7 +23,7 @@ trait DefinitionSiteLike {
 
     val pc: Int
 
-    val method: Method
+    val method: DeclaredMethod
 
     def usedBy[V <: ValueInformation](tacode: TACode[TACMethodParameter, DUVar[V]]): IntTrieSet
 }

@@ -28,6 +28,7 @@ import org.opalj.fpcf.PropertyComputationResult
 import org.opalj.fpcf.PropertyKind
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Results
+import org.opalj.util.elidedAssert
 
 /**
  * Computes the set of finalize methods that are being called by the VM during the execution of the
@@ -67,7 +68,7 @@ class FinalizerAnalysis private[analyses] (final val project: SomeProject) exten
             "finalize",
             MethodDescriptor.NoArgsAndReturnVoid
         )
-        assert(finalizers.size < 2)
+        elidedAssert(finalizers.size < 2)
 
         val r = finalizers.map { finalizerMethod =>
             val finalizer = declaredMethods(finalizerMethod)

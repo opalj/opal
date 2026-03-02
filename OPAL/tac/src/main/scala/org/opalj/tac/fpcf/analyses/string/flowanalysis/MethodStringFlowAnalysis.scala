@@ -102,14 +102,15 @@ class MethodStringFlowAnalysis(override val project: SomeProject) extends FPCFAn
                 else MethodStringFlow.ub
             )
         } else {
-            determinePossibleStrings(method, tacDependee.ub.tac.get)
+            determinePossibleStrings(using method, tacDependee.ub.tac.get)
         }
     }
 
     private def determinePossibleStrings(implicit method: Method, tac: TAC): ProperPropertyComputationResult = {
 
         val flowGraph = FlowGraph(tac.cfg)
-        val (_, superFlowGraph, controlTree) = StructuralAnalysis.analyze(flowGraph, FlowGraph.entry)(project.config)
+        val (_, superFlowGraph, controlTree) =
+            StructuralAnalysis.analyze(flowGraph, FlowGraph.entry)(using project.config)
         val flowAnalysis =
             new DataFlowAnalysis[StringTreeNode, StringTreeEnvironment](controlTree, superFlowGraph, highSoundness)
 
@@ -128,7 +129,7 @@ class MethodStringFlowAnalysis(override val project: SomeProject) extends FPCFAn
 
     private def continuationForTAC(method: Method)(eps: SomeEPS): ProperPropertyComputationResult = eps match {
         case FinalP(tacai: TACAI) =>
-            determinePossibleStrings(method, tacai.tac.get)
+            determinePossibleStrings(using method, tacai.tac.get)
         case tacDependee =>
             InterimResult(
                 method,
@@ -143,7 +144,7 @@ class MethodStringFlowAnalysis(override val project: SomeProject) extends FPCFAn
         eps match {
             case EUBP(e: MethodPC, _: StringFlowFunctionProperty) if eps.pk.equals(StringFlowFunctionProperty.key) =>
                 state.updateDependee(e.pc, eps.asInstanceOf[EOptionP[MethodPC, StringFlowFunctionProperty]])
-                computeResults(state)
+                computeResults(using state)
 
             case _ =>
                 throw new IllegalArgumentException(s"Unknown EPS given in continuation: $eps")

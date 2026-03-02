@@ -29,6 +29,6 @@ object CFA_1_1_CallGraphKey extends PointsToCallGraphKey {
         AllocationSiteBasedPointsToCallGraphKey.callGraphSchedulers(project)
     }
 
-    override def getTypeIterator(project: SomeProject) =
+    override def getTypeIterator(project: SomeProject): CFA_k_l_TypeIterator =
         new CFA_k_l_TypeIterator(project, 1, 1)
 }

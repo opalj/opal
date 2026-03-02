@@ -115,11 +115,11 @@ private[string] class ContextFreeStringAnalysis(override val project: SomeProjec
         eps match {
             case _ if eps.pk == TACAI.key =>
                 state.tacaiDependee = eps.asInstanceOf[EOptionP[Method, TACAI]]
-                computeResults(state)
+                computeResults(using state)
 
             case _ if eps.pk == MethodStringFlow.key =>
                 state.stringFlowDependee = Some(eps.asInstanceOf[EOptionP[Method, MethodStringFlow]])
-                computeResults(state)
+                computeResults(using state)
 
             case _ =>
                 throw new IllegalArgumentException(s"Unexpected eps in continuation: $eps")
@@ -181,8 +181,8 @@ private[string] class ContextFreeStringAnalysis(override val project: SomeProjec
             throw new IllegalStateException(s"Requested to compute an UB using method string flow but none is given!")
         }
 
-        state.stringFlowDependee.get match {
-            case UBP(methodStringFlow) =>
+        (state.stringFlowDependee.get: @unchecked) match {
+            case UBP(methodStringFlow: MethodStringFlow) =>
                 val tree = methodStringFlow(state.entity.pc, state.entity.pv).simplified
                 if (tree.depth >= depthThreshold) {
                     // String constancy information got too complex, abort. This guard can probably be removed once
@@ -359,8 +359,8 @@ private[string] class MethodParameterContextStringAnalysis(override val project:
         context: (Context, Int)
     )(implicit state: MethodParameterContextStringAnalysisState): Unit = {
         val callExpr = tac.stmts(valueOriginOfPC(context._2, tac.pcToIndex).get) match {
-            case Assignment(_, _, expr) if expr.isInstanceOf[Call[_]] => expr.asInstanceOf[Call[V]]
-            case ExprStmt(_, expr) if expr.isInstanceOf[Call[_]]      => expr.asInstanceOf[Call[V]]
+            case Assignment(_, _, expr) if expr.isInstanceOf[Call[?]] => expr.asInstanceOf[Call[V]]
+            case ExprStmt(_, expr) if expr.isInstanceOf[Call[?]]      => expr.asInstanceOf[Call[V]]
             case call: Call[_]                                        => call.asInstanceOf[Call[V]]
             case node                                                 => throw new IllegalArgumentException(s"Unexpected argument: $node")
         }
@@ -379,7 +379,7 @@ private[string] class MethodParameterContextStringAnalysis(override val project:
         val tac = state.getTACForContext(callerContext)
         val paramVC = VariableContext(
             callerContext._2,
-            callExpr.params(state.index).asVar.toPersistentForm(tac.stmts),
+            callExpr.params(state.index).asVar.toPersistentForm(using tac.stmts),
             callerContext._1
         )
         state.registerParameterDependee(dm, ps(paramVC, StringConstancyProperty.key))

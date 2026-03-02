@@ -9,7 +9,7 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.junit.JUnitRunner
 
 import org.opalj.bi.TestResources.locateTestResources
-import org.opalj.br._
+import org.opalj.br.*
 import org.opalj.br.reader.Java8Framework.ClassFiles
 
 /**
@@ -21,7 +21,7 @@ import org.opalj.br.reader.Java8Framework.ClassFiles
 @RunWith(classOf[JUnitRunner])
 class MethodsWithLoopsTest extends AnyFlatSpec with Matchers {
 
-    import MethodsWithLoopsTest._
+    import MethodsWithLoopsTest.*
 
     def findMethod(name: String): Method = {
         classFile.methods.find(_.name == name).get

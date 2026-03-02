@@ -71,11 +71,11 @@ object IDLTestsFixtures {
         "signature" -> "test0p()V",
         "firstLine" -> JsNull
     )
-    private[this] val methodTemplateReturnVoidNoParameters = {
+    private val methodTemplateReturnVoidNoParameters = {
         Method(ACC_PUBLIC.mask, "test0p", NoFieldTypes, VoidType, Attributes(code))
     }
 
-    private[this] val methodTemplateReturnIntOneParameter = {
+    private val methodTemplateReturnIntOneParameter = {
         Method(ACC_PUBLIC.mask | ACC_STATIC.mask, "test1p", FieldTypes(ClassType("foo/Bar")), IntegerType)
     }
 
@@ -128,7 +128,7 @@ object IDLTestsFixtures {
         "value2" -> JsNull
     )
 
-    val simpleLocalVariables = new LocalVariables(code, 0, Locals.empty)
+    val simpleLocalVariables = new LocalVariables(code, 0, Locals.empty[AnyRef])
 
     val simpleLocalVariablesIDL: JsObject = {
         Json.obj("type" -> "LocalVariables", "values" -> Json.arr())

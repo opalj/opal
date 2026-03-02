@@ -2,8 +2,8 @@
 package org.opalj
 package de
 
-import org.opalj.br._
-import org.opalj.br.instructions._
+import org.opalj.br.*
+import org.opalj.br.instructions.*
 import org.opalj.bytecode.BytecodeProcessingFailedException
 import org.opalj.log.BasicLogMessage
 import org.opalj.log.GlobalLogContext
@@ -26,7 +26,7 @@ import org.opalj.log.OPALLogger
  * class is thread-safe.
  *
  * However, if multiple dependency extractors are executed concurrently and
- * share the same [[DependencyProcessor]] or the same `DepencencyExtractor`
+ * share the same [[DependencyProcessor]] or the same `DependencyExtractor`
  * is used by multiple threads concurrently, the [[DependencyProcessor]] has to be
  * thread-safe.
  *
@@ -42,9 +42,9 @@ import org.opalj.log.OPALLogger
  * @author Thomas Schlosser
  * @author Michael Eichberg
  */
-class DependencyExtractor(protected[this] val dependencyProcessor: DependencyProcessor) {
+class DependencyExtractor(protected val dependencyProcessor: DependencyProcessor) {
 
-    import DependencyTypes._
+    import DependencyTypes.*
 
     /**
      * Extracts all inter source element dependencies of the given class file
@@ -84,7 +84,7 @@ class DependencyExtractor(protected[this] val dependencyProcessor: DependencyPro
                     }
 
                 case EnclosingMethod.KindId => {
-                    val EnclosingMethod(enclosingClass, name, descriptor) = attribute
+                    val EnclosingMethod(enclosingClass, name, descriptor) = attribute: @unchecked
                     // Check whether the enclosing method attribute refers to an enclosing
                     // method or an enclosing class.
                     if (name.isDefined /*&& descriptor.isDefined*/ )
@@ -284,7 +284,7 @@ class DependencyExtractor(protected[this] val dependencyProcessor: DependencyPro
                 case _                 =>
                     val fieldInfo = vf.toJava
                     val message = s"unexpected field attribute: $attribute ($fieldInfo)"
-                    throw new BytecodeProcessingFailedException(message)
+                    throw BytecodeProcessingFailedException(message)
             }
         }
     }
@@ -856,7 +856,7 @@ class DependencyExtractor(protected[this] val dependencyProcessor: DependencyPro
 
                 case _ =>
             }
-            i = instruction.indexOfNextInstruction(i)(code)
+            i = instruction.indexOfNextInstruction(i)(using code)
         }
     }
 
@@ -898,7 +898,7 @@ class DependencyExtractor(protected[this] val dependencyProcessor: DependencyPro
      * related to an `Invokedynamic` instruction. However, in that case the
      * method [[processInvokedynamicRuntimeDependencies]] should be called explicitly.
      */
-    protected[this] def processInvokedynamic(
+    protected def processInvokedynamic(
         declaringMethod: VirtualMethod,
         instruction:     INVOKEDYNAMIC
     ): Unit = {
@@ -915,7 +915,7 @@ class DependencyExtractor(protected[this] val dependencyProcessor: DependencyPro
      * DependencyExtractor must be created which overrides this method and performs
      * deeper-going analysis on invokedynamic instructions.
      */
-    protected[this] def processInvokedynamicRuntimeDependencies(
+    protected def processInvokedynamicRuntimeDependencies(
         declaringMethod: VirtualMethod,
         instruction:     INVOKEDYNAMIC
     ): Unit = {
@@ -1005,7 +1005,7 @@ class DependencyExtractor(protected[this] val dependencyProcessor: DependencyPro
         }
     }
 
-    protected[this] def processDependency(
+    protected def processDependency(
         source: ClassType,
         target: VirtualSourceElement,
         dType:  DependencyType
@@ -1017,7 +1017,7 @@ class DependencyExtractor(protected[this] val dependencyProcessor: DependencyPro
         )
     }
 
-    protected[this] def processDependency(
+    protected def processDependency(
         source: ClassFile,
         target: VirtualSourceElement,
         dType:  DependencyType
@@ -1029,7 +1029,7 @@ class DependencyExtractor(protected[this] val dependencyProcessor: DependencyPro
         )
     }
 
-    @inline protected[this] def processDependency(
+    @inline protected def processDependency(
         source: ClassFile,
         target: ClassType,
         dType:  DependencyType
@@ -1041,7 +1041,7 @@ class DependencyExtractor(protected[this] val dependencyProcessor: DependencyPro
         )
     }
 
-    @inline protected[this] def processDependency(
+    @inline protected def processDependency(
         source: VirtualSourceElement,
         target: ClassType,
         dType:  DependencyType
@@ -1053,7 +1053,7 @@ class DependencyExtractor(protected[this] val dependencyProcessor: DependencyPro
         )
     }
 
-    @inline protected[this] def processDependency(
+    @inline protected def processDependency(
         source: VirtualSourceElement,
         target: BaseType,
         dType:  DependencyType
@@ -1061,7 +1061,7 @@ class DependencyExtractor(protected[this] val dependencyProcessor: DependencyPro
         dependencyProcessor.processDependency(source, target, dType)
     }
 
-    @inline protected[this] def processDependency(
+    @inline protected def processDependency(
         source: VirtualSourceElement,
         target: ArrayType,
         dType:  DependencyType
@@ -1069,7 +1069,7 @@ class DependencyExtractor(protected[this] val dependencyProcessor: DependencyPro
         dependencyProcessor.processDependency(source, target, dType)
     }
 
-    protected[this] def processDependency(
+    protected def processDependency(
         source: VirtualSourceElement,
         target: Type,
         dType:  DependencyType
@@ -1099,11 +1099,11 @@ class DependencyExtractor(protected[this] val dependencyProcessor: DependencyPro
  */
 private object DependencyExtractor {
 
-    private[this] final val incompleteHandlingOfInvokedynamicMessage: String = {
+    private final val incompleteHandlingOfInvokedynamicMessage: String = {
         "for the code's invokedynamic instructions only dependencies to the runtime are resolved"
     }
 
-    @volatile private[this] var incompleteHandlingOfInvokedynamicWasLogged = false
+    @volatile private var incompleteHandlingOfInvokedynamicWasLogged = false
 
     def warnAboutIncompleteHandlingOfInvokedynamic(): Unit = {
         if (!incompleteHandlingOfInvokedynamicWasLogged) this.synchronized {

@@ -3,6 +3,8 @@ package org.opalj
 package collection
 package immutable
 
+import org.opalj.util.elidedAssert
+
 /**
  * A representation of a pair of unsigned short values.
  *
@@ -11,7 +13,6 @@ package immutable
  * scala> val p = org.opalj.collection.immutable.UShortPair(2323,332)
  * p: org.opalj.collection.immutable.UShortPair = UShortPair(2323,332)
  * }}}
- *
  * @author Michael Eichberg
  */
 final class UShortPair private (val pair: Int) extends AnyVal {
@@ -33,8 +34,8 @@ final class UShortPair private (val pair: Int) extends AnyVal {
 object UShortPair {
 
     def apply(a: UShort, b: UShort): UShortPair = {
-        assert(a >= UShort.MinValue && a <= UShort.MaxValue)
-        assert(b >= UShort.MinValue && b <= UShort.MaxValue)
+        elidedAssert(a >= UShort.MinValue && a <= UShort.MaxValue)
+        elidedAssert(b >= UShort.MinValue && b <= UShort.MaxValue)
 
         new UShortPair(a | b << 16)
     }

@@ -34,7 +34,8 @@ object ClassHierarchyVisualizer extends ProjectsAnalysisApplication {
 
         val (project, _) = analysisConfig.setupProject(cp)
 
-        val dotGraph = toDot(Set(project.classHierarchy.toGraph()), "back")
+        val dotGraph = toDot(Set(project.classHierarchy.toGraph), "back")
+
         val file = writeAndOpen(dotGraph, "ClassHierarchy", ".gv")
         println(s"Wrote class hierarchy graph to: $file.")
     }

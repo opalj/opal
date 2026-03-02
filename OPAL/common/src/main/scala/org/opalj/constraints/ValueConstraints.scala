@@ -51,7 +51,7 @@ case class ObjectConstraint(
 ) extends ReferenceValueConstraint
 
 /**
- * @param arrayValues Constraint which is satisified by all elements of the array (on first access).
+ * @param arrayValues Constraint which is satisfied by all elements of the array (on first access).
  */
 case class ArrayConstraint(
     arrayReference: ReferenceValueConstraint,

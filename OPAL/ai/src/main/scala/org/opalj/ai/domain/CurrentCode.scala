@@ -3,6 +3,8 @@ package org.opalj
 package ai
 package domain
 
+import scala.compiletime.uninitialized
+
 import org.opalj.br.Code
 import org.opalj.collection.immutable.IntTrieSet
 
@@ -17,7 +19,7 @@ import org.opalj.collection.immutable.IntTrieSet
  */
 trait CurrentCode extends TheCode with CustomInitialization { domain: ValuesDomain =>
 
-    private[this] var theCode: Code = _
+    private var theCode: Code = uninitialized
 
     /**
      * Returns the code block that is currently analyzed.

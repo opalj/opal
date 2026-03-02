@@ -16,6 +16,6 @@ case object FCMPG extends ComparisonInstruction {
 
     final val operator = "cmpg"
 
-    final val computationalType = ComputationalTypeFloat
+    final val computationalType: ComputationalTypeFloat.type = ComputationalTypeFloat
 
 }

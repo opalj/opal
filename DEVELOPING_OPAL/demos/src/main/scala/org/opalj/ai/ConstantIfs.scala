@@ -5,7 +5,7 @@ package ai
 import java.io.File
 import java.net.URL
 import java.util.concurrent.ConcurrentLinkedQueue
-import scala.jdk.CollectionConverters._
+import scala.jdk.CollectionConverters.*
 
 import org.opalj.br.Method
 import org.opalj.br.analyses.BasicReport
@@ -64,7 +64,7 @@ object ConstantIfs extends ProjectsAnalysisApplication {
             collectPCWithOperands(result.domain)(method.body.get, result.operandsArray) {
                 case (
                         pc,
-                        _: IFICMPInstruction[_],
+                        _: IFICMPInstruction[?],
                         Seq(ConcreteIntegerValue(a), ConcreteIntegerValue(b), _*)
                     ) =>
                     val context = method.toJava

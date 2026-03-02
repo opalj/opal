@@ -3,7 +3,6 @@ package org.opalj
 package collection
 package eval
 
-import org.opalj.util
 import org.opalj.util.PerformanceEvaluation.time
 
 /**
@@ -43,7 +42,7 @@ object SetsEval extends App {
     //
     val mHashSet = scala.collection.mutable.HashSet.empty[T]
     val mTreeSet = scala.collection.mutable.TreeSet.empty[T]
-    // imutable maps...
+    // immutable maps...
     var iHashSet = scala.collection.immutable.HashSet.empty[T]
     var iTreeSet = scala.collection.immutable.TreeSet.empty[T]
 

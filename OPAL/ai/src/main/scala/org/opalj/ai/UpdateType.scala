@@ -45,7 +45,7 @@ sealed abstract class UpdateType {
      * Merges this `UpdateType` with the given `Update` object and returns an `UpdateType`
      * object that characterizes the update.
      */
-    def &:(update: Update[_]): UpdateType
+    def &:(update: Update[?]): UpdateType
 
 }
 
@@ -59,7 +59,7 @@ case object NoUpdateType extends UpdateType {
 
     override def &:(updateType: UpdateType): UpdateType = updateType
 
-    override def &:(update: Update[_]): UpdateType = update.updateType
+    override def &:(update: Update[?]): UpdateType = update.updateType
 
 }
 
@@ -79,7 +79,7 @@ sealed trait MetaInformationUpdateType extends UpdateType {
             this
     }
 
-    override def &:(update: Update[_]): UpdateType = update.updateType &: this
+    override def &:(update: Update[?]): UpdateType = update.updateType &: this
 }
 case object MetaInformationUpdateType extends MetaInformationUpdateType
 
@@ -93,5 +93,5 @@ case object StructuralUpdateType extends UpdateType {
 
     override def &:(updateType: UpdateType): UpdateType = StructuralUpdateType
 
-    override def &:(update: Update[_]): UpdateType = StructuralUpdateType
+    override def &:(update: Update[?]): UpdateType = StructuralUpdateType
 }

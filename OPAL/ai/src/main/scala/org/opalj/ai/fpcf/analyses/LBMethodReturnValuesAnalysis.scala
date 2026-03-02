@@ -4,7 +4,6 @@ package ai
 package fpcf
 package analyses
 
-import org.opalj.ai.domain
 import org.opalj.ai.fpcf.domain.RefinedTypeLevelFieldAccessInstructions
 import org.opalj.ai.fpcf.domain.RefinedTypeLevelInvokeInstructions
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
@@ -47,27 +46,27 @@ class LBMethodReturnValuesAnalysis private[analyses] (
      * @author Michael Eichberg
      */
     class MethodReturnValuesAnalysisDomain(
-        val ai:        InterruptableAI[MethodReturnValuesAnalysisDomain],
+        val theAI:     InterruptableAI[MethodReturnValuesAnalysisDomain],
         val method:    Method,
         val dependees: EOptionPSet[Entity, Property]
     ) extends CorrelationalDomain
-        with domain.TheProject
-        with domain.TheMethod
-        with domain.DefaultSpecialDomainValuesBinding
-        with domain.ThrowAllPotentialExceptionsConfiguration
-        with domain.l1.DefaultIntegerValues // to enable constant tracking
-        with domain.l0.DefaultTypeLevelLongValues
-        with domain.l0.DefaultTypeLevelFloatValues
-        with domain.l0.DefaultTypeLevelDoubleValues
-        with domain.l0.TypeLevelPrimitiveValuesConversions
-        with domain.l0.TypeLevelLongValuesShiftOperators
-        with domain.l0.TypeLevelFieldAccessInstructions
-        with domain.l0.TypeLevelInvokeInstructions
-        with domain.l0.TypeLevelDynamicLoads
-        with domain.l1.DefaultReferenceValuesBinding
-        with domain.DefaultHandlingOfMethodResults
-        with domain.RecordReturnedValue
-        with domain.IgnoreSynchronization
+        with ai.domain.TheProject
+        with ai.domain.TheMethod
+        with ai.domain.DefaultSpecialDomainValuesBinding
+        with ai.domain.ThrowAllPotentialExceptionsConfiguration
+        with ai.domain.l1.DefaultIntegerValues // to enable constant tracking
+        with ai.domain.l0.DefaultTypeLevelLongValues
+        with ai.domain.l0.DefaultTypeLevelFloatValues
+        with ai.domain.l0.DefaultTypeLevelDoubleValues
+        with ai.domain.l0.TypeLevelPrimitiveValuesConversions
+        with ai.domain.l0.TypeLevelLongValuesShiftOperators
+        with ai.domain.l0.TypeLevelFieldAccessInstructions
+        with ai.domain.l0.TypeLevelInvokeInstructions
+        with ai.domain.l0.TypeLevelDynamicLoads
+        with ai.domain.l1.DefaultReferenceValuesBinding
+        with ai.domain.DefaultHandlingOfMethodResults
+        with ai.domain.RecordReturnedValue
+        with ai.domain.IgnoreSynchronization
         with RefinedTypeLevelFieldAccessInstructions
         with RefinedTypeLevelInvokeInstructions {
 
@@ -75,7 +74,7 @@ class LBMethodReturnValuesAnalysis private[analyses] (
 
         override implicit val project: SomeProject = analysis.project
 
-        override protected[this] def doRecordReturnedValue(pc: PC, value: Value): Boolean = {
+        override protected def doRecordReturnedValue(pc: PC, value: Value): Boolean = {
             val isUpdated = super.doRecordReturnedValue(pc, value)
 
             // The idea is to check if the computed return value can no longer be more
@@ -93,7 +92,7 @@ class LBMethodReturnValuesAnalysis private[analyses] (
             // In this case, it may happen that the returned value (Object in the above case)
             // suddenly becomes "less precise" than the declared return type.
             //
-            // assert(
+            // elidedAssert(
             //    returnedReferenceValue.isNull.isYes ||
             //         classHierarchy.isASubtypeOf(
             //             returnedReferenceValue.upperTypeBound,
@@ -106,14 +105,14 @@ class LBMethodReturnValuesAnalysis private[analyses] (
                 val methodReturnType = method.returnType.asClassType
                 if (!classHierarchy.isSubtypeOf(returnedValueUTB, methodReturnType)) {
                     // the type hierarchy is incomplete...
-                    ai.interrupt()
+                    theAI.interrupt()
                 } else if (returnedReferenceValue.isNull.isUnknown &&
                            returnedValueUTB.isSingletonSet &&
                            returnedValueUTB.head == methodReturnType &&
                            !returnedReferenceValue.isPrecise
                 ) {
                     // we don't get more precise information
-                    ai.interrupt()
+                    theAI.interrupt()
                 }
             }
             isUpdated // <= whether the information about the returned value was updated
@@ -141,7 +140,7 @@ class LBMethodReturnValuesAnalysis private[analyses] (
                 ai,
                 method,
                 // We need a new instance, because the set may grow when compared to the
-                // last run; actually it may even shrink, but this is will likely only happen in
+                // last run; actually it may even shrink, but this will likely only happen in
                 // very rare cases and is not a problem.
                 dependees.clone()
             )
@@ -184,7 +183,7 @@ object EagerLBMethodReturnValuesAnalysis extends BasicFPCFEagerAnalysisScheduler
     override def requiredProjectInformation: ProjectInformationKeys = Seq.empty
 
     override def init(p: SomeProject, ps: PropertyStore): Null = {
-        // To ensure that subsequent analyses are able to pick-up the results of this
+        // To ensure that subsequent analyses are able to pick up the results of this
         // analysis, we state that the domain that has to be used when computing
         // the AIResult has to use the (partial) domain: RefinedTypeLevelInvokeInstructions.
         p.updateProjectInformationKeyInitializationData(AIDomainFactoryKey)(i =>

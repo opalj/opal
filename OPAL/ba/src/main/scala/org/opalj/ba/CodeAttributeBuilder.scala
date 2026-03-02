@@ -89,7 +89,7 @@ class CodeAttributeBuilder[T] private[ba] (
      *
      * (This overrides/disables the automatic computation of this value.)
      */
-    def MAXSTACK(value: Int): this.type = {
+    infix def MAXSTACK(value: Int): this.type = {
         maxStack = Some(value)
         this
     }
@@ -99,7 +99,7 @@ class CodeAttributeBuilder[T] private[ba] (
      *
      * (This overrides/disables the automatic computation of this value.)
      */
-    def MAXLOCALS(value: Int): this.type = {
+    infix def MAXLOCALS(value: Int): this.type = {
         maxLocals = Some(value)
         this
     }
@@ -222,7 +222,7 @@ object CodeAttributeBuilder {
     // because some instructions will never throw an exception and the respective variable is
     // guaranteed to be initialized to a new appropriate value along the way. Unfortunately,
     // the information may be required by the JVM to compute the stack map table.
-    // I.e., when we have a finally handler the JVM assumes that EVERY instruction may throw
+    // I.e., when we have a finally-handler the JVM assumes that EVERY instruction may throw
     // an exception and therefore the register information associated with the handler
     // has to be compatible with all handlers... (see `AI.IdentifyDeadVariables` for further
     // details!)
@@ -271,7 +271,7 @@ object CodeAttributeBuilder {
                         case dv =>
                             val operandSize = dv.computationalType.operandSize
                             if (operandSize == 2 && locals(index + 1) != null) {
-                                // This situation may arises in cases where we use a local variable
+                                // This situation may arise in cases where we use a local variable
                                 // with index x for a long value and later on use x + 1 for some
                                 // new value
                                 index += 1
@@ -289,10 +289,8 @@ object CodeAttributeBuilder {
         var lastPC = -1 // -1 === initial stack map frame
         var lastVerificationTypeInfoLocals: VerificationTypeInfos =
             computeLocalsVerificationTypeInfo(ils)
-        var lastverificationTypeInfoStack: VerificationTypeInfos =
-            ArraySeq.empty // has to be empty...
 
-        val framePCs = c.stackMapTablePCs(classHierarchy)
+        val framePCs = c.stackMapTablePCs
         val fs = new Array[StackMapFrame](framePCs.size)
         var frameIndex = 0
         framePCs.foreach { pc =>
@@ -306,7 +304,7 @@ object CodeAttributeBuilder {
                     val evaluationDetails = r.evaluatedPCs.mkString("evaluated: ", ", ", body)
                     val ehs = c.exceptionHandlers.mkString("Exception Handlers:\n", "\n", "\nt")
                     val message = m.toJava(evaluationDetails + ehs)
-                    throw new BytecodeProcessingFailedException(message);
+                    throw BytecodeProcessingFailedException(message);
                 }
                 computeLocalsVerificationTypeInfo(locals)
             }
@@ -318,11 +316,13 @@ object CodeAttributeBuilder {
                 } else {
                     val os = new Array[VerificationTypeInfo](operandIndex /*HERE == operands.size*/ )
                     operandIndex -= 1
-                    do {
+                    while {
                         os(operandIndex) = operands.head.verificationTypeInfo
                         operands = operands.tail
                         operandIndex -= 1
-                    } while (operandIndex >= 0)
+
+                        operandIndex >= 0
+                    } do ()
                     ArraySeq.unsafeWrapArray[VerificationTypeInfo](os)
                 }
             }
@@ -401,7 +401,6 @@ object CodeAttributeBuilder {
             }
 
             lastVerificationTypeInfoLocals = verificationTypeInfoLocals
-            lastverificationTypeInfoStack = verificationTypeInfoStack
             frameIndex += 1
             lastPC = pc
         }

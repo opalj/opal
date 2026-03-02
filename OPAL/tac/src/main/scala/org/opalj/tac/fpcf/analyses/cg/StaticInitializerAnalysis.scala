@@ -72,7 +72,7 @@ class StaticInitializerAnalysis(val project: SomeProject) extends FPCFAnalysis {
         handleLoadedClasses()
     }
 
-    private[this] def handleLoadedClasses()(
+    private def handleLoadedClasses()(
         implicit state: LCState
     ): PropertyComputationResult = {
         val (unseenLoadedClasses, seenClasses) =
@@ -116,7 +116,7 @@ class StaticInitializerAnalysis(val project: SomeProject) extends FPCFAnalysis {
         Results(emptyResult, callersResult)
     }
 
-    private[this] def continuation(
+    private def continuation(
         someEPS: SomeEPS
     )(
         implicit state: LCState
@@ -134,7 +134,7 @@ class StaticInitializerAnalysis(val project: SomeProject) extends FPCFAnalysis {
         }
     }
 
-    private[this] def retrieveStaticInitializers(
+    private def retrieveStaticInitializers(
         declaringClassType: ClassType
     ): Iterator[DefinedMethod] = {
         // TODO only for interfaces with default methods

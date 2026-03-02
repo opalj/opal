@@ -38,12 +38,12 @@ case class L1NonVirtualMethodCallInterpreter()(
 
     private def interpretInit(init: T)(implicit state: InterpretationState): ProperPropertyComputationResult = {
         val pc = state.pc
-        val targetVar = init.receiver.asVar.toPersistentForm(state.tac.stmts)
+        val targetVar = init.receiver.asVar.toPersistentForm(using state.tac.stmts)
         init.params.size match {
             case 0 =>
                 computeFinalResult(StringFlowFunctionProperty.constForVariableAt(pc, targetVar, StringTreeEmptyConst))
             case 1 =>
-                val paramVar = init.params.head.asVar.toPersistentForm(state.tac.stmts)
+                val paramVar = init.params.head.asVar.toPersistentForm(using state.tac.stmts)
 
                 computeFinalResult(
                     Set(PDUWeb(pc, targetVar), PDUWeb(pc, paramVar)),

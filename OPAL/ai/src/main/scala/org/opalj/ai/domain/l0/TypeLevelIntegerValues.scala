@@ -32,7 +32,7 @@ trait TypeLevelIntegerValues extends Domain { this: Configuration =>
     /**
      * Abstracts over values with computational type `integer`.
      */
-    protected[this] trait ComputationalTypeIntegerValue[T <: CTIntType] extends TypedValue[T] {
+    protected trait ComputationalTypeIntegerValue[T <: CTIntType] extends TypedValue[T] {
         this: DomainTypedValue[T] =>
 
         override def summarize(pc: Int): DomainValue = this

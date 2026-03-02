@@ -28,7 +28,7 @@ trait DefaultJavaObjectToDomainValueConversion extends AsDomainValue {
         val fqnInBinaryNotation = clazz.getName.replace('.', '/')
         if (clazz.isArray) {
             val arrayType = FieldType(fqnInBinaryNotation).asArrayType
-            val array: Array[_] = value.asInstanceOf[Array[_]]
+            val array: Array[?] = value.asInstanceOf[Array[?]]
             this match {
                 case rv: ArrayValues =>
                     val domainValue = rv.InitializedArrayValue(pc, arrayType, array.length)

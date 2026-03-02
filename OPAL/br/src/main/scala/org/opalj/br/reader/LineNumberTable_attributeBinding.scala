@@ -27,11 +27,11 @@ trait UnpackedLineNumberTable_attributeBinding
         attribute_name_index: Constant_Pool_Index,
         line_number_table:    LineNumbers
     ): UnpackedLineNumberTable = {
-        new UnpackedLineNumberTable(line_number_table)
+        UnpackedLineNumberTable(line_number_table)
     }
 
     def LineNumberTableEntry(start_pc: Int, line_number: Int): br.LineNumber = {
-        new LineNumber(start_pc, line_number)
+        LineNumber(start_pc, line_number)
     }
 
 }
@@ -55,7 +55,7 @@ trait CompactLineNumberTable_attributeBinding
         attribute_name_index: Constant_Pool_Index,
         line_number_table:    Array[Byte]
     ): CompactLineNumberTable = {
-        new CompactLineNumberTable(line_number_table)
+        CompactLineNumberTable(line_number_table)
     }
 
     /**

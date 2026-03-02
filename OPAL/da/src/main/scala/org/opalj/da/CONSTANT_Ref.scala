@@ -18,7 +18,7 @@ trait CONSTANT_Ref extends Constant_Pool_Entry {
 
     override def asCPNode(implicit cp: Constant_Pool): Node =
         <div class="cp_entry">
-            {this.getClass().getSimpleName}
+            {this.getClass.getSimpleName}
             (<div class="cp_ref">
                  class_index={class_index}
                  &laquo;
@@ -43,7 +43,7 @@ trait CONSTANT_Ref extends Constant_Pool_Entry {
     }
 
     override def toString(implicit cp: Constant_Pool): String = {
-        cp(class_index).toString(cp) + "{ " + cp(name_and_type_index).toString(cp) + " }"
+        cp(class_index).toString + "{ " + cp(name_and_type_index).toString + " }"
     }
 
 }

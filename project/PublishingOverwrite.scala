@@ -3,14 +3,13 @@
 import com.jsuereth.sbtpgp.PgpKeys._
 import sbt._
 import sbt.Keys._
-import sbt.sbtpgp.Compat.publishSignedConfigurationTask
 
 object PublishingOverwrite {
 
     val onSnapshotOverwriteSettings = Seq(
         publishConfiguration := withOverwrite(publishConfiguration.value, isSnapshot.value),
         publishSignedConfiguration := withOverwrite(
-            publishSignedConfigurationTask.value,
+            publishSignedConfiguration.value,
             isSnapshot.value
         ),
         publishLocalConfiguration ~= (_.withOverwrite(true)),

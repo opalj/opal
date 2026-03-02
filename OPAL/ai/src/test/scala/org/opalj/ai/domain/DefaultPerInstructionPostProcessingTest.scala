@@ -11,7 +11,7 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.junit.JUnitRunner
 
 import org.opalj.ai.common.XHTML.dumpOnFailureDuringValidation
-import org.opalj.br._
+import org.opalj.br.*
 import org.opalj.collection.immutable.IntTrieSet
 
 /**
@@ -22,7 +22,7 @@ import org.opalj.collection.immutable.IntTrieSet
 @RunWith(classOf[JUnitRunner])
 class DefaultPerInstructionPostProcessingTest extends AnyFlatSpec with Matchers {
 
-    import MethodsWithExceptionsTest._
+    import MethodsWithExceptionsTest.*
 
     class DefaultRecordingDomain(val id: String) extends CorrelationalDomain
         with DefaultSpecialDomainValuesBinding
@@ -67,7 +67,7 @@ class DefaultPerInstructionPostProcessingTest extends AnyFlatSpec with Matchers 
 
     it should "be able to analyze a method that always throws an exception" in {
         evaluateMethod("alwaysThrows") { domain =>
-            import domain._
+            import domain.*
             allThrownExceptions should be(
                 Map((8 -> Set(ObjectValue(0, No, true, ClassType.RuntimeException))))
             )
@@ -76,17 +76,17 @@ class DefaultPerInstructionPostProcessingTest extends AnyFlatSpec with Matchers 
 
     it should "be able to analyze a method that catches everything" in {
         evaluateMethod("alwaysCatch") { domain =>
-            import domain._
+            import domain.*
             allReturnVoidInstructions should be(IntTrieSet(7)) // <= void return
         }
     }
 
     it should "be able to identify all potentially thrown exceptions when different exceptions are stored in a variable which is then passed to a throw statement" in {
         evaluateMethod("throwsThisOrThatException") { domain =>
-            import domain._
+            import domain.*
             allThrownExceptions should be(
                 Map(
-                    (19 -> Set(ObjectValue(12, No, true, ClassType("java/lang/IllegalArgumentException")))), // <= finally
+                    (19 -> Set(ObjectValue(12, No, true, ClassType.IllegalArgumentException))), // <= finally
                     (11 -> Set(ObjectValue(4, No, true, ClassType.NullPointerException)))
                 ) // <= if t is null
             )
@@ -95,7 +95,7 @@ class DefaultPerInstructionPostProcessingTest extends AnyFlatSpec with Matchers 
 
     it should "be able to analyze a method that catches the thrown exceptions" in {
         evaluateMethod("throwsNoException") { domain =>
-            import domain._
+            import domain.*
             allThrownExceptions should be(LongMap.empty)
             allReturnVoidInstructions should be(IntTrieSet(39)) // <= void return
         }
@@ -103,11 +103,11 @@ class DefaultPerInstructionPostProcessingTest extends AnyFlatSpec with Matchers 
 
     it should "be able to handle the pattern where some (checked) exceptions are caught and then rethrown as an unchecked exception" in {
         evaluateMethod("leverageException") { domain =>
-            import domain._
+            import domain.*
             allReturnVoidInstructions should be(IntTrieSet(38)) // <= void return
             allThrownExceptions should be(LongMap.empty)
-            // Due to the simplicity of the domain I(the exceptions of called methods are
-            // not yet analyze) we cannot determine that the following exception
+            // Due to the simplicity of the domain (the exceptions of called methods are
+            // not yet analyzed) we cannot determine that the following exception
             // (among others?) may also be thrown:
             // ("throws", SomeReferenceValue(...,ClassType("java/lang/RuntimeException"),No))
         }
@@ -115,7 +115,7 @@ class DefaultPerInstructionPostProcessingTest extends AnyFlatSpec with Matchers 
 
     it should "be able to analyze a method that always throws an exception but also swallows several exceptions" in {
         evaluateMethod("withFinallyAndThrows") { domain =>
-            import domain._
+            import domain.*
             allThrownExceptions should be(
                 Map(
                     (

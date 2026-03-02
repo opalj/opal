@@ -42,7 +42,7 @@ case class InnerClass(
     innerClassAccessFlags: Int
 ) {
 
-    override def toString(): String = {
+    override def toString: String = {
         "InnerClass" +
             "(type=" + innerClassType.toJava +
             ",outerType=" + outerClassType.map(_.toJava) +

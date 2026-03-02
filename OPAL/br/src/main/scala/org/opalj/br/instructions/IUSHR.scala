@@ -16,5 +16,5 @@ case object IUSHR extends ShiftInstruction {
 
     final val operator = ">>>"
 
-    final val computationalType = ComputationalTypeInt
+    final val computationalType: ComputationalTypeInt.type = ComputationalTypeInt
 }

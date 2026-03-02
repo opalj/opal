@@ -8,11 +8,10 @@ import scala.collection.mutable.ArrayBuffer
 import org.opalj.br.Method
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.ReferenceType
+import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.cg.EntryPointFinder
-
-import net.ceedubs.ficus.Ficus._
 
 /**
  * The AndroidEntryPointFinder considers specific methods of launcher Activity Classes as entry points.
@@ -23,13 +22,17 @@ import net.ceedubs.ficus.Ficus._
  */
 object AndroidEntryPointFinder extends EntryPointFinder {
 
+    import pureconfig.*
+
     val configKey = "org.opalj.fpcf.android.AndroidEntryPointFinder.entryPoints"
 
     override def requirements(project: SomeProject): ProjectInformationKeys = {
         super.requirements(project) ++ Seq(AndroidManifestKey)
     }
 
-    override def collectEntryPoints(project: SomeProject): Iterable[Method] = {
+    override def collectEntryPoints(project: SomeProject): Iterable[DeclaredMethod] = {
+        val declaredMethods = project.get(DeclaredMethodsKey)
+
         val entryPointDescriptions = getConfiguredEntryPoints(project)
         val manifest: AndroidManifest = project.get(AndroidManifestKey)
 
@@ -51,19 +54,17 @@ object AndroidEntryPointFinder extends EntryPointFinder {
             }
         }
 
-        entryPoints
+        entryPoints.map(declaredMethods.apply)
     }
 
-    private def getConfiguredEntryPoints(project: SomeProject) = {
-        import net.ceedubs.ficus.readers.ArbitraryTypeReader._
-        project.config.as[List[EntryPointContainer]](configKey)
-
+    private def getConfiguredEntryPoints(project: SomeProject): List[EntryPointContainer] = {
+        ConfigSource.fromConfig(project.config).at(configKey).loadOrThrow[List[EntryPointContainer]]
     }
 
-    /* Required by Ficus' `ArbitraryTypeReader`*/
+    /* Required by pureconfig */
     private case class EntryPointContainer(
         declaringClass: String,
         name:           String,
         descriptor:     String
-    )
+    ) derives ConfigReader
 }

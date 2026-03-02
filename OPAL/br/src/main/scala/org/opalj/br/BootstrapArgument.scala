@@ -3,8 +3,8 @@ package org.opalj
 package br
 
 /**
- * A marker trait to identify those constant pool values that can be arguments of boot
- * strap methods.
+ * A marker trait to identify those constant pool values that can be arguments of
+ * bootstrap methods.
  *
  * @author Michael Eichberg
  */

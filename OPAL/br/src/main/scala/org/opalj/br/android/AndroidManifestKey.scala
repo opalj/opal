@@ -61,10 +61,10 @@ object AndroidManifestKey extends ProjectInformationKey[AndroidManifest, String]
         }
 
         // Parse the different component types using specific lambdas
-        val activities = (xml \ "application" \ "activity").flatMap(parseComponentFromXml(_, Activity))
-        val services = (xml \ "application" \ "service").flatMap(parseComponentFromXml(_, Service))
-        val receivers = (xml \ "application" \ "receiver").flatMap(parseComponentFromXml(_, BroadcastReceiver))
-        val providers = (xml \ "application" \ "provider").flatMap(parseComponentFromXml(_, ContentProvider))
+        val activities = (xml \ "application" \ "activity").flatMap(parseComponentFromXml(_, Activity.apply))
+        val services = (xml \ "application" \ "service").flatMap(parseComponentFromXml(_, Service.apply))
+        val receivers = (xml \ "application" \ "receiver").flatMap(parseComponentFromXml(_, BroadcastReceiver.apply))
+        val providers = (xml \ "application" \ "provider").flatMap(parseComponentFromXml(_, ContentProvider.apply))
 
         // Collect all components
         AndroidManifest(packageName, activities, services, receivers, providers)

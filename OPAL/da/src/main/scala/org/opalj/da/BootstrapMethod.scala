@@ -17,9 +17,9 @@ case class BootstrapMethod(method_ref: Constant_Pool_Index, arguments: Seq[Boots
     def toXHTML(implicit cp: Constant_Pool): Node = {
         <details class="bootstrap_method">
             <summary>{cp(method_ref).asInstructionParameter}</summary>
-            {argumentsToXHTML(cp)}
+            {argumentsToXHTML}
         </details>
     }
 
-    def argumentsToXHTML(implicit cp: Constant_Pool): Seq[Node] = arguments.map(_.toXHTML(cp))
+    def argumentsToXHTML(implicit cp: Constant_Pool): Seq[Node] = arguments.map(_.toXHTML)
 }

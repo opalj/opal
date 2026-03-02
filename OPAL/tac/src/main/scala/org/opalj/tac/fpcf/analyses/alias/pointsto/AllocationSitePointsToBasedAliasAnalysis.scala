@@ -32,9 +32,9 @@ class AllocationSitePointsToBasedAliasAnalysis(final val project: SomeProject)
     with AllocationSiteBasedAnalysis
     with AllocationSiteAndTacBasedAliasAnalysis {
 
-    override protected[this] type AnalysisState = AllocationSitePointsToBasedAliasAnalysisState
+    override protected type AnalysisState = AllocationSitePointsToBasedAliasAnalysisState
 
-    override protected[this] def handlePointsToSetElement(
+    override protected def handlePointsToSetElement(
         ase:            AliasSourceElement,
         pointsToEntity: Entity,
         element:        ElementType
@@ -54,7 +54,7 @@ class AllocationSitePointsToBasedAliasAnalysis(final val project: SomeProject)
     /**
      * Creates the state to use for the computation.
      */
-    override protected[this] def createState: AnalysisState = new AllocationSitePointsToBasedAliasAnalysisState
+    override protected def createState: AnalysisState = new AllocationSitePointsToBasedAliasAnalysisState
 
 }
 

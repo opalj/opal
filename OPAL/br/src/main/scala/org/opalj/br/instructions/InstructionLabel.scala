@@ -61,7 +61,7 @@ object InstructionLabel {
     implicit final def nameToInstructionLabel(l:   String): InstructionLabel = InstructionLabel(l)
     implicit final def pcToInstructionLabel(l:     PC): InstructionLabel = InstructionLabel(l)
 
-    def apply(s:    Symbol): NamedLabel = new NamedLabel(s.name)
-    def apply(name: String): NamedLabel = new NamedLabel(name)
-    def apply(pc:   Int): PCLabel = new PCLabel(pc)
+    def apply(s:    Symbol): NamedLabel = NamedLabel(s.name)
+    def apply(name: String): NamedLabel = NamedLabel(name)
+    def apply(pc:   Int): PCLabel = PCLabel(pc)
 }

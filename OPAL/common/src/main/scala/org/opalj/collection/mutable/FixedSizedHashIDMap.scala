@@ -16,7 +16,7 @@ import scala.collection.immutable.ArraySeq
  *     values stored in the map; i.e., two different key objects have to have different
  *     hashcode values.
  *  1. The range of hashcode values returned by the keys has to be known and should be reasonably
- *     consecutive because an array will be preallocated to hold all values.
+ *     consecutive because an array will be pre-allocated to hold all values.
  *     (it can nevertheless start with an arbitrary int)
  *  1. The number of eventually stored key/values should be > 1/4 of the range of key values to
  *     amortize the costs of the underlying data-structures.
@@ -27,9 +27,9 @@ import scala.collection.immutable.ArraySeq
  * @author Michael Eichberg
  */
 class FixedSizedHashIDMap[K <: AnyRef, V] private (
-    private var theKeys:        Array[K],
-    private var theValues:      Array[V],
-    private var hashCodeOffset: Int // basically -minValue
+    private val theKeys:        Array[K],
+    private val theValues:      Array[V],
+    private val hashCodeOffset: Int // basically -minValue
 ) { self =>
 
     /**
@@ -78,7 +78,7 @@ class FixedSizedHashIDMap[K <: AnyRef, V] private (
     def keys: Iterator[K] = ArraySeq.unsafeWrapArray(theKeys).iterator.filter(key => key != null)
 
     def entries: Iterator[(K, V)] = new Iterator[(K, V)] {
-        private[this] def getNextIndex(lastIndex: Int): Int = {
+        private def getNextIndex(lastIndex: Int): Int = {
             val keys = self.theKeys
             val max = keys.length
             var i = lastIndex + 1
@@ -88,7 +88,7 @@ class FixedSizedHashIDMap[K <: AnyRef, V] private (
             }
             max
         }
-        private[this] var i = getNextIndex(-1)
+        private var i = getNextIndex(-1)
         def hasNext: Boolean = i < theKeys.length
         def next(): (K, V) = { val r = (theKeys(i), theValues(i)); i = getNextIndex(i); r }
     }

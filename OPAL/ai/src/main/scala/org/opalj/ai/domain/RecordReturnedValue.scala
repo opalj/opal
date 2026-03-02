@@ -3,6 +3,8 @@ package org.opalj
 package ai
 package domain
 
+import scala.compiletime.uninitialized
+
 /**
  * Record the value returned by a method across all return instructions.
  *
@@ -18,11 +20,11 @@ package domain
 trait RecordReturnedValue extends RecordReturnedValuesInfrastructure {
     domain: ValuesDomain =>
 
-    protected[this] var theReturnedValue: DomainValue = null
+    protected var theReturnedValue: DomainValue = uninitialized
 
     def returnedValue: Option[DomainValue] = Option(theReturnedValue)
 
-    protected[this] def doRecordReturnedValue(pc: Int, value: DomainValue): Boolean = {
+    protected def doRecordReturnedValue(pc: Int, value: DomainValue): Boolean = {
         val oldReturnedValue = theReturnedValue
         if (oldReturnedValue eq value)
             return false;

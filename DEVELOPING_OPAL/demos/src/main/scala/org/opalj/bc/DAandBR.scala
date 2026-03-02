@@ -216,7 +216,7 @@ object DAandBR extends App {
     val brClassFile = Java8Framework.ClassFile(() => new ByteArrayInputStream(assembledCF)).head
     val newBRMethods =
         brClassFile.methods
-            .filter(m => /*due some sophisticated analysis...*/ m.name == "<init>")
+            .filter(m => /* do some sophisticated analysis...*/ m.name == "<init>")
             .map[MethodTemplate](m => m.copy())
     val newBRClassFile = brClassFile.copy(methods = newBRMethods)
 

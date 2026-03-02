@@ -10,7 +10,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
 /**
- * Annotation to state that the annotated method is compile time pure.
+ * Annotation to state that the annotated method is compile-time pure.
  *
  * @author Dominik Helm
  */

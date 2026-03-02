@@ -16,6 +16,7 @@ import org.opalj.fpcf.PropertyIsNotDerivedByPreviouslyExecutedAnalysis
 import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.PropertyMetaInformation
 import org.opalj.fpcf.PropertyStore
+import org.opalj.util.elidedAssert
 
 /**
  * Represent the set of types that have allocations reachable from the respective entry points.
@@ -42,7 +43,7 @@ sealed trait AllocationSitePointsToSet
         }
     }
 
-    protected[this] def orderedTypes: List[ReferenceType]
+    protected def orderedTypes: List[ReferenceType]
     override def types: UIDSet[ReferenceType]
 
     override def included(other: AllocationSitePointsToSet): AllocationSitePointsToSet = {
@@ -169,14 +170,14 @@ sealed trait AllocationSitePointsToSet
         AllocationSitePointsToSet(newAllocationSites, newTypes, newOrderedTypes)
     }
 
-    assert {
+    elidedAssert {
         var asTypes = IntTrieSet.empty
         elements.foreach { allocationSite => asTypes += allocationSiteLongToTypeId(allocationSite) }
 
         val typeIds = types.foldLeft(IntTrieSet.empty) { (r, t) => r + t.id }
         typeIds == asTypes
     }
-    assert(numElements >= numTypes)
+    elidedAssert(numElements >= numTypes)
 }
 
 object AllocationSitePointsToSet extends AllocationSitePointsToSetPropertyMetaInformation {
@@ -194,7 +195,7 @@ object AllocationSitePointsToSet extends AllocationSitePointsToSetPropertyMetaIn
         allocationSiteOld: AllocationSite,
         allocatedTypeOld:  ReferenceType
     ): AllocationSitePointsToSet = {
-        assert(allocationSiteOld != allocationSiteNew)
+        elidedAssert(allocationSiteOld != allocationSiteNew)
         new AllocationSitePointsToSetN(
             LongTrieSetWithList(allocationSiteNew, allocationSiteOld),
             UIDSet(allocatedTypeOld, allocatedTypeNew),
@@ -235,9 +236,9 @@ object AllocationSitePointsToSet extends AllocationSitePointsToSetPropertyMetaIn
 }
 
 case class AllocationSitePointsToSetN private[pointsto] (
-    override val elements:                     LongLinkedSet,
-    override val types:                        UIDSet[ReferenceType],
-    override protected[this] val orderedTypes: List[ReferenceType]
+    override val elements:               LongLinkedSet,
+    override val types:                  UIDSet[ReferenceType],
+    override protected val orderedTypes: List[ReferenceType]
 ) extends AllocationSitePointsToSet {
 
     override def numTypes: Int = types.size
@@ -268,7 +269,7 @@ case class AllocationSitePointsToSetN private[pointsto] (
 
     override def hashCode: Int = elements.hashCode()
 
-    override def getNewestElement(): AllocationSite = elements.head
+    override def getNewestElement: AllocationSite = elements.head
 }
 
 object NoAllocationSites extends AllocationSitePointsToSet {
@@ -299,21 +300,21 @@ object NoAllocationSites extends AllocationSitePointsToSet {
 
     override def types: UIDSet[ReferenceType] = UIDSet.empty
 
-    override protected[this] def orderedTypes: List[ReferenceType] = List.empty
+    override protected def orderedTypes: List[ReferenceType] = List.empty
 
     override def numElements: Int = 0
 
     override def elements: LongLinkedSet = LongTrieSetWithList.empty
 
     override def forNewestNTypes[U](n: Int)(f: ReferenceType => U): Unit = {
-        assert(n == 0)
+        elidedAssert(n == 0)
     }
 
     override def forNewestNElements[U](n: Int)(f: AllocationSite => U): Unit = {
-        assert(n == 0)
+        elidedAssert(n == 0)
     }
 
-    override def getNewestElement(): AllocationSite = throw new NoSuchElementException
+    override def getNewestElement: AllocationSite = throw new NoSuchElementException
 }
 
 case class AllocationSitePointsToSet1(
@@ -325,7 +326,7 @@ case class AllocationSitePointsToSet1(
 
     override def types: UIDSet[ReferenceType] = UIDSet(allocatedType)
 
-    override protected[this] def orderedTypes: List[ReferenceType] = List(allocatedType)
+    override protected def orderedTypes: List[ReferenceType] = List(allocatedType)
 
     override def numElements: Int = 1
 
@@ -365,8 +366,6 @@ case class AllocationSitePointsToSet1(
                     otherTypes + allocatedType,
                     newOrderedTypes
                 )
-            case _ =>
-                throw new IllegalArgumentException(s"unexpected list $other")
         }
     }
 
@@ -374,7 +373,7 @@ case class AllocationSitePointsToSet1(
         other:        AllocationSitePointsToSet,
         seenElements: Int
     ): AllocationSitePointsToSet = {
-        assert(seenElements >= 0 && seenElements <= other.numElements)
+        elidedAssert(seenElements >= 0 && seenElements <= other.numElements)
         // Note, that we can not assert, that seenElements is between 0 and 1, as this can
         // happen by unordered partial results.
         included(other)
@@ -453,13 +452,13 @@ case class AllocationSitePointsToSet1(
     }
 
     override def forNewestNTypes[U](n: Int)(f: ReferenceType => U): Unit = {
-        assert(n == 0 || n == 1)
+        elidedAssert(n == 0 || n == 1)
         if (n == 1)
             f(allocatedType)
     }
 
     override def forNewestNElements[U](n: Int)(f: AllocationSite => U): Unit = {
-        assert(n == 0 || n == 1)
+        elidedAssert(n == 0 || n == 1)
         if (n == 1)
             f(allocationSite)
     }
@@ -475,5 +474,5 @@ case class AllocationSitePointsToSet1(
 
     override def hashCode: Int = (allocationSite ^ (allocationSite >> 32)).toInt
 
-    override def getNewestElement(): AllocationSite = allocationSite
+    override def getNewestElement: AllocationSite = allocationSite
 }

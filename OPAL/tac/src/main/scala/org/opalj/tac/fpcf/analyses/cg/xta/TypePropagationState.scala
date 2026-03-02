@@ -6,11 +6,11 @@ package analyses
 package cg
 package xta
 
-import java.util.{HashMap => JHashMap}
-import java.util.{HashSet => JHashSet}
-import java.util.{Set => JSet}
+import java.util.HashMap as JHashMap
+import java.util.HashSet as JHashSet
+import java.util.Set as JSet
 import scala.collection.immutable.IntMap
-import scala.jdk.CollectionConverters._
+import scala.jdk.CollectionConverters.*
 
 import org.opalj.br.ClassHierarchy
 import org.opalj.br.DeclaredMethod
@@ -27,6 +27,7 @@ import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.SomeEOptionP
 import org.opalj.tac.fpcf.analyses.cg.BaseAnalysisState
 import org.opalj.tac.fpcf.properties.TACAI
+import org.opalj.util.elidedAssert
 
 /**
  * Manages the state of each method analyzed by [[TypePropagationAnalysis]].
@@ -38,17 +39,20 @@ import org.opalj.tac.fpcf.properties.TACAI
  * @param _calleeDependee Dependee for the callee property of the method.
  */
 final class TypePropagationState[ContextType <: Context](
-    override val callContext:                        ContextType,
-    val typeSetEntity:                               TypeSetEntity,
-    override protected[this] var _tacDependee:       EOptionP[Method, TACAI],
-    private[this] var _ownInstantiatedTypesDependee: EOptionP[TypeSetEntity, InstantiatedTypes],
-    private[this] var _calleeDependee:               EOptionP[DeclaredMethod, Callees],
-    private[this] var _readAccessDependee:           EOptionP[Method, MethodFieldReadAccessInformation],
-    private[this] var _writeAccessDependee:          EOptionP[Method, MethodFieldWriteAccessInformation]
+    override val callContext:                  ContextType,
+    val typeSetEntity:                         TypeSetEntity,
+    protected var _tacDependee:                EOptionP[Method, TACAI],
+    private var _ownInstantiatedTypesDependee: EOptionP[TypeSetEntity, InstantiatedTypes],
+    private var _calleeDependee:               EOptionP[DeclaredMethod, Callees],
+    private var _readAccessDependee:           Option[EOptionP[Method, MethodFieldReadAccessInformation]],
+    private var _writeAccessDependee:          Option[EOptionP[Method, MethodFieldWriteAccessInformation]]
 ) extends BaseAnalysisState with TACAIBasedAnalysisState[ContextType] {
 
     var methodWritesArrays: Boolean = false
     var methodReadsArrays: Boolean = false
+
+    def methodHasBody: Boolean =
+        callContext.method.hasSingleDefinedMethod && callContext.method.definedMethod.body.isDefined
 
     /////////////////////////////////////////////
     //                                         //
@@ -81,12 +85,12 @@ final class TypePropagationState[ContextType <: Context](
     //                                         //
     /////////////////////////////////////////////
 
-    private[this] val _seenCallees: JSet[(PC, DeclaredMethod)] = new JHashSet()
+    private val _seenCallees: JSet[(PC, DeclaredMethod)] = new JHashSet()
 
     def isSeenCallee(pc: PC, callee: DeclaredMethod): Boolean = _seenCallees.contains((pc, callee))
 
     def addSeenCallee(pc: PC, callee: DeclaredMethod): Unit = {
-        assert(!isSeenCallee(pc, callee))
+        elidedAssert(!isSeenCallee(pc, callee))
         _seenCallees.add((pc, callee))
     }
 
@@ -114,19 +118,19 @@ final class TypePropagationState[ContextType <: Context](
     var seenIndirectWriteAccesses: IntMap[Int] = IntMap.empty
 
     def readAccessDependee: Option[EOptionP[Method, MethodFieldReadAccessInformation]] = {
-        if (_readAccessDependee.isRefinable) Some(_readAccessDependee) else None
+        if (_readAccessDependee.isDefined && _readAccessDependee.get.isRefinable) _readAccessDependee else None
     }
 
     def updateReadAccessDependee(readAccessDependee: EOptionP[Method, MethodFieldReadAccessInformation]): Unit = {
-        _readAccessDependee = readAccessDependee
+        _readAccessDependee = Some(readAccessDependee)
     }
 
     def writeAccessDependee: Option[EOptionP[Method, MethodFieldWriteAccessInformation]] = {
-        if (_writeAccessDependee.isRefinable) Some(_writeAccessDependee) else None
+        if (_writeAccessDependee.isDefined && _writeAccessDependee.get.isRefinable) _writeAccessDependee else None
     }
 
     def updateWriteAccessDependee(writeAccessDependee: EOptionP[Method, MethodFieldWriteAccessInformation]): Unit = {
-        _writeAccessDependee = writeAccessDependee
+        _writeAccessDependee = Some(writeAccessDependee)
     }
 
     /////////////////////////////////////////////
@@ -158,7 +162,7 @@ final class TypePropagationState[ContextType <: Context](
     )(
         implicit classHierarchy: ClassHierarchy
     ): Boolean = {
-        assert(typeFilters.nonEmpty)
+        elidedAssert(typeFilters.nonEmpty)
         val alreadyExists = _forwardPropagationEntities.contains(typeSetEntity)
         if (!alreadyExists) {
             val compactedFilters = rootTypes(typeFilters)
@@ -204,7 +208,7 @@ final class TypePropagationState[ContextType <: Context](
     )(
         implicit classHierarchy: ClassHierarchy
     ): Boolean = {
-        assert(typeFilters.nonEmpty)
+        elidedAssert(typeFilters.nonEmpty)
         val alreadyExists = _backwardPropagationFilters.containsKey(typeSetEntity)
         if (!alreadyExists) {
             val compactedFilters = rootTypes(typeFilters)
@@ -279,7 +283,7 @@ final class TypePropagationState[ContextType <: Context](
      * java.lang.Object is returned, since Object is a supertype of all other types.
      */
     // IMPROVE: could be implemented with linear runtime.
-    private[this] def rootTypes(
+    private def rootTypes(
         types: UIDSet[ReferenceType]
     )(
         implicit classHierarchy: ClassHierarchy

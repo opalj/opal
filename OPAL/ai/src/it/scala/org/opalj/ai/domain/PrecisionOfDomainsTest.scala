@@ -4,6 +4,8 @@ package ai
 package domain
 
 import java.net.URL
+import scala.util.boundary
+import scala.util.boundary.break
 
 import org.junit.runner.RunWith
 import org.scalatest.funspec.AnyFunSpec
@@ -28,7 +30,7 @@ class PrecisionOfDomainsTest extends AnyFunSpec with Matchers {
 
     describe("a more precise domain") {
 
-        type TheAIResult = AIResult { val domain: Domain with TheMethod }
+        type TheAIResult = AIResult { val domain: Domain & TheMethod }
 
         it("should return a more precise result") {
             val theProject = createJREProject()
@@ -106,7 +108,7 @@ class PrecisionOfDomainsTest extends AnyFunSpec with Matchers {
                 with l0.TypeLevelFieldAccessInstructions
                 with l0.TypeLevelDynamicLoads
 
-            def checkAbstractsOver(r1: TheAIResult, r2: TheAIResult): Option[String] = {
+            def checkAbstractsOver(r1: TheAIResult, r2: TheAIResult): Option[String] = boundary {
                 var pc = -1
                 r1.operandsArray.corresponds(r2.operandsArray) { (lOperands, rOperands) =>
                     pc += 1
@@ -119,24 +121,24 @@ class PrecisionOfDomainsTest extends AnyFunSpec with Matchers {
                             if (!lVD.abstractsOver(rVD)) {
                                 val line =
                                     r1.domain.code.lineNumber(pc).map(_.toString).getOrElse("N/A")
-                                return Some(
+                                break(Some(
                                     s"$pc[line=$line]: the operand stack $op " +
                                         s"value $lVD (${lVD.getClass.getName})" +
                                         s" does not abstract over $rVD (${rVD.getClass.getName})" +
                                         s" (original: $lValue join $rValue )"
-                                );
+                                ));
                             }
                             // this primarily tests the "isMorePreciseThan" method
                             if (lVD.isMorePreciseThan(rVD)) {
                                 val line =
                                     r1.domain.code.lineNumber(pc).map(_.toString).getOrElse("N/A")
-                                return Some(
+                                break(Some(
                                     s"$pc[line=$line]: the operand stack value $op " +
                                         s"$lVD#${System.identityHashCode(lVD)} (${lVD.getClass.getName})" +
                                         s" is more precise than " +
                                         s"$rVD#${System.identityHashCode(rVD)} (${rVD.getClass.getName})" +
                                         s" (original: $lValue join $rValue )"
-                                );
+                                ));
                             }
                             true
                         }
@@ -147,7 +149,7 @@ class PrecisionOfDomainsTest extends AnyFunSpec with Matchers {
                         (lOperands != null && (rOperands == null || {
                             val result = compareOperands()
                             if (result.isDefined)
-                                return result;
+                                break(result);
                             true
                         }))
                 }
@@ -172,7 +174,7 @@ class PrecisionOfDomainsTest extends AnyFunSpec with Matchers {
                     ): Unit = {
                         failed.set(true)
                         val bodyMessage =
-                            "\" /*Instructions " + method.body.get.instructions.size + "*/\n" +
+                            "\" /*Instructions " + method.body.get.instructions.length + "*/\n" +
                                 s"\tthe less precise domain ($lpDomain) did not abstract " +
                                 s"over the state of the more precise domain ($mpDomain)\n" +
                                 "\t" + Console.BOLD + m + Console.RESET + "\n"

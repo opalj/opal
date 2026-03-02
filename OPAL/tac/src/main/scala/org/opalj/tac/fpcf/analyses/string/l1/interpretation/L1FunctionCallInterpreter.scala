@@ -42,7 +42,7 @@ trait L1FunctionCallInterpreter
 
     type CallState <: FunctionCallState
 
-    protected[this] class FunctionCallState(
+    protected class FunctionCallState(
         val call:                  E,
         val target:                PV,
         val parameters:            Seq[PV],
@@ -98,7 +98,7 @@ trait L1FunctionCallInterpreter
                     callState.returnDependees += m -> returns.map { ret =>
                         val entity = VariableDefinition(
                             ret.pc,
-                            ret.asInstanceOf[ReturnValue[V]].expr.asVar.toPersistentForm(calleeTac.get.stmts),
+                            ret.asInstanceOf[ReturnValue[V]].expr.asVar.toPersistentForm(using calleeTac.get.stmts),
                             m
                         )
                         ps(entity, StringConstancyProperty.key)
@@ -164,7 +164,7 @@ trait L1FunctionCallInterpreter
 
         if (callState.hasDependees) {
             InterimResult.forUB(
-                InterpretationHandler.getEntity(state),
+                InterpretationHandler.getEntity,
                 newUB,
                 callState.dependees.toSet,
                 continuation(state, callState)
@@ -174,19 +174,19 @@ trait L1FunctionCallInterpreter
         }
     }
 
-    protected[this] def continuation(
+    protected def continuation(
         state:     InterpretationState,
         callState: CallState
     )(eps: SomeEPS): ProperPropertyComputationResult = {
         eps match {
             case EUBP(m: Method, _: TACAI) =>
                 callState.tacDependees += m -> eps.asInstanceOf[EOptionP[Method, TACAI]]
-                interpretArbitraryCallToFunctions(state, callState)
+                interpretArbitraryCallToFunctions(using state, callState)
 
             case EUBP(_, _: StringConstancyProperty) =>
                 val contextEPS = eps.asInstanceOf[EOptionP[VariableDefinition, StringConstancyProperty]]
                 callState.updateReturnDependee(contextEPS.e.m, contextEPS)
-                computeResult(state, callState)
+                computeResult(using state, callState)
 
             case _ => throw new IllegalArgumentException(s"Encountered unknown eps: $eps")
         }

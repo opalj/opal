@@ -4,7 +4,7 @@ package av
 package checking
 
 import org.opalj.bi.AccessFlagsMatcher
-import org.opalj.br.{Attributes => SourceElementAttributes}
+import org.opalj.br.Attributes as SourceElementAttributes
 import org.opalj.br.ConcreteSourceElement
 
 /**
@@ -14,30 +14,30 @@ import org.opalj.br.ConcreteSourceElement
  */
 trait SourceElementPredicate[-S <: ConcreteSourceElement] extends (S => Boolean) { left =>
 
-    def and[T <: ConcreteSourceElement, X <: S with T](
+    infix def and[T <: ConcreteSourceElement, X <: S & T](
         right: SourceElementPredicate[T]
     ): SourceElementPredicate[X] = {
 
         new SourceElementPredicate[X] {
             def apply(s: X): Boolean = left(s) && right(s)
-            def toDescription() = left.toDescription() + " and " + right.toDescription()
+            def toDescription = left.toDescription + " and " + right.toDescription
         }
 
     }
 
-    final def having[T <: ConcreteSourceElement, X <: S with T](
+    final def having[T <: ConcreteSourceElement, X <: S & T](
         right: SourceElementPredicate[T]
     ): SourceElementPredicate[X] = and(right)
 
     /**
-     * Returns a human readable representation of this predicate that is well suited
+     * Returns a human-readable representation of this predicate that is well suited
      * for presenting it in messages related to architectural deviations.
      *
      * It should not end with a white space and should not use multiple lines.
      * It should not be a complete sentence as this description may be composed with
      * other descriptions.
      */
-    def toDescription(): String
+    def toDescription: String
 }
 
 case class AccessFlags(
@@ -48,7 +48,7 @@ case class AccessFlags(
         this.accessFlags.unapply(sourceElement.accessFlags)
     }
 
-    def toDescription(): String = accessFlags.toString
+    def toDescription: String = accessFlags.toString
 
 }
 
@@ -62,10 +62,10 @@ case class Attributes(
 
     def apply(sourceElement: ConcreteSourceElement): Boolean = {
         //    sourceElement.attributes.size == this.attributes.size &&
-        this.attributes.forall(a => sourceElement.attributes.exists(_ == a))
+        this.attributes.forall(a => sourceElement.attributes.contains(a))
     }
 
-    def toDescription(): String = {
+    def toDescription: String = {
         attributes.view.map(_.getClass.getSimpleName).mkString(" « ", ", ", " »")
     }
 }

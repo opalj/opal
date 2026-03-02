@@ -20,9 +20,9 @@ trait PerInstructionPostProcessing extends CoreDomainFunctionality {
 
     type DomainValueUpdater = (DomainValue) => DomainValue
 
-    private[this] var onExceptionalControlFlow: List[DomainValueUpdater] = Nil
+    private var onExceptionalControlFlow: List[DomainValueUpdater] = Nil
 
-    private[this] var onRegularControlFlow: List[DomainValueUpdater] = Nil
+    private var onRegularControlFlow: List[DomainValueUpdater] = Nil
 
     abstract override def flow(
         currentPC:                        Int,

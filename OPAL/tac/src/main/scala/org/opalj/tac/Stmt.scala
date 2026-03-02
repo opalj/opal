@@ -4,10 +4,11 @@ package tac
 
 import scala.collection.immutable.ArraySeq
 
-import org.opalj.br._
+import org.opalj.br.*
 import org.opalj.br.analyses.ProjectLike
 import org.opalj.collection.immutable.IntIntPair
 import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.util.elidedAssert
 import org.opalj.value.ValueInformation
 
 /**
@@ -16,10 +17,10 @@ import org.opalj.value.ValueInformation
  * @author Michael Eichberg
  * @author Roberts Kolosovs
  */
-sealed abstract class Stmt[+V <: Var[V]] extends ASTNode[V] {
+sealed abstract class Stmt[+V] extends ASTNode[V] {
 
     /**
-     * The program counter of the original '''underyling bytecode instruction'''.
+     * The program counter of the original '''underlying bytecode instruction'''.
      *
      * This `pc` is independent of the (implicit) `index` of the statement
      * in the generated statements array! This pc is, e.g., useful for
@@ -110,7 +111,7 @@ sealed abstract class Stmt[+V <: Var[V]] extends ASTNode[V] {
  *        However, it is an expression to facilitate advanced use cases such as
  *        generating source code.
  */
-case class If[+V <: Var[V]](
+case class If[+V](
     pc:                      PC,
     left:                    Expr[V],
     condition:               RelationalOperator,
@@ -148,7 +149,7 @@ case class If[+V <: Var[V]](
     }
 
     override final def isSideEffectFree: Boolean = {
-        assert(left.isValueExpression && right.isValueExpression)
+        elidedAssert(left.isValueExpression && right.isValueExpression)
         true
     }
 
@@ -209,9 +210,9 @@ object Goto {
  * Return from subroutine; only to be used in combination with JSR instructions (Java 6 and earlier).
  *
  * @param returnAddresses The set of return addresses. Based on the return addresses it is
- *                        immediately possible to determine the original JSR instruction that led
- *                        to the execution of the subroutine. It is the JSR instruction directly
- *                        preceding the instruction to which this RET instruction jumps to.
+ *                        immediately possible to determine the original JSR-instruction that led
+ *                        to the execution of the subroutine. It is the JSR-instruction directly
+ *                        preceding the instruction to which this RET-instruction jumps to.
  *                        '''This information is only relevant in case of flow-sensitive
  *                        analyses.'''
  */
@@ -291,7 +292,7 @@ object JSR {
  * @param npairs may be empty in that case we have a glorified goto – or if all other cases
  *        were determined to be dead.
  */
-case class Switch[+V <: Var[V]](
+case class Switch[+V](
     pc:                        PC,
     private var defaultTarget: Int,
     index:                     Expr[V],
@@ -310,7 +311,7 @@ case class Switch[+V <: Var[V]](
     ): Unit = {
         npairs = npairs.map { x =>
             val newIndex = pcToIndex(x._2)
-            // assert(newIndex >= 0)
+            // elidedAssert(newIndex >= 0)
             x.copy(_2 = newIndex)
         }
         defaultTarget = pcToIndex(defaultTarget)
@@ -324,7 +325,7 @@ case class Switch[+V <: Var[V]](
     }
 
     override final def isSideEffectFree: Boolean = {
-        assert(index.isValueExpression)
+        elidedAssert(index.isValueExpression)
         true
     }
 
@@ -346,7 +347,7 @@ object Switch {
     final val ASTID = 4
 }
 
-sealed abstract class AssignmentLikeStmt[+V <: Var[V]] extends Stmt[V] {
+sealed abstract class AssignmentLikeStmt[+V] extends Stmt[V] {
     def expr: Expr[V]
     override final def asAssignmentLike: AssignmentLikeStmt[V] = this
 }
@@ -362,9 +363,9 @@ object AssignmentLikeStmt {
 
 }
 
-case class Assignment[+V <: Var[V]](
+case class Assignment[+V](
     pc:        PC,
-    targetVar: V,
+    targetVar: V & Var[V],
     expr:      Expr[V]
 ) extends AssignmentLikeStmt[V] {
 
@@ -402,7 +403,7 @@ object Assignment {
     final val ASTID = 5
 }
 
-case class ReturnValue[+V <: Var[V]](pc: Int, expr: Expr[V]) extends Stmt[V] {
+case class ReturnValue[+V](pc: Int, expr: Expr[V]) extends Stmt[V] {
 
     override final def asReturnValue: this.type = this
     override final def isReturnValue: Boolean = true
@@ -470,7 +471,7 @@ object Return {
 /**
  * Models a no-operation. In general, a NOP (no operation) can be pruned; however, in the TACAI
  * representation, if a NOP is the last statement of a basic block where the previous basic block
- * has multiple-successors then it may be the case that the NOP cannot be pruned, because it it
+ * has multiple-successors then it may be the case that the NOP cannot be pruned, because it
  * is required to keep the path alive. For example, given the following code:
  * {{{
  * public int m(int i, int j, boolean z){
@@ -486,7 +487,7 @@ object Return {
  *
  * In this case, the returned value is either i or j and therefore the UVar would directly encode
  * that information and therefore the assignments would be ignored. (The information cannot be
- * recovered! If needed a complete SSA representation would be required; TACAI only provides only
+ * recovered! If needed, a complete SSA representation would be required; TACAI only provides
  * an SSA-like representation!)
  */
 case class Nop(pc: Int) extends SimpleStmt {
@@ -506,7 +507,7 @@ object Nop {
     final val ASTID = 8
 }
 
-sealed abstract class SynchronizationStmt[+V <: Var[V]] extends Stmt[V] {
+sealed abstract class SynchronizationStmt[+V] extends Stmt[V] {
 
     override final def asSynchronizationStmt: this.type = this
 
@@ -521,7 +522,7 @@ sealed abstract class SynchronizationStmt[+V <: Var[V]] extends Stmt[V] {
 
 }
 
-case class MonitorEnter[+V <: Var[V]](pc: PC, objRef: Expr[V]) extends SynchronizationStmt[V] {
+case class MonitorEnter[+V](pc: PC, objRef: Expr[V]) extends SynchronizationStmt[V] {
 
     override final def asMonitorEnter: this.type = this
     override final def isMonitorEnter: Boolean = true
@@ -548,7 +549,7 @@ object MonitorEnter {
     final val ASTID = 9
 }
 
-case class MonitorExit[+V <: Var[V]](pc: PC, objRef: Expr[V]) extends SynchronizationStmt[V] {
+case class MonitorExit[+V](pc: PC, objRef: Expr[V]) extends SynchronizationStmt[V] {
 
     override final def asMonitorExit: this.type = this
     override final def isMonitorExit: Boolean = true
@@ -576,7 +577,7 @@ object MonitorExit {
     final val ASTID = 10
 }
 
-case class ArrayStore[+V <: Var[V]](
+case class ArrayStore[+V](
     pc:       PC,
     arrayRef: Expr[V],
     index:    Expr[V],
@@ -617,7 +618,7 @@ object ArrayStore {
     final val ASTID = 11
 }
 
-case class Throw[+V <: Var[V]](pc: PC, exception: Expr[V]) extends Stmt[V] {
+case class Throw[+V](pc: PC, exception: Expr[V]) extends Stmt[V] {
 
     override final def asThrow: this.type = this
     override final def isThrow: Boolean = true
@@ -650,7 +651,7 @@ object Throw {
     final val ASTID = 12
 }
 
-sealed abstract class FieldWriteAccessStmt[+V <: Var[V]] extends Stmt[V] {
+sealed abstract class FieldWriteAccessStmt[+V] extends Stmt[V] {
     def declaringClass: ClassType
     def name: String
     def declaredFieldType: FieldType
@@ -666,7 +667,7 @@ sealed abstract class FieldWriteAccessStmt[+V <: Var[V]] extends Stmt[V] {
     }
 }
 
-case class PutStatic[+V <: Var[V]](
+case class PutStatic[+V](
     pc:                PC,
     declaringClass:    ClassType,
     name:              String,
@@ -712,7 +713,7 @@ object PutStatic {
     final val ASTID = 13
 }
 
-case class PutField[+V <: Var[V]](
+case class PutField[+V](
     pc:                Int,
     declaringClass:    ClassType,
     name:              String,
@@ -762,16 +763,16 @@ object PutField {
     final val ASTID = 14
 }
 
-sealed abstract class MethodCall[+V <: Var[V]] extends Stmt[V] with Call[V] {
+sealed abstract class MethodCall[+V] extends Stmt[V] with Call[V] {
 
-    override final def isSideEffectFree: Boolean = false // IMPROVE Check if a call has no side-effect
+    override final def isSideEffectFree: Boolean = false // IMPROVE Check if a call has no sideeffect
     override final def asMethodCall: this.type = this
     override final def isMethodCall: Boolean = true
     override final def isStaticCall: Boolean = isStaticMethodCall
 
 }
 
-sealed abstract class InstanceMethodCall[+V <: Var[V]] extends MethodCall[V] {
+sealed abstract class InstanceMethodCall[+V] extends MethodCall[V] {
 
     override final def allParams: Seq[Expr[V]] = receiver +: params
 
@@ -797,7 +798,7 @@ object InstanceMethodCall {
     def unapply[V <: Var[V]](
         call: InstanceMethodCall[V]
     ): Some[(Int, ReferenceType, Boolean, String, MethodDescriptor, Expr[V], Seq[Expr[V]])] = {
-        import call._
+        import call.*
         Some((pc, declaringClass, isInterface, name, descriptor, receiver, params))
     }
 }
@@ -806,7 +807,7 @@ object InstanceMethodCall {
  * Call of an instance method for which no virtual method call resolution has to happen.
  * I.e., it is either a super-call, a private instance method call or a constructor call.
  */
-case class NonVirtualMethodCall[+V <: Var[V]](
+case class NonVirtualMethodCall[+V](
     pc:             Int,
     declaringClass: ClassType,
     isInterface:    Boolean,
@@ -837,7 +838,7 @@ case class NonVirtualMethodCall[+V <: Var[V]](
         p:  ProjectLike,
         ev: V <:< DUVar[ValueInformation]
     ): Set[Method] = {
-        resolveCallTarget(callingContext)(p).toSet
+        resolveCallTarget(callingContext).toSet
     }
 
     override final def toCanonicalForm(
@@ -866,7 +867,7 @@ object NonVirtualMethodCall {
     final val ASTID = 15
 }
 
-case class VirtualMethodCall[+V <: Var[V]](
+case class VirtualMethodCall[+V](
     pc:             Int,
     declaringClass: ReferenceType,
     isInterface:    Boolean,
@@ -906,7 +907,7 @@ object VirtualMethodCall {
     final val ASTID = 16
 }
 
-case class StaticMethodCall[+V <: Var[V]](
+case class StaticMethodCall[+V](
     pc:             Int,
     declaringClass: ClassType,
     isInterface:    Boolean,
@@ -982,7 +983,7 @@ object StaticMethodCall {
  *
  * @tparam V The type of the [[Var]]s.
  */
-case class InvokedynamicMethodCall[+V <: Var[V]](
+case class InvokedynamicMethodCall[+V](
     pc:              PC,
     bootstrapMethod: BootstrapMethod,
     name:            String,
@@ -1034,7 +1035,7 @@ case class InvokedynamicMethodCall[+V <: Var[V]](
 object InvokedynamicMethodCall { final val ASTID = 18 }
 
 /** An expression where the value is not further used. */
-case class ExprStmt[+V <: Var[V]](pc: Int, expr: Expr[V]) extends AssignmentLikeStmt[V] {
+case class ExprStmt[+V](pc: Int, expr: Expr[V]) extends AssignmentLikeStmt[V] {
 
     override final def asExprStmt: this.type = this
     override final def isExprStmt: Boolean = true
@@ -1051,7 +1052,7 @@ case class ExprStmt[+V <: Var[V]](pc: Int, expr: Expr[V]) extends AssignmentLike
     }
 
     override final def isSideEffectFree: Boolean = {
-        assert(
+        elidedAssert(
             !expr.isSideEffectFree,
             "useless ExprStmt - the referenced expression is side-effect free"
         )
@@ -1125,7 +1126,7 @@ object StaticFunctionCallStatement {
  *
  * @note `CaughtException` expression are only created by [[TACAI]]!
  */
-case class CaughtException[+V <: Var[V]](
+case class CaughtException[+V](
     pc:                        PC,
     exceptionType:             Option[ClassType],
     private var throwingStmts: IntTrieSet
@@ -1159,7 +1160,7 @@ case class CaughtException[+V <: Var[V]](
      *  - If the exception is a parameter the parameter's origin (-1,... -n) is returned.
      *  - If the exception was raised due to a sideeffect of evaluating an expression, then the
      *    origin is smaller or equal to [[org.opalj.ai.ImmediateVMExceptionsOriginOffset]] and can be
-     *    tranformed to the index of the responsible instruction using
+     *    transformed to the index of the responsible instruction using
      *    [[org.opalj.ai#pcOfImmediateVMException]].
      */
     def origins: IntTrieSet = throwingStmts
@@ -1167,7 +1168,7 @@ case class CaughtException[+V <: Var[V]](
     /**
      * Textual description of the sources of the caught exceptions. If the exception was
      * thrown by the JVM due to the evaluation of an expression (e.g., NullPointerException,
-     * DivisionByZero,..) then the string will be `exception@<INDEX>` where index identifies
+     * DivisionByZero, ...) then the string will be `exception@<INDEX>` where index identifies
      * the failing expression. In case an exception is caught that was thrown using `ATHROW`
      * the local variable/parameter which stores the local variable is returned.
      */
@@ -1202,7 +1203,7 @@ object CaughtException {
 /**
  * A `checkcast` as defined by the JVM specification.
  */
-case class Checkcast[+V <: Var[V]](pc: PC, value: Expr[V], cmpTpe: ReferenceType) extends Stmt[V] {
+case class Checkcast[+V](pc: PC, value: Expr[V], cmpTpe: ReferenceType) extends Stmt[V] {
 
     override final def asCheckcast: this.type = this
     override final def isCheckcast: Boolean = true
@@ -1228,7 +1229,7 @@ case class Checkcast[+V <: Var[V]](pc: PC, value: Expr[V], cmpTpe: ReferenceType
         // IMPROVE identify (from the JVM verifiers point-of-view) truly useless checkcasts
         // A useless checkcast is one where the static intra-procedural type information which
         // is available in the bytecode is sufficient to determine that the type is a subtype
-        // of the tested type (i.e., only those check casts are truly usefull that would not
+        // of the tested type (i.e., only those check casts are truly usefully that would not
         // lead to a failing validation of the bytecode by the JVM!)
         false
     }

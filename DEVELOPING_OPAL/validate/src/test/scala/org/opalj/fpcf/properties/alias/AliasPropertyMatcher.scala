@@ -20,7 +20,7 @@ import org.opalj.br.fpcf.properties.alias.NoAlias
 abstract class AliasPropertyMatcher(val property: Alias) extends AbstractPropertyMatcher {
 
     override def isRelevant(
-        p:      Project[_],
+        p:      Project[?],
         as:     Set[ClassType],
         entity: Any,
         a:      AnnotationLike
@@ -35,7 +35,7 @@ abstract class AliasPropertyMatcher(val property: Alias) extends AbstractPropert
     }
 
     override def validateProperty(
-        p:          Project[_],
+        p:          Project[?],
         as:         Set[ClassType],
         entity:     Any,
         a:          AnnotationLike,

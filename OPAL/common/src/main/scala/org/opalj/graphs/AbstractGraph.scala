@@ -66,14 +66,14 @@ trait AbstractGraph[@specialized(Int) N] extends (N => IterableOnce[N]) {
     //
 
     override def toString: String = {
-        val vertices = this.vertices.iterator.map { v => this(v).iterator.mkString(v.toString() + " => {", ",", "}") }
+        val vertices = this.vertices.iterator.map { v => this(v).iterator.mkString(v.toString + " => {", ",", "}") }
         vertices.mkString("Graph{\n\t", "\n\t", "\n}")
     }
 
     def toNodes: Iterable[Node] = {
 
         val nodesMap: Map[N, DefaultMutableNode[String]] = {
-            vertices.iterator.map(v => (v, new DefaultMutableNode(v.toString()))).toMap
+            vertices.iterator.map(v => (v, new DefaultMutableNode(v.toString))).toMap
         }
 
         vertices.iterator.foreach { v =>

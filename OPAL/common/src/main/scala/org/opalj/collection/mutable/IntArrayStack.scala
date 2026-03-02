@@ -230,7 +230,7 @@ object IntArrayStack extends SpecificIterableFactory[Int, IntArrayStack] {
         builder.result()
     }
 
-    override def newBuilder =
+    override def newBuilder: IntArrayStackBuilder =
         new IntArrayStackBuilder(empty)
 
     /**

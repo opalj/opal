@@ -8,8 +8,7 @@ import org.opalj.collection.immutable.IntTrieSet
 /**
  * Efficient representation of a mutable graph where the nodes are identified using consecutive
  * int values. This graph in particular supports the case where many nodes do not have successors.
- * Computing the strongly connected components is particular efficient as no transformations are
- * are required.
+ * Computing the strongly connected components is particular efficient as no transformations are required.
  *
  * ==Thread Safety==
  * This class is not thread-safe!

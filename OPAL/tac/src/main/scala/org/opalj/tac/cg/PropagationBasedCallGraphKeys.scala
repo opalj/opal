@@ -9,8 +9,8 @@ import org.opalj.br.analyses.cg.InitialInstantiatedTypesKey
 import org.opalj.br.fpcf.FPCFAnalysisScheduler
 import org.opalj.br.fpcf.properties.SimpleContextsKey
 import org.opalj.tac.fpcf.analyses.cg.PropagationBasedTypeIterator
-import org.opalj.tac.fpcf.analyses.cg.rta.ConfiguredNativeMethodsInstantiatedTypesAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.xta.ArrayInstantiationsAnalysisScheduler
+import org.opalj.tac.fpcf.analyses.cg.xta.ConfiguredNativeMethodsInstantiatedTypesAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.xta.CTASetEntitySelector
 import org.opalj.tac.fpcf.analyses.cg.xta.FTASetEntitySelector
 import org.opalj.tac.fpcf.analyses.cg.xta.InstantiatedTypesAnalysisScheduler
@@ -33,8 +33,7 @@ import org.opalj.tac.fpcf.analyses.fieldaccess.reflection.ReflectionRelatedField
  *      [[org.opalj.tac.fpcf.analyses.cg.xta.LibraryInstantiatedTypesBasedEntryPointsAnalysis]].
  *
  *      Note, that initial instantiated types ([[org.opalj.br.analyses.cg.InitialInstantiatedTypesKey]])
- *      and entry points ([[org.opalj.br.analyses.cg.InitialEntryPointsKey]]) can be configured before
- *      hand.
+ *      and entry points ([[org.opalj.br.analyses.cg.InitialEntryPointsKey]]) can be configured beforehand.
  *      Furthermore, you can configure the analysis mode (Library or Application) in the configuration
  *      of these keys.
  *
@@ -61,13 +60,13 @@ trait PropagationBasedCallGraphKey extends CallGraphKey {
             new InstantiatedTypesAnalysisScheduler(theTypeSetEntitySelector),
             new ArrayInstantiationsAnalysisScheduler(theTypeSetEntitySelector),
             new TypePropagationAnalysisScheduler(theTypeSetEntitySelector),
-            ConfiguredNativeMethodsInstantiatedTypesAnalysisScheduler,
+            new ConfiguredNativeMethodsInstantiatedTypesAnalysisScheduler(theTypeSetEntitySelector),
             TriggeredFieldAccessInformationAnalysis,
             ReflectionRelatedFieldAccessesAnalysisScheduler
         ) ::: (if (isLibrary) List(LibraryInstantiatedTypesBasedEntryPointsAnalysis) else Nil)
     }
 
-    override def getTypeIterator(project: SomeProject) =
+    override def getTypeIterator(project: SomeProject): PropagationBasedTypeIterator =
         new PropagationBasedTypeIterator(project, typeSetEntitySelector())
 }
 

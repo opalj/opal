@@ -22,20 +22,17 @@ trait Module_attributeReader extends AttributeReader {
 
     type Module_attribute <: Attribute
 
-    type RequiresEntry <: AnyRef
-    implicit val requiresEntryType: ClassTag[RequiresEntry] // TODO: Replace in Scala 3 by `type RequiresEntry : ClassTag`
+    type RequiresEntry <: AnyRef: ClassTag
     type Requires = ArraySeq[RequiresEntry]
 
-    type ExportsEntry <: AnyRef
-    implicit val exportsEntryType: ClassTag[ExportsEntry] // TODO: Replace in Scala 3 by `type ExportsEntry : ClassTag`
+    type ExportsEntry <: AnyRef: ClassTag
     type Exports = ArraySeq[ExportsEntry]
 
     // CONCEPTUALLY:
     // type ExportsToIndexEntry => type ExportsToIndexTable = <X>Array[ExportsToIndexEntry]
     type ExportsToIndexTable = Array[Constant_Pool_Index] // CONSTANT_Module_Index[]
 
-    type OpensEntry <: AnyRef
-    implicit val opensEntryType: ClassTag[OpensEntry] // TODO: Replace in Scala 3 by `type OpensEntry : ClassTag`
+    type OpensEntry <: AnyRef: ClassTag
     type Opens = ArraySeq[OpensEntry]
 
     // CONCEPTUALLY:
@@ -50,8 +47,7 @@ trait Module_attributeReader extends AttributeReader {
     // type ProvidesWithIndexEntry => type ProvidesWithIndexTable = <X>Array[ProvidesWithIndexEntry]
     type ProvidesWithIndexTable = Array[Constant_Pool_Index] // CONSTANT_Class_Index[]
 
-    type ProvidesEntry <: AnyRef
-    implicit val providesEntryType: ClassTag[ProvidesEntry] // TODO: Replace in Scala 3 by `type ProvidesEntry : ClassTag`
+    type ProvidesEntry <: AnyRef: ClassTag
     type Provides = ArraySeq[ProvidesEntry]
 
     //
@@ -153,7 +149,7 @@ trait Module_attributeReader extends AttributeReader {
      * }
      * </pre>
      */
-    private[this] def parserFactory() = (
+    private def parserFactory() = (
         cp:                   Constant_Pool,
         ap:                   AttributeParent,
         ap_name_index:        Constant_Pool_Index,

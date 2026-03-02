@@ -64,7 +64,7 @@ final class ArrayInstantiationsAnalysis(
             PartialResult(
                 targetSetEntity,
                 InstantiatedTypes.key,
-                InstantiatedTypes.update(targetSetEntity, UIDSet(instantiatedArrays.toSeq: _*))
+                InstantiatedTypes.update(targetSetEntity, UIDSet(instantiatedArrays.toSeq*))
             ),
             multidimensionalArrayPartialResults
         )

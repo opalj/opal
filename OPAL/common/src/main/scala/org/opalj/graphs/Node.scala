@@ -17,7 +17,7 @@ import scala.collection.immutable
 trait Node {
 
     /**
-     * Returns a human readable representation (HRR) of this node.
+     * Returns a human-readable representation (HRR) of this node.
      */
     def toHRR: Option[String]
 
@@ -25,7 +25,7 @@ trait Node {
 
     /**
      * An identifier that uniquely identifies this node in the graph to which this
-     * node belongs. By default two nodes are considered equal if they have the same
+     * node belongs. By default, two nodes are considered equal if they have the same
      * unique id.
      */
     def nodeId: Int
@@ -41,7 +41,7 @@ trait Node {
     def foreachSuccessor(f: Node => Unit): Unit
 
     /**
-     * The hash code of this node. By default the hash code is the unique id.
+     * The hash code of this node. By default, the hash code is the unique id.
      */
     override def hashCode(): Int = nodeId
 

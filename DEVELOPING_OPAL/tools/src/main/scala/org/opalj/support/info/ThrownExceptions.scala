@@ -16,14 +16,15 @@ import org.opalj.br.analyses.ProjectsAnalysisApplication
 import org.opalj.br.collection.TypesSet
 import org.opalj.br.fpcf.ContextProviderKey
 import org.opalj.br.fpcf.cli.MultiProjectAnalysisConfig
-import org.opalj.br.fpcf.properties.{ThrownExceptions => ThrownExceptionsProperty}
 import org.opalj.br.fpcf.properties.Context
+import org.opalj.br.fpcf.properties.ThrownExceptions as ThrownExceptionsProperty
 import org.opalj.cli.AnalysisLevelArg
 import org.opalj.cli.IndividualArg
+import org.opalj.fpcf.EPS
 import org.opalj.fpcf.FPCFAnalysesManagerKey
 import org.opalj.fpcf.PropertyKind
-import org.opalj.fpcf.PropertyStoreBasedCommandLineConfig
-import org.opalj.fpcf.SomeEPS
+import org.opalj.tac.cg.CallGraphArg
+import org.opalj.tac.cg.CGBasedCommandLineConfig
 import org.opalj.tac.fpcf.analyses.EagerL1ThrownExceptionsAnalysis
 import org.opalj.util.Nanoseconds
 import org.opalj.util.PerformanceEvaluation.time
@@ -37,18 +38,19 @@ import org.opalj.util.PerformanceEvaluation.time
 object ThrownExceptions extends ProjectsAnalysisApplication {
 
     protected class ThrownExceptionsConfig(args: Array[String]) extends MultiProjectAnalysisConfig(args)
-        with PropertyStoreBasedCommandLineConfig {
+        with CGBasedCommandLineConfig {
         val description = "Computes the set of the exceptions (in)directly thrown by methods"
 
         private val analysisLevelArg =
-            new AnalysisLevelArg("Thrown-exceptions analysis level", Seq("L0" -> "L0", "L1" -> "L1"): _*) {
+            new AnalysisLevelArg("Thrown-exceptions analysis level", Seq("L0" -> "L0", "L1" -> "L1")*) {
                 override val defaultValue: Option[String] = Some("L1")
                 override val withNone = false
             }
 
         args(
             analysisLevelArg !,
-            IndividualArg
+            IndividualArg,
+            CallGraphArg ?
         )
         init()
 
@@ -80,6 +82,7 @@ object ThrownExceptions extends ProjectsAnalysisApplication {
                 ps.waitOnPhaseCompletion()
                 ps
             } else /* if no analysis level is specified or L1 */ {
+                analysisConfig.setupCallGraph(project)
                 project.get(FPCFAnalysesManagerKey).runAll(
                     EagerL1ThrownExceptionsAnalysis
                 )
@@ -106,7 +109,7 @@ object ThrownExceptions extends ProjectsAnalysisApplication {
                 epsThrowingExceptionsByClassFile.map { e =>
                     val (cf, epsThrowingExceptionsPerMethod) = e
                     cf.thisType.toJava + "{" +
-                        epsThrowingExceptionsPerMethod.map { (eps: SomeEPS) =>
+                        epsThrowingExceptionsPerMethod.map { (eps: EPS[?, ThrownExceptionsProperty]) =>
                             val m: DeclaredMethod = eps.e.asInstanceOf[Context].method
                             val ThrownExceptionsProperty(types) = eps.ub
                             m.descriptor.toJava(m.name) + " throws " + types.toString

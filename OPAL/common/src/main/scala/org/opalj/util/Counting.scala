@@ -20,7 +20,7 @@ import org.opalj.concurrent.Locking
  */
 trait Counting extends Locking {
 
-    private[this] val count = mutable.Map.empty[Symbol, Long]
+    private val count = mutable.Map.empty[Symbol, Long]
 
     final def incrementCount(s: Symbol): Unit = {
         withWriteLock { updateCount(s, 1L) }
@@ -45,7 +45,7 @@ trait Counting extends Locking {
      * ==Thread Safety==
      * The `updateCount` method takes care of the synchronization.
      */
-    protected[this] def doUpdateCount(s: Symbol, value: Long): Unit = {
+    protected def doUpdateCount(s: Symbol, value: Long): Unit = {
         val oldValue = count.getOrElseUpdate(s, 0L)
         count.update(s, oldValue + value)
     }
@@ -61,7 +61,7 @@ trait Counting extends Locking {
      * ==Thread Safety==
      * The `getCount` method takes care of the synchronization.
      */
-    protected[this] def doGetCount(s: Symbol): Long = count.getOrElse(s, 0L)
+    protected def doGetCount(s: Symbol): Long = count.getOrElse(s, 0L)
 
     /**
      * Resets the overall count of the given symbol.
@@ -74,7 +74,7 @@ trait Counting extends Locking {
      * ==Thread Safety==
      * The `reset` method takes care of the synchronization.
      */
-    private[this] def doReset(s: Symbol): Unit = count.remove(s)
+    private def doReset(s: Symbol): Unit = count.remove(s)
 
     /**
      * Resets everything. The effect is comparable to creating a new
@@ -88,7 +88,7 @@ trait Counting extends Locking {
      * ==Thread Safety==
      * The `resetAll` method takes care of the synchronization.
      */
-    private[this] def doResetAll(): Unit = count.clear()
+    private def doResetAll(): Unit = count.clear()
 
 }
 

@@ -19,7 +19,7 @@ import org.opalj.br.ReferenceType
  * @author Michael Eichberg
  */
 trait TypeLevelInvokeInstructions extends MethodCallsHandling {
-    domain: ReferenceValuesDomain with TypedValuesFactory with Configuration with TheCode =>
+    domain: ReferenceValuesDomain & TypedValuesFactory & Configuration & TheCode =>
 
     /*override*/
     def invokevirtual(

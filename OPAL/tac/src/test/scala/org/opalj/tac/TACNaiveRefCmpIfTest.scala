@@ -5,7 +5,7 @@ package tac
 import org.junit.runner.RunWith
 import org.scalatestplus.junit.JUnitRunner
 
-import org.opalj.br._
+import org.opalj.br.*
 import org.opalj.br.TestSupport.biProject
 
 /**
@@ -21,7 +21,7 @@ class TACNaiveRefCmpIfTest extends TACNaiveTest {
 
     val ControlSequencesClassFile = project.classFile(ControlSequencesType).get
 
-    import RelationalOperators._
+    import RelationalOperators.*
 
     val IfACMPEQMethod = ControlSequencesClassFile.findMethod("ifacmpeq").head
     val IfACMPNEMethod = ControlSequencesClassFile.findMethod("ifacmpne").head
@@ -84,7 +84,7 @@ class TACNaiveRefCmpIfTest extends TACNaiveTest {
             val javaLikeCode = ToTxt.stmtsToTxtStmt(statements, false)
 
             assert(statements.nonEmpty)
-            assert(javaLikeCode.length > 0)
+            assert(javaLikeCode.nonEmpty)
             statements.shouldEqual(binaryResultAST(
                 If(2, SimpleVar(0, ComputationalTypeReference), EQ, SimpleVar(1, ComputationalTypeReference), 8)
             ))
@@ -97,7 +97,7 @@ class TACNaiveRefCmpIfTest extends TACNaiveTest {
             val javaLikeCode = ToTxt.stmtsToTxtStmt(statements, false)
 
             assert(statements.nonEmpty)
-            assert(javaLikeCode.length > 0)
+            assert(javaLikeCode.nonEmpty)
             statements.shouldEqual(binaryResultAST(
                 If(2, SimpleVar(0, ComputationalTypeReference), NE, SimpleVar(1, ComputationalTypeReference), 8)
             ))
@@ -110,7 +110,7 @@ class TACNaiveRefCmpIfTest extends TACNaiveTest {
             val javaLikeCode = ToTxt.stmtsToTxtStmt(statements, false)
 
             assert(statements.nonEmpty)
-            assert(javaLikeCode.length > 0)
+            assert(javaLikeCode.nonEmpty)
             statements.shouldEqual(unaryResultAST(
                 If(1, SimpleVar(0, ComputationalTypeReference), NE, NullExpr(-1), 6)
             ))
@@ -123,7 +123,7 @@ class TACNaiveRefCmpIfTest extends TACNaiveTest {
             val javaLikeCode = ToTxt.stmtsToTxtStmt(statements, false)
 
             assert(statements.nonEmpty)
-            assert(javaLikeCode.length > 0)
+            assert(javaLikeCode.nonEmpty)
             statements.shouldEqual(unaryResultAST(
                 If(1, SimpleVar(0, ComputationalTypeReference), EQ, NullExpr(-1), 6)
             ))

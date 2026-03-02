@@ -27,7 +27,7 @@ abstract class EscapePropertyMatcher(
 ) extends AbstractPropertyMatcher {
 
     override def isRelevant(
-        p:      Project[_],
+        p:      Project[?],
         as:     Set[ClassType],
         entity: Any,
         a:      AnnotationLike
@@ -38,9 +38,9 @@ abstract class EscapePropertyMatcher(
         val analyses = analysesElementValues map { _.asClassValue.value.asClassType }
         val analysisRelevant = analyses.exists(as.contains)
 
-        // check whether the PerformInvokations domain or the ArrayValuesBinding domain are required
-        val requiresPerformInvokationsDomain =
-            getValue(p, a.annotationType.asClassType, a.elementValuePairs, "performInvokationsDomain")
+        // check whether the PerformInvocations domain or the ArrayValuesBinding domain are required
+        val requiresPerformInvocationsDomain =
+            getValue(p, a.annotationType.asClassType, a.elementValuePairs, "performInvocationsDomain")
                 .asInstanceOf[BooleanValue].value
         // val requiresArrayDomain = getValue(p, a.annotationType.asClassType, a.elementValuePairs, "arrayDomain").asInstanceOf[BooleanValue].value
 
@@ -48,18 +48,18 @@ abstract class EscapePropertyMatcher(
         val m = entity match {
             case (_, VirtualFormalParameter(dm: DefinedMethod, _))
                 if dm.declaringClassType == dm.definedMethod.classFile.thisType =>
-                dm.definedMethod
-            case (_, VirtualFormalParameter(dm: DefinedMethod, _)) => return false;
-            case (_, DefinitionSite(m, _))                         => m
-            case _                                                 => throw new RuntimeException(s"unsuported entity $entity")
+                dm
+            case (_, VirtualFormalParameter(_: DefinedMethod, _)) => return false;
+            case (_, DefinitionSite(m, _))                        => m
+            case _                                                => throw new RuntimeException(s"unsupported entity $entity")
         }
-        if (as.nonEmpty && m.body.isDefined) {
+        if (as.nonEmpty && m.hasSingleDefinedMethod && m.definedMethod.body.isDefined) {
             val domainClass = p.get(AIDomainFactoryKey).domainClass
             val performInvocationsClass = classOf[PerformInvocations]
             val isPerformInvocationsClass = performInvocationsClass.isAssignableFrom(domainClass)
 
             val isPerformInvocationDomainRelevant =
-                if (requiresPerformInvokationsDomain) isPerformInvocationsClass
+                if (requiresPerformInvocationsDomain) isPerformInvocationsClass
                 else !isPerformInvocationsClass
 
             analysisRelevant && isPerformInvocationDomainRelevant
@@ -70,7 +70,7 @@ abstract class EscapePropertyMatcher(
     }
 
     override def validateProperty(
-        p:          Project[_],
+        p:          Project[?],
         as:         Set[ClassType],
         entity:     scala.Any,
         a:          AnnotationLike,

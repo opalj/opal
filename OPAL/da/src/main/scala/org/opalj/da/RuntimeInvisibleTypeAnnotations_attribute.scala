@@ -21,7 +21,7 @@ case class RuntimeInvisibleTypeAnnotations_attribute(
             <summary class="attribute_name">Runtime Invisible Type Annotations [size: {
                 typeAnnotations.size
             } item(s)]</summary>
-            {typeAnnotationsToXHTML(cp)}
+            {typeAnnotationsToXHTML}
         </details>
     }
 

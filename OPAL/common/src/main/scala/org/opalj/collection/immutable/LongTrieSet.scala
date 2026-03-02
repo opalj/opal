@@ -5,7 +5,8 @@ package immutable
 
 import scala.annotation.tailrec
 
-import java.lang.Long.{hashCode => lHashCode}
+import java.lang.Long.hashCode as lHashCode
+import scala.compiletime.uninitialized
 
 sealed abstract class LongTrieSet extends LongSet { intSet =>
 
@@ -158,7 +159,7 @@ private[immutable] final class LongTrieSet1(val i1: Long) extends LongTrieSetLea
     override def equals(other: Any): Boolean = {
         other match {
             case that: LongTrieSet1 => (that eq this) || this.i1 == that.i1
-            case that               => false
+            case _                  => false
         }
     }
     override def hashCode: Int = 31 + lHashCode(i1)
@@ -211,7 +212,7 @@ private[immutable] final class LongTrieSet2(
     override def equals(other: Any): Boolean = {
         other match {
             case that: LongTrieSet2 => (that eq this) || this.i1 == that.i1 && this.i2 == that.i2
-            case that               => false
+            case _                  => false
         }
     }
     override def hashCode: Int = 31 * (31 + lHashCode(i1)) + lHashCode(i2)
@@ -277,7 +278,7 @@ private[immutable] final class LongTrieSet3(
 
         this.grow(i, level)
     }
-    private[this] def grow(i: Long, level: Int): LongTrieSetNode = {
+    private def grow(i: Long, level: Int): LongTrieSetNode = {
         // we know that i1, i2, i3 and i are all different values
         // Now, let's try to create the final tree in a more direct manner:
 
@@ -289,7 +290,7 @@ private[immutable] final class LongTrieSet3(
             if (i1_7L == i3_7L) {
                 if (i1_7L == i_7L) {
                     // they all have the same 3 bits used for branching purposes...
-                    new LongTrieSetNode1(i1_7L.toInt, grow(i, level + 3))
+                    new LongTrieSetNode1(i1_7L, grow(i, level + 3))
                 } else {
                     new LongTrieSetNode2(
                         1 << (i_7L * 4) | 2 << (i1_7L * 4) /*lookuptable*/,
@@ -450,7 +451,7 @@ private[immutable] final class LongTrieSetN(
     final val root: LongTrieSetNode
 ) extends LongTrieSet {
 
-    // assert(size >= 4)
+    // elidedAssert(size >= 4)
 
     override def isEmpty: Boolean = false
     override def isSingletonSet: Boolean = false
@@ -459,12 +460,12 @@ private[immutable] final class LongTrieSetN(
     override def foreach[U](f:   Long => U): Unit = root.foreach(f)
 
     override def iterator: LongIterator = new LongIterator {
-        private[this] var leafNode: LongTrieSetLeaf = null
-        private[this] var index = 0
-        private[this] val nodes =
+        private var leafNode: LongTrieSetLeaf = uninitialized
+        private var index = 0
+        private val nodes =
             new scala.collection.mutable.Stack(initialSize = Math.min(16, LongTrieSetN.this.size / 2)) += root
 
-        @tailrec private[this] def moveToNextLeafNode(): Unit = {
+        @tailrec private def moveToNextLeafNode(): Unit = {
             if (nodes.isEmpty) {
                 leafNode = null
                 return;
@@ -670,7 +671,7 @@ sealed abstract private[immutable] class LongTrieSetNode2_7 extends LongTrieSetN
                 val thisLookupTable = this.lookupTable
                 val thatLookupTable = that.lookupTable
                 var index = 0
-                do {
+                while {
                     val thisIndex = thisLookupTable >> (index * 4) & 15
                     val thatIndex = thatLookupTable >> (index * 4) & 15
                     if (thisIndex == 0) {
@@ -689,7 +690,8 @@ sealed abstract private[immutable] class LongTrieSetNode2_7 extends LongTrieSetN
                             }
                         }
                     }
-                } while (index < 8)
+                    index < 8
+                } do ()
                 true
             case _ =>
                 false

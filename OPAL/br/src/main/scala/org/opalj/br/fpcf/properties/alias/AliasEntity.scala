@@ -31,7 +31,7 @@ class AliasEntity(
      * A copy of two elements of this [[AliasEntity]].
      * It is used to ensure that the order of the elements is irrelevant.
      */
-    private[this] val (_element1, _element2) = (e1, e2) match {
+    private val (_element1, _element2) = (e1, e2) match {
         case (e1, e2) if e1.hashCode() < e2.hashCode() => (e1, e2)
         case (e1, e2)                                  => (e2, e1)
     }
@@ -39,7 +39,7 @@ class AliasEntity(
     /**
      * A copy of two contexts of this [[AliasEntity]]. It uses the same order as the elements.
      */
-    private[this] val (_context1, _context2) = (c1, c2) match {
+    private val (_context1, _context2) = (c1, c2) match {
         case (c1, c2) if e1 eq _element1 => (c1, c2)
         case (c1, c2)                    => (c2, c1)
     }

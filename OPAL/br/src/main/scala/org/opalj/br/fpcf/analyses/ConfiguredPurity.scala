@@ -13,8 +13,7 @@ import org.opalj.br.analyses.cg.ClassExtensibilityKey
 import org.opalj.br.fpcf.properties.Purity
 import org.opalj.fpcf.PropertyStoreKey
 
-import net.ceedubs.ficus.Ficus._
-import net.ceedubs.ficus.readers.ArbitraryTypeReader._
+import pureconfig.*
 
 /**
  * @author Dominik Helm
@@ -30,17 +29,16 @@ class ConfiguredPurity(
         desc:  String,
         p:     String,
         conds: Option[Seq[String]]
-    )
+    ) derives ConfigReader
 
     private val classExtensibility = project.get(ClassExtensibilityKey)
 
-    private val toSet = project.config.as[Seq[PurityValue]](
-        "org.opalj.fpcf.analyses.ConfiguredPurity.purities"
-    )
+    private val toSet = ConfigSource.fromConfig(project.config).at("org.opalj.fpcf.analyses.ConfiguredPurity.purities")
+        .loadOrThrow[Seq[PurityValue]]
 
     private val methods: Map[DeclaredMethod, Purity] = (
         for {
-            PurityValue(className, methodName, descriptor, property, conditions) <- toSet.toSet
+            case PurityValue(className, methodName, descriptor, property, conditions) <- toSet.toSet
 
             po = Purity(property)
             if po.isDefined

@@ -28,7 +28,7 @@ class L1VirtualMethodCallInterpreter()(
     override type T = VirtualMethodCall[V]
 
     override def interpret(call: T)(implicit state: InterpretationState): ProperPropertyComputationResult = {
-        val pReceiver = call.receiver.asVar.toPersistentForm(state.tac.stmts)
+        val pReceiver = call.receiver.asVar.toPersistentForm(using state.tac.stmts)
 
         call.name match {
             case "setLength" if StringInterpreter.isStringBuilderBufferCall(call) =>

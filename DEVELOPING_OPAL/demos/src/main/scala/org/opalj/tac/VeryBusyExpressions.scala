@@ -3,11 +3,11 @@ package org.opalj
 package tac
 
 import org.opalj.ai.cli.AIBasedCommandLineConfig
-import org.opalj.br._
-import org.opalj.br.analyses._
-import org.opalj.br.cfg._
+import org.opalj.br.*
+import org.opalj.br.analyses.*
+import org.opalj.br.cfg.*
 import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.value._
+import org.opalj.value.*
 
 /**
  * Computes the very busy binary arithmetic expressions.
@@ -47,7 +47,7 @@ object VeryBusyExpressions extends MethodAnalysisApplication {
 
         val seed = Set.empty[Fact]
 
-        def transfer(inFacts: Facts, stmt: Stmt[_], index: PC, succId: CFG.SuccessorId): Facts = {
+        def transfer(inFacts: Facts, stmt: Stmt[?], index: PC, succId: CFG.SuccessorId): Facts = {
             // Recall that we work on a flat SSA like representation.
             stmt match {
                 case Assignment(_, _, expr) =>

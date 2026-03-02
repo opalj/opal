@@ -23,7 +23,7 @@ sealed trait FieldLocalityMetaInformation extends PropertyMetaInformation {
  * The lifetime of a value in a [[LocalFieldWithGetter]] can only be extended by it being returned
  * by a method. I.e. if the caller of such method knows that it's receiver is fresh, the field's
  * value may also be treated as fresh.
- * [[ExtensibleLocalFieldWithGetter]] is used if both restrictions apply: The type type of the
+ * [[ExtensibleLocalFieldWithGetter]] is used if both restrictions apply: The type of the
  * owning instance may not be cloneable and the value's lifetime could be extended by being
  * returned by a method.
  */
@@ -95,7 +95,7 @@ case object ExtensibleLocalFieldWithGetter extends FieldLocality {
 }
 
 /**
- * The field is not local, i.e. it may be written with non-fresh values or the fields's value may
+ * The field is not local, i.e. it may be written with non-fresh values or the field's value may
  * escape other than by being returned by a method of the owning instance.
  */
 case object NoLocalField extends FieldLocality {

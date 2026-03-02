@@ -18,6 +18,7 @@ import org.opalj.fpcf.PropertyIsNotDerivedByPreviouslyExecutedAnalysis
 import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.PropertyMetaInformation
 import org.opalj.fpcf.PropertyStore
+import org.opalj.util.elidedAssert
 
 /**
  * Represent the set of types that have allocations reachable from the respective entry points.
@@ -36,7 +37,7 @@ case class InstantiatedTypes private[properties] (
 ) extends OrderedProperty
     with InstantiatedTypesPropertyMetaInformation {
 
-    assert(orderedTypes == null || orderedTypes.size == types.size)
+    elidedAssert(orderedTypes == null || orderedTypes.size == types.size)
 
     final def key: PropertyKey[InstantiatedTypes] = InstantiatedTypes.key
 

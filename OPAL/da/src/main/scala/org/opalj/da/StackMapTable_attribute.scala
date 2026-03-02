@@ -24,16 +24,16 @@ case class StackMapTable_attribute(
         <div>
             <details class="attribute">
                 <summary class="attribute_name">StackMapTable [size: {stack_map_frames.length} item(s)]</summary>
-                {stack_map_framestoXHTML(cp)}
+                {stack_map_framestoXHTML}
             </details>
         </div>
     }
 
     def stack_map_framestoXHTML(implicit cp: Constant_Pool): Node = {
-        var offset: Int = -1
+        implicit var offset: Int = -1
         val framesAsXHTML =
             for (stack_map_frame <- stack_map_frames) yield {
-                val (frameAsXHTML, newOffset) = stack_map_frame.toXHTML(cp, offset)
+                val (frameAsXHTML, newOffset) = stack_map_frame.toXHTML
                 offset = newOffset
                 frameAsXHTML
             }

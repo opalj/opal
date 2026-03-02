@@ -142,7 +142,7 @@ trait ConstantPoolBinding extends Constant_PoolReader {
         new CONSTANT_Dynamic_info(bootstrap_method_attr_index, name_and_type_index)
     }
 
-    protected[this] def createDeferredActionsStore(): DeferredActionsStore = {
+    protected def createDeferredActionsStore(): DeferredActionsStore = {
         new mutable.ArrayBuffer[ClassFile => ClassFile] with Constant_Pool_Entry {}
     }
 

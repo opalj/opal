@@ -13,6 +13,7 @@ import org.opalj.br.ClassType
 import org.opalj.br.FieldTypes
 import org.opalj.br.Method
 import org.opalj.br.MethodDescriptor
+import org.opalj.br.analyses.MethodDeclarationContext
 import org.opalj.br.analyses.ProjectIndexKey
 import org.opalj.br.analyses.SomeProject
 import org.opalj.value.IsReferenceValue
@@ -51,13 +52,13 @@ class ClassBasedMethodMatcher(
 
     // TODO use a ProjectInformationKey or WeakHashMap to cache methods per project
     // (for the contains check)
-    private[this] def methods(implicit p: SomeProject): Set[Method] = possibleClasses.flatMap { c =>
+    private def methods(implicit p: SomeProject): Set[Method] = possibleClasses.flatMap { c =>
         // todo what about "inherited" static methods?
-        val methodsInClassFile = p.classFile(c).map(_.methods).getOrElse(ArraySeq.empty)
+        val methodsInClassFile = p.classFile(c).map(_.methods).getOrElse(ArraySeq.empty[Method])
         if (onlyMethodsExactlyInClass)
             methodsInClassFile
         else
-            methodsInClassFile ++ p.instanceMethods.getOrElse(c, ArraySeq.empty).map(_.method)
+            methodsInClassFile ++ p.instanceMethods.getOrElse(c, ArraySeq.empty[MethodDeclarationContext]).map(_.method)
 
     }
 

@@ -2,7 +2,7 @@
 package org.opalj
 package br
 
-import java.lang.{Boolean => JBoolean}
+import java.lang.Boolean as JBoolean
 import java.util.concurrent.atomic.AtomicInteger
 
 import org.scalatest.funsuite.AnyFunSuite
@@ -56,16 +56,16 @@ class CodePropertiesTest extends AnyFunSuite {
             val eh = code.exceptionHandlers
             val specifiedMaxStack = code.maxStack
             val specifiedMaxLocals = code.maxLocals
-            val cfg = CFGFactory(code, ch)
+            val cfg = CFGFactory(using code, ch)
 
-            val liveVariables = code.liveVariables(ch)
+            val liveVariables = code.liveVariables(using ch)
             assert(
                 code.programCounters.forall(pc => liveVariables(pc) ne null),
                 s"computation of liveVariables fails for ${method.toJava}"
             )
 
             for {
-                PCAndInstruction(pc, instruction) <- code
+                case PCAndInstruction(pc, instruction) <- code
                 if instruction.isReturnInstruction
                 // The bytecode of the scala...typechecker.Typers$Typer.$deserializeLambda$ method
                 // is invalid. The "primary" code is duplicated in an exception handler and the
@@ -87,7 +87,7 @@ class CodePropertiesTest extends AnyFunSuite {
                 }
             }
 
-            for { PCAndInstruction(pc, LocalVariableAccess(i, isRead)) <- code } {
+            for { case PCAndInstruction(pc, LocalVariableAccess(i, isRead)) <- code } {
                 val isLive = liveVariables(pc).contains(i)
                 if (isRead)
                     assert(isLive, s"$i is not live at $pc in ${method.toJava}")
@@ -180,7 +180,7 @@ class CodePropertiesTest extends AnyFunSuite {
             override def loadsInterfacesOnly: Boolean = false
         }
         val reader = new Reader()
-        val cfs = org.opalj.br.reader.readJREClassFiles()(reader = reader)
+        val cfs = org.opalj.br.reader.readJREClassFiles()(using reader = reader)
         val jreProject = Project(cfs)
         analyzeMaxStackAndLocals(jreProject)
         val count = analyzeStackMapTablePCs(jreProject)

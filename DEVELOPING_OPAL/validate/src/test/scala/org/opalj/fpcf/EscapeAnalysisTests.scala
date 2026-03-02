@@ -7,7 +7,6 @@ import java.net.URL
 import org.opalj.ai.domain.l2.DefaultPerformInvocationsDomainWithCFGAndDefUse
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.br.AnnotationLike
-import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.VirtualFormalParameter
 import org.opalj.br.fpcf.properties.SimpleContextsKey
@@ -30,7 +29,7 @@ class EscapeAnalysisTests extends PropertiesTest {
     }
 
     override def init(p: Project[URL]): Unit = {
-        val performInvocationsDomain = classOf[DefaultPerformInvocationsDomainWithCFGAndDefUse[_]]
+        val performInvocationsDomain = classOf[DefaultPerformInvocationsDomainWithCFGAndDefUse[?]]
 
         p.updateProjectInformationKeyInitializationData(AIDomainFactoryKey) {
             case None               => Set(performInvocationsDomain)
@@ -40,16 +39,15 @@ class EscapeAnalysisTests extends PropertiesTest {
         p.get(RTACallGraphKey)
     }
 
-    private[this] def mapEntities(
+    private def mapEntities(
         p:  Project[URL],
         es: Iterable[(Entity, String => String, Iterable[AnnotationLike])]
     ): Iterable[(Entity, String => String, Iterable[AnnotationLike])] = {
-        val declaredMethods = p.get(DeclaredMethodsKey)
         val simpleContexts = p.get(SimpleContextsKey)
         es.map { tuple =>
             (
                 tuple._1 match {
-                    case ds: DefinitionSite         => (simpleContexts(declaredMethods(ds.method)), ds)
+                    case ds: DefinitionSite         => (simpleContexts(ds.method), ds)
                     case fp: VirtualFormalParameter => (simpleContexts(fp.method), fp)
                 },
                 tuple._2,

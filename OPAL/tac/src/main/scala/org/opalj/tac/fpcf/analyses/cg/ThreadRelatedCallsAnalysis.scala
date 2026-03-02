@@ -35,6 +35,7 @@ import org.opalj.fpcf.SomeEPS
 import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.tac.fpcf.properties.TheTACAI
+import org.opalj.util.elidedAssert
 import org.opalj.value.IsReferenceValue
 
 class ThreadStartAnalysisResults extends IndirectCalls with VMReachableMethodsBase
@@ -195,12 +196,12 @@ class ThreadStartAnalysis private[cg] (
      * A call to `Thread#start` eventually leads to calls to `Thread#exit` and
      * `ConcreteRunnable#run`. These methods will be returned by this method.
      * Note, that if the concrete type of the runnable object is unknown, the corresponding
-     * `run` methods might be missing. Thus the resulting call graph may be unsound.
+     * `run` methods might be missing. Thus, the resulting call graph may be unsound.
      *
-     * Note: It takes the given `threadRelatedMethods`, add the relavant ones and returns the
+     * Note: It takes the given `threadRelatedMethods`, add the relevant ones and returns the
      * updated set.
      */
-    private[this] def handleStart(
+    private def handleStart(
         callContext:            ContextType,
         callPC:                 Int,
         receiver:               V,
@@ -258,7 +259,7 @@ class ThreadStartAnalysis private[cg] (
         }
     }
 
-    private[this] def handleTypeAndHasRunnable(
+    private def handleTypeAndHasRunnable(
         tpe:                    ReferenceType,
         callContext:            ContextType,
         callPC:                 Int,
@@ -287,7 +288,7 @@ class ThreadStartAnalysis private[cg] (
     /**
      * For the given `expr`, it collects all calls to `<init>` on that expression.
      */
-    private[this] def getConstructorCalls(
+    private def getConstructorCalls(
         expr:    Expr[V],
         defSite: Int,
         stmts:   Array[Stmt[V]]
@@ -306,10 +307,10 @@ class ThreadStartAnalysis private[cg] (
     }
 
     /**
-     * Handles the case of a call to `run` of a thread object, that holds a instance of
+     * Handles the case of a call to `run` of a thread object, that holds an instance of
      * [[Runnable]] (passed as an argument to the constructor).
      */
-    private[this] def handleThreadInit(
+    private def handleThreadInit(
         callContext:            ContextType,
         callPC:                 Int,
         allocationContext:      Context,
@@ -319,8 +320,11 @@ class ThreadStartAnalysis private[cg] (
     )(implicit typeIteratorState: TypeIteratorState): Unit = stmts(threadDefSite) match {
         case Assignment(_, thread, New(_, _)) =>
             for {
-                NonVirtualMethodCall(_, _, _, "<init>", descriptor, _, params) <-
-                    getConstructorCalls(thread, threadDefSite, stmts)
+                case NonVirtualMethodCall(_, _, _, "<init>", descriptor, _, params) <- getConstructorCalls(
+                    thread,
+                    threadDefSite,
+                    stmts
+                )
             } {
                 val indexOfRunnableParameter = descriptor.parameterTypes.indexWhere {
                     _ == ClassType.Runnable
@@ -386,10 +390,10 @@ class ThreadStartAnalysis private[cg] (
      * Otherwise, it will add the corresponding [[org.opalj.br.DeclaredMethod]] in case it is
      * virtual (i.e. its definition is not available).
      *
-     * Note: It takes the given `threadRelatedMethods`, add the relavant ones and returns the
+     * Note: It takes the given `threadRelatedMethods`, add the relevant ones and returns the
      * updated set.
      */
-    private[this] def addRunnableMethod(
+    private def addRunnableMethod(
         callContext:            ContextType,
         callPC:                 Int,
         receiverType:           ClassType,
@@ -418,7 +422,7 @@ class ThreadStartAnalysis private[cg] (
         )
     }
 
-    private[this] def addThreadGroupMethod(
+    private def addThreadGroupMethod(
         callContext:        ContextType,
         callPC:             Int,
         receiverValue:      IsReferenceValue,
@@ -445,7 +449,7 @@ class ThreadStartAnalysis private[cg] (
                 ThreadRelatedCallsAnalysisScheduler.uncaughtExceptionDescriptor
             )
 
-            assert(!declTgt.hasSingleDefinedMethod)
+            elidedAssert(!declTgt.hasSingleDefinedMethod)
 
             vmReachableMethods.addIncompleteCallSite(callPC)
             vmReachableMethods.addVMReachableMethod(declTgt)
@@ -458,10 +462,10 @@ class ThreadStartAnalysis private[cg] (
      * Otherwise, it will add the corresponding [[org.opalj.br.DeclaredMethod]] in case it is
      * virtual (i.e. its definition is not available).
      *
-     * Note: It takes the given `threadRelatedMethods`, add the relavant ones and returns the
+     * Note: It takes the given `threadRelatedMethods`, add the relevant ones and returns the
      * updated set.
      */
-    private[this] def addMethod(
+    private def addMethod(
         callContext:            ContextType,
         callPC:                 Int,
         receiver:               Option[V],
@@ -473,7 +477,7 @@ class ThreadStartAnalysis private[cg] (
         partialAnalysisResults: IndirectCalls
     ): Unit = {
         val caller = callContext.method.asDefinedMethod
-        val persistentReceiver = receiver.flatMap(persistentUVar(_)(stmts))
+        val persistentReceiver = receiver.flatMap(persistentUVar(_)(using stmts))
         if (target.hasValue) {
             partialAnalysisResults.addCall(
                 callContext,
@@ -520,7 +524,7 @@ class UncaughtExceptionHandlerAnalysis private[analyses] (
         if (params.nonEmpty && params.head.isDefined) {
             val receiver = params.head.get.asVar
             handleUncaughtExceptionHandler(callerContext, receiver, callPC, vmReachableMethods)
-            returnResult(receiver, vmReachableMethods)(state)
+            returnResult(receiver, vmReachableMethods)(using state)
         } else {
             vmReachableMethods.addIncompleteCallSite(callPC)
             Results(vmReachableMethods.partialResults(callerContext))
@@ -539,7 +543,7 @@ class UncaughtExceptionHandlerAnalysis private[analyses] (
 
         typeIterator.continuation(receiver, eps.asInstanceOf[EPS[Entity, PropertyType]]) { newType =>
             handleType(newType, state.callContext, pc, vmReachableMethods)
-        }(state)
+        }(using state)
 
         if (eps.isFinal) {
             state.removeDependee(epk)
@@ -547,7 +551,7 @@ class UncaughtExceptionHandlerAnalysis private[analyses] (
             state.updateDependency(eps)
         }
 
-        returnResult(receiver, vmReachableMethods)(state)
+        returnResult(receiver, vmReachableMethods)(using state)
     }
 
     def returnResult(
@@ -569,10 +573,10 @@ class UncaughtExceptionHandlerAnalysis private[analyses] (
      * `uncaughtException` if the runtime type is precisely known.
      * Otherwise, we remain unsound.
      *
-     * Note: It takes the given `threadRelatedMethods`, add the relavant ones and returns the
+     * Note: It takes the given `threadRelatedMethods`, add the relevant ones and returns the
      * updated set.
      */
-    private[this] def handleUncaughtExceptionHandler(
+    private def handleUncaughtExceptionHandler(
         callContext:        ContextType,
         receiver:           V,
         callPC:             Int,
@@ -585,13 +589,13 @@ class UncaughtExceptionHandlerAnalysis private[analyses] (
     }
 
     // todo refactor
-    private[this] def handleType(
+    private def handleType(
         receiverType:       ReferenceType,
         callContext:        ContextType,
         callPC:             Int,
         vmReachableMethods: VMReachableMethods
     ): Unit = {
-        if (classHierarchy.isASubtypeOf(receiverType, ClassType("java/lang/Thread$UncaughtExceptionHandler")).isNo)
+        if (classHierarchy.isASubtypeOf(receiverType, ClassType.ThreadUncaughtExceptionHandler).isNo)
             return
 
         val thisType = callContext.method.declaringClassType
@@ -613,7 +617,7 @@ class UncaughtExceptionHandlerAnalysis private[analyses] (
                 ThreadRelatedCallsAnalysisScheduler.uncaughtExceptionDescriptor
             )
 
-            assert(!declTgt.hasSingleDefinedMethod)
+            elidedAssert(!declTgt.hasSingleDefinedMethod)
 
             vmReachableMethods.addIncompleteCallSite(callPC)
             vmReachableMethods.addVMReachableMethod(declTgt)
@@ -638,7 +642,7 @@ class ThreadRelatedCallsAnalysis private[cg] (
         val declaredMethods = p.get(DeclaredMethodsKey)
 
         val setUncaughtExceptionHandlerDescriptor = {
-            MethodDescriptor(ClassType("java/lang/Thread$UncaughtExceptionHandler"), VoidType)
+            MethodDescriptor(ClassType.ThreadUncaughtExceptionHandler, VoidType)
         }
 
         var setUncaughtExceptionHandlerMethods: List[DeclaredMethod] = List(
@@ -659,12 +663,12 @@ class ThreadRelatedCallsAnalysis private[cg] (
         ))
 
         classHierarchy.foreachSubclass(ClassType.Thread, project) { cf =>
-            val setUncaughtExcpetionHandlerOpt =
+            val setUncaughtExceptionHandlerOpt =
                 cf.findMethod("setUncaughtExceptionHandler", setUncaughtExceptionHandlerDescriptor)
                     .map(declaredMethods.apply)
 
-            if (setUncaughtExcpetionHandlerOpt.isDefined)
-                setUncaughtExceptionHandlerMethods ::= setUncaughtExcpetionHandlerOpt.get
+            if (setUncaughtExceptionHandlerOpt.isDefined)
+                setUncaughtExceptionHandlerMethods ::= setUncaughtExceptionHandlerOpt.get
 
             val threadStartOpt = cf.findMethod("start", MethodDescriptor.NoArgsAndReturnVoid).map(declaredMethods.apply)
 

@@ -6,6 +6,9 @@ package analyses
 
 import scala.annotation.switch
 
+import scala.util.boundary
+import scala.util.boundary.break
+
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.ProjectInformationKeys
@@ -95,8 +98,8 @@ class L0PurityAnalysis private[analyses] (final val project: SomeProject) extend
     import project.nonVirtualCall
     import project.resolveFieldReference
 
-    private[this] val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
-    private[this] val simpleContexts: SimpleContexts = project.get(SimpleContextsKey)
+    private val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
+    private val simpleContexts: SimpleContexts = project.get(SimpleContextsKey)
 
     /** Called when the analysis is scheduled lazily. */
     def doDeterminePurity(e: Entity): ProperPropertyComputationResult = {
@@ -134,7 +137,7 @@ class L0PurityAnalysis private[analyses] (final val project: SomeProject) extend
             val instruction = instructions(currentPC)
             (instruction.opcode: @switch) match {
                 case GETSTATIC.opcode =>
-                    val GETSTATIC(declaringClass, fieldName, fieldType) = instruction
+                    val GETSTATIC(declaringClass, fieldName, fieldType) = instruction: @unchecked
 
                     resolveFieldReference(declaringClass, fieldName, fieldType) match {
 
@@ -213,7 +216,7 @@ class L0PurityAnalysis private[analyses] (final val project: SomeProject) extend
                 case ARETURN.opcode |
                     IRETURN.opcode | FRETURN.opcode | DRETURN.opcode | LRETURN.opcode |
                     RETURN.opcode =>
-                // if we have a monitor instruction the method is impure anyway..
+                // if we have a monitor instruction the method is impure anyway...
                 // hence, we can ignore the monitor related implicit exception
 
                 // Reference comparisons may have different results for structurally equal values
@@ -229,7 +232,7 @@ class L0PurityAnalysis private[analyses] (final val project: SomeProject) extend
                         // the calling context is now an explicit part of the method's result.
                         return Result(context, ImpureByAnalysis);
                     }
-                // else ok..
+                // else ok...
 
             }
             currentPC = body.pcOfNextInstruction(currentPC)
@@ -240,7 +243,7 @@ class L0PurityAnalysis private[analyses] (final val project: SomeProject) extend
         if (dependees.isEmpty)
             return Result(context, Pure);
 
-        // This function computes the “purity for a method based on the properties of its dependees:
+        // This function computes the purity for a method based on the properties of its dependees:
         // other methods (Purity), types (immutability), fields (effectively final)
         def c(eps: SomeEPS): ProperPropertyComputationResult = {
             // Let's filter the entity.
@@ -282,14 +285,14 @@ class L0PurityAnalysis private[analyses] (final val project: SomeProject) extend
         InterimResult(context, ImpureByAnalysis, Pure, dependees, c)
     }
 
-    def determinePurityStep1(context: Context): ProperPropertyComputationResult = {
+    def determinePurityStep1(context: Context): ProperPropertyComputationResult = boundary {
         val method = context.method.definedMethod
 
         // All parameters either have to be base types or have to be immutable.
         // IMPROVE Use plain class type once we use ClassType in the store!
         var referenceTypedParameters = method.parameterTypes.iterator.collect[ClassType] {
             case t: ClassType => t
-            case _: ArrayType => return Result(context, ImpureByAnalysis);
+            case _: ArrayType => break(Result(context, ImpureByAnalysis));
         }
         val methodReturnType = method.descriptor.returnType
         if (methodReturnType.isArrayType) {
@@ -306,9 +309,9 @@ class L0PurityAnalysis private[analyses] (final val project: SomeProject) extend
             propertyStore(e, TypeImmutability.key) match {
                 case FinalP(TransitivelyImmutableType) => /*everything is Ok*/
                 case _: FinalEP[_, _]                  =>
-                    return Result(context, ImpureByAnalysis);
+                    break(Result(context, ImpureByAnalysis));
                 case InterimUBP(ub) if ub ne TransitivelyImmutableType =>
-                    return Result(context, ImpureByAnalysis);
+                    break(Result(context, ImpureByAnalysis));
                 case epk => dependees += epk
             }
         }

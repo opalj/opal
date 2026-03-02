@@ -7,10 +7,7 @@ package fieldaccess
 
 import scala.collection.immutable.IntMap
 
-import org.opalj.br.DeclaredField
-import org.opalj.br.Method
 import org.opalj.br.PCs
-import org.opalj.br.fpcf.properties.Context
 import org.opalj.collection.immutable.IntList
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.collection.immutable.LongLinkedTrieSet0
@@ -31,10 +28,11 @@ import org.opalj.fpcf.PropertyKey
  * @author Maximilian Rüsch
  */
 sealed trait FieldAccesses {
-    final def partialResults(accessContext: Context): IterableOnce[PartialResult[_, _ >: Null <: Property]] = {
+
+    final def partialResults(accessContext: Context): IterableOnce[PartialResult[?, ? >: Null <: Property]] = {
         var results = partialResultsForFieldBasedFieldAccesses
             .iterator
-            .asInstanceOf[Iterator[PartialResult[_, _ >: Null <: Property]]]
+            .asInstanceOf[Iterator[PartialResult[?, ? >: Null <: Property]]]
 
         if (containsMethodBasedReadAccessInformation)
             results ++= Iterator(partialResultForReadFields(accessContext))
@@ -44,12 +42,12 @@ sealed trait FieldAccesses {
         results
     }
 
-    private[this] def containsMethodBasedReadAccessInformation =
+    private def containsMethodBasedReadAccessInformation =
         directReadFields.nonEmpty ||
             indirectReadFields.nonEmpty ||
             incompleteAccessSites.nonEmpty
 
-    private[this] def containsMethodBasedWriteAccessInformation =
+    private def containsMethodBasedWriteAccessInformation =
         directWriteFields.nonEmpty ||
             indirectWriteFields.nonEmpty ||
             incompleteAccessSites.nonEmpty
@@ -68,7 +66,7 @@ sealed trait FieldAccesses {
 
     protected def incompleteAccessSites: PCs = IntTrieSet.empty
 
-    private[this] def partialResultForAccessedFields[S >: Null <: MethodFieldAccessInformation[S]](
+    private def partialResultForAccessedFields[S >: Null <: MethodFieldAccessInformation[S]](
         accessContext:             Context,
         propertyKey:               PropertyKey[S],
         noFieldAccessesValue:      S,
@@ -84,7 +82,7 @@ sealed trait FieldAccesses {
                 case InterimUBP(_) if !containsInformation =>
                     None
 
-                case InterimUBP(ub) =>
+                case InterimUBP(ub: S @unchecked) =>
                     Some(InterimEUBP(method, fieldAccessesValueUpdater(ub)))
 
                 case _: EPK[_, _] if !containsInformation =>
@@ -99,7 +97,7 @@ sealed trait FieldAccesses {
         )
     }
 
-    private[this] def partialResultForReadFields(
+    private def partialResultForReadFields(
         accessContext: Context
     ): PartialResult[Method, MethodFieldReadAccessInformation] = {
         partialResultForAccessedFields(
@@ -119,7 +117,7 @@ sealed trait FieldAccesses {
         )
     }
 
-    private[this] def partialResultForWriteFields(
+    private def partialResultForWriteFields(
         accessContext: Context
     ): PartialResult[Method, MethodFieldWriteAccessInformation] = {
         partialResultForAccessedFields(
@@ -143,13 +141,13 @@ sealed trait FieldAccesses {
 
     protected def partialResultsForFieldBasedFieldAccesses: IterableOnce[PartialResult[
         DeclaredField,
-        _ >: Null <: FieldAccessInformation[_]
+        ? >: Null <: FieldAccessInformation[?]
     ]] =
         Iterator.empty
 }
 
 trait IncompleteFieldAccesses extends FieldAccesses {
-    private[this] var _incompleteAccessSites = IntTrieSet.empty
+    private var _incompleteAccessSites = IntTrieSet.empty
     override protected def incompleteAccessSites: IntTrieSet = _incompleteAccessSites
 
     def addIncompleteAccessSite(pc: Int): Unit = _incompleteAccessSites += pc
@@ -161,12 +159,12 @@ trait CompleteFieldAccesses extends FieldAccesses {
         field:       DeclaredField,
         propertyKey: PropertyKey[S],
         property:    S
-    ): PartialResult[DeclaredField, _ >: Null <: FieldAccessInformation[_]] = {
+    ): PartialResult[DeclaredField, ? >: Null <: FieldAccessInformation[?]] = {
         PartialResult[DeclaredField, FieldAccessInformation[S]](
             field,
             propertyKey,
             {
-                case InterimUBP(ub) =>
+                case InterimUBP(ub: FieldAccessInformation[S] @unchecked) =>
                     val accessInformation = ub.included(property)
                     if (accessInformation eq ub)
                         None
@@ -182,7 +180,7 @@ trait CompleteFieldAccesses extends FieldAccesses {
         )
     }
 
-    @inline protected[this] def pcFieldMapNestedUpdate[T](
+    @inline protected def pcFieldMapNestedUpdate[T](
         nestedMap: IntMap[IntMap[T]],
         pc:        Int,
         fieldId:   Int,
@@ -197,9 +195,9 @@ trait CompleteFieldAccesses extends FieldAccesses {
     protected var _writeReceivers: IntMap[IntMap[AccessReceiver]] = IntMap.empty
     protected var _writeParameters: IntMap[IntMap[AccessParameter]] = IntMap.empty
 
-    private[this] var _partialResultsForFieldBasedFieldAccesses: List[PartialResult[
+    private var _partialResultsForFieldBasedFieldAccesses: List[PartialResult[
         DeclaredField,
-        _ >: Null <: Property with FieldAccessInformation[_]
+        ? >: Null <: Property & FieldAccessInformation[?]
     ]] =
         List.empty
 
@@ -263,7 +261,7 @@ trait CompleteFieldAccesses extends FieldAccesses {
 
     override protected def partialResultsForFieldBasedFieldAccesses: IterableOnce[PartialResult[
         DeclaredField,
-        _ >: Null <: FieldAccessInformation[_]
+        ? >: Null <: FieldAccessInformation[?]
     ]] =
         _partialResultsForFieldBasedFieldAccesses.iterator ++ super.partialResultsForFieldBasedFieldAccesses
 }

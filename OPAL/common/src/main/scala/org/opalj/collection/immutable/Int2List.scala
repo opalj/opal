@@ -61,9 +61,9 @@ object Int2List {
 
     def empty: Int2List = Int2ListEnd
 
-    def apply(v: Int): Int2List = new Int2ListNode(Int.MinValue, v, Int2ListEnd)
+    def apply(v: Int): Int2List = Int2ListNode(Int.MinValue, v, Int2ListEnd)
 
-    def apply(head: Int, last: Int): Int2List = new Int2ListNode(head, last, Int2ListEnd)
+    def apply(head: Int, last: Int): Int2List = Int2ListNode(head, last, Int2ListEnd)
 
 }
 
@@ -87,14 +87,14 @@ case object Int2ListEnd extends Int2List {
     override def forFirstN[U](n: Int)(f: Int => U): Unit = {}
     override def iterator: IntIterator = IntIterator.empty
     /** Prepends the given value to this list. E.g., `l = 2l +: l`. */
-    override def +:(v: Int): Int2List = new Int2ListNode(Int.MinValue, v, this)
+    override def +:(v: Int): Int2List = Int2ListNode(Int.MinValue, v, this)
 
     override def equals(that: Int2List): Boolean = this eq that
     override def hashCode(): Int = 37
 }
 
 /**
- * An container for a list element.
+ * A container for a list element.
  *
  * @author Michael Eichberg
  */
@@ -122,13 +122,11 @@ final case class Int2ListNode(
     override def forFirstN[U](n: Int)(f: Int => U): Unit = {
         n match {
             case 0 =>
-                return;
             case 1 =>
                 if (h != Int.MinValue)
                     f(h)
                 else
                     f(t)
-                return;
             case _ =>
                 // ... n >= 2
                 var i = n - 1 // <= for the second element...
@@ -146,8 +144,8 @@ final case class Int2ListNode(
 
     override def iterator: IntIterator = {
         new IntIterator {
-            private[this] var currentList: Int2List = list
-            private[this] var head: Boolean = list.h != Int.MinValue
+            private var currentList: Int2List = list
+            private var head: Boolean = list.h != Int.MinValue
             def hasNext: Boolean = currentList ne Int2ListEnd
             def next(): Int = {
                 if (head) {
@@ -165,9 +163,9 @@ final case class Int2ListNode(
 
     override def +:(v: Int): Int2List = {
         if (h != Int.MinValue)
-            new Int2ListNode(Int.MinValue, v, this)
+            Int2ListNode(Int.MinValue, v, this)
         else
-            new Int2ListNode(v, t, this.rest)
+            Int2ListNode(v, t, this.rest)
     }
 
     override def equals(that: Int2List): Boolean = {

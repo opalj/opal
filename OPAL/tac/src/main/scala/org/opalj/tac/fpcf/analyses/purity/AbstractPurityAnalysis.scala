@@ -93,13 +93,13 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
 
     type StateType <: AnalysisState
 
-    protected[this] def raterFqn: String
+    protected def raterFqn: String
 
     val rater: DomainSpecificRater
 
-    protected[this] implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
-    private[this] val simpleContexts: Option[SimpleContexts] = project.has(SimpleContextsKey)
-    protected[this] implicit val contextProvider: ContextProvider = project.get(ContextProviderKey)
+    protected implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
+    private val simpleContexts: Option[SimpleContexts] = project.has(SimpleContextsKey)
+    protected implicit val contextProvider: ContextProvider = project.get(ContextProviderKey)
 
     val configuredPurity: ConfiguredPurity = project.get(ConfiguredPurityKey)
 
@@ -107,15 +107,15 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
      * Reduces the maxPurity of the current method to at most the given purity level.
      */
     def reducePurityLB(newLevel: Purity)(implicit state: StateType): Unit = {
-        state.lbPurity = state.lbPurity meet newLevel
+        state.lbPurity = state.lbPurity.meet(newLevel)
     }
 
     /**
      * Reduces the minPurity and maxPurity of the current method to at most the given purity level.
      */
     def atMost(newLevel: Purity)(implicit state: StateType): Unit = {
-        state.lbPurity = state.lbPurity meet newLevel
-        state.ubPurity = state.ubPurity meet newLevel
+        state.lbPurity = state.lbPurity.meet(newLevel)
+        state.ubPurity = state.ubPurity.meet(newLevel)
     }
 
     /**
@@ -228,7 +228,7 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
                 // See
                 // https://stackoverflow.com/questions/6416408/static-circular-dependency-in-java
                 // for an in-depth discussion.
-                // (Howevever, if we would check for cycles, we could determine that it is pure,
+                // (However, if we would check for cycles, we could determine that it is pure,
                 // but this is not considered to be too useful...)
                 atMost(ImpureByAnalysis)
                 false
@@ -249,7 +249,7 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
 
             // Reference comparisons may have different results for structurally equal values
             case If.ASTID =>
-                val If(_, left, _, right, _) = stmt
+                val If(_, left, _, right, _) = stmt: @unchecked
                 if (left.cTpe eq ComputationalTypeReference)
                     if (!(isLocal(left, CompileTimePure) || isLocal(right, CompileTimePure)))
                         atMost(SideEffectFree)
@@ -336,7 +336,7 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
     /**
      * Examines the influence of the purity property of a method on the examined method's purity.
      *
-     * @note Adds dependendies when necessary.
+     * @note Adds dependendees when necessary.
      */
     def checkMethodPurity(
         ep:     EOptionP[Context, Purity],
@@ -413,7 +413,7 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
 
         if (!returnValue.isVar) {
             // The expression could refer to further expressions in a non-flat representation. To
-            // avoid special handling, we just fallback to SideEffectFreeWithoutAllocations here if
+            // avoid special handling, we just fall back to SideEffectFreeWithoutAllocations here if
             // the return value is not local as the analysis is intended to be used on flat
             // representations anyway.
             isLocal(returnValue, SideEffectFree)
@@ -471,7 +471,7 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
                 handleUnknownTypeImmutability(ep, returnValue)
             true
         case _ =>
-            atMost(Pure) // Can not be compile time pure if mutable object is returned
+            atMost(Pure) // Can not be compile-time pure if mutable object is returned
             if (state.ubPurity.isDeterministic)
                 isLocal(returnValue, SideEffectFree)
             false // Return early if we are already side-effect free

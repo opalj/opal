@@ -25,22 +25,22 @@ class LabeledInstructionsTest extends AnyFlatSpec with Matchers {
         InstructionLabel => LabeledSimpleConditionalBranchInstruction
     )] = {
         List(
-            IFEQ(label) -> LabeledIFEQ,
-            IFNE(label) -> LabeledIFNE,
-            IFLT(label) -> LabeledIFLT,
-            IFGE(label) -> LabeledIFGE,
-            IFGT(label) -> LabeledIFGT,
-            IFLE(label) -> LabeledIFLE,
-            IF_ICMPEQ(label) -> LabeledIF_ICMPEQ,
-            IF_ICMPNE(label) -> LabeledIF_ICMPNE,
-            IF_ICMPLT(label) -> LabeledIF_ICMPLT,
-            IF_ICMPGE(label) -> LabeledIF_ICMPGE,
-            IF_ICMPGT(label) -> LabeledIF_ICMPGT,
-            IF_ICMPLE(label) -> LabeledIF_ICMPLE,
-            IF_ACMPEQ(label) -> LabeledIF_ACMPEQ,
-            IF_ACMPNE(label) -> LabeledIF_ACMPNE,
-            IFNULL(label) -> LabeledIFNULL,
-            IFNONNULL(label) -> LabeledIFNONNULL
+            IFEQ(label) -> LabeledIFEQ.apply,
+            IFNE(label) -> LabeledIFNE.apply,
+            IFLT(label) -> LabeledIFLT.apply,
+            IFGE(label) -> LabeledIFGE.apply,
+            IFGT(label) -> LabeledIFGT.apply,
+            IFLE(label) -> LabeledIFLE.apply,
+            IF_ICMPEQ(label) -> LabeledIF_ICMPEQ.apply,
+            IF_ICMPNE(label) -> LabeledIF_ICMPNE.apply,
+            IF_ICMPLT(label) -> LabeledIF_ICMPLT.apply,
+            IF_ICMPGE(label) -> LabeledIF_ICMPGE.apply,
+            IF_ICMPGT(label) -> LabeledIF_ICMPGT.apply,
+            IF_ICMPLE(label) -> LabeledIF_ICMPLE.apply,
+            IF_ACMPEQ(label) -> LabeledIF_ACMPEQ.apply,
+            IF_ACMPNE(label) -> LabeledIF_ACMPNE.apply,
+            IFNULL(label) -> LabeledIFNULL.apply,
+            IFNONNULL(label) -> LabeledIFNONNULL.apply
         )
     }
 

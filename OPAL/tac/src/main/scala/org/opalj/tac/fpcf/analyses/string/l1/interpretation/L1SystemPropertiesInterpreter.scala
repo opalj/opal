@@ -40,7 +40,7 @@ private[string] trait L1SystemPropertiesInterpreter extends StringInterpreter {
 
         if (depender.dependee.isEPK) {
             InterimResult.forUB(
-                InterpretationHandler.getEntity(state),
+                InterpretationHandler.getEntity,
                 StringFlowFunctionProperty.constForVariableAt(
                     state.pc,
                     depender.target,
@@ -68,13 +68,13 @@ private[string] trait L1SystemPropertiesInterpreter extends StringInterpreter {
                 )
                 if (depender.dependee.isRefinable) {
                     InterimResult.forUB(
-                        InterpretationHandler.getEntity(state),
+                        InterpretationHandler.getEntity(using state),
                         newUB,
                         Set(depender.dependee),
                         continuation(state, depender)
                     )
                 } else {
-                    computeFinalResult(newUB)(state)
+                    computeFinalResult(newUB)(using state)
                 }
 
             case _ => throw new IllegalArgumentException(s"Encountered unknown eps: $eps")

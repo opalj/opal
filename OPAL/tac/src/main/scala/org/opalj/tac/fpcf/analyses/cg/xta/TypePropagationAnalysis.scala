@@ -7,13 +7,12 @@ package cg
 package xta
 
 import scala.collection.mutable.ArrayBuffer
-import scala.jdk.CollectionConverters._
+import scala.jdk.CollectionConverters.*
 
 import org.opalj.br.ClassType
 import org.opalj.br.Code
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.DefinedField
-import org.opalj.br.DefinedMethod
 import org.opalj.br.Method
 import org.opalj.br.ReferenceType
 import org.opalj.br.analyses.DeclaredFields
@@ -32,6 +31,7 @@ import org.opalj.collection.immutable.UIDSet
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EPS
 import org.opalj.fpcf.EUBP
+import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.InterimPartialResult
 import org.opalj.fpcf.PartialResult
 import org.opalj.fpcf.ProperPropertyComputationResult
@@ -42,7 +42,9 @@ import org.opalj.fpcf.Results
 import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.SomePartialResult
 import org.opalj.tac.cg.TypeIteratorKey
+import org.opalj.tac.fpcf.properties.NoTACAI
 import org.opalj.tac.fpcf.properties.TACAI
+import org.opalj.util.elidedAssert
 
 /**
  * This analysis handles the type propagation of XTA, MTA, FTA and CTA call graph
@@ -58,28 +60,36 @@ final class TypePropagationAnalysis private[analyses] (
     selectTypeSetEntity: TypeSetEntitySelector
 ) extends ReachableMethodAnalysis {
 
-    private[this] val debug = false
-    private[this] val _trace: TypePropagationTrace = new TypePropagationTrace()
+    private val debug = false
+    private val _trace: TypePropagationTrace = new TypePropagationTrace()
 
     private type State = TypePropagationState[ContextType]
 
-    private[this] implicit val declaredFields: DeclaredFields = project.get(DeclaredFieldsKey)
+    private implicit val declaredFields: DeclaredFields = project.get(DeclaredFieldsKey)
+
+    // We need to also propagate types if the method has no body, e.g. for native methods with configured data.
+    // Those methods set the TAC EPS to null. Access to state.tac will always be guarded by if(state.methodHasBody).
+    override def processMethodWithoutBody(callContext: ContextType): ProperPropertyComputationResult =
+        processMethod(callContext, FinalEP(null, NoTACAI))
 
     override def processMethod(
         callContext: ContextType,
         tacEP:       EPS[Method, TACAI]
     ): ProperPropertyComputationResult = {
 
-        val definedMethod = callContext.method.asDefinedMethod
-        val method = definedMethod.definedMethod
+        val declaredMethod = callContext.method
 
-        val typeSetEntity = selectTypeSetEntity(definedMethod)
+        val methodOpt = if (declaredMethod.hasSingleDefinedMethod) {
+            Some(declaredMethod.definedMethod)
+        } else None
+
+        val typeSetEntity = selectTypeSetEntity(declaredMethod)
         val instantiatedTypesEOptP = propertyStore(typeSetEntity, InstantiatedTypes.key)
-        val calleesEOptP = propertyStore(definedMethod, Callees.key)
-        val readAccessEOptP = propertyStore(method, MethodFieldReadAccessInformation.key)
-        val writeAccessEOptP = propertyStore(method, MethodFieldWriteAccessInformation.key)
+        val calleesEOptP = propertyStore(declaredMethod, Callees.key)
+        val readAccessEOptP = methodOpt.map(m => propertyStore(m, MethodFieldReadAccessInformation.key))
+        val writeAccessEOptP = methodOpt.map(m => propertyStore(m, MethodFieldWriteAccessInformation.key))
 
-        if (debug) _trace.traceInit(definedMethod)
+        if (debug) _trace.traceInit(declaredMethod)
 
         implicit val state: TypePropagationState[ContextType] = new TypePropagationState(
             callContext,
@@ -94,12 +104,15 @@ final class TypePropagationAnalysis private[analyses] (
 
         if (calleesEOptP.hasUBP)
             processCallees(calleesEOptP.ub)
-        if (readAccessEOptP.hasUBP)
-            processReadAccesses(readAccessEOptP.ub)
-        if (writeAccessEOptP.hasUBP)
-            processWriteAccesses(writeAccessEOptP.ub)
-        processTACStatements
-        processArrayTypes(state.ownInstantiatedTypes)
+        if (readAccessEOptP.isDefined && readAccessEOptP.get.hasUBP)
+            processReadAccesses(readAccessEOptP.get.ub)
+        if (writeAccessEOptP.isDefined && writeAccessEOptP.get.hasUBP)
+            processWriteAccesses(writeAccessEOptP.get.ub)
+
+        if (state.methodHasBody) {
+            processTACStatements
+            processArrayTypes(state.ownInstantiatedTypes)
+        }
 
         returnResults(partialResults.iterator)
     }
@@ -113,7 +126,7 @@ final class TypePropagationAnalysis private[analyses] (
             case Assignment(_, _, expr) if expr.astID == ArrayLoad.ASTID =>
                 state.methodReadsArrays = true
 
-            case stmt: Stmt[_] if stmt.astID == ArrayStore.ASTID =>
+            case stmt: Stmt[?] if stmt.astID == ArrayStore.ASTID =>
                 state.methodWritesArrays = true
 
             case _ =>
@@ -122,34 +135,36 @@ final class TypePropagationAnalysis private[analyses] (
 
     private def c(state: State)(eps: SomeEPS): ProperPropertyComputationResult = eps match {
 
-        case EUBP(e: DefinedMethod, _: Callees) =>
+        case EUBP(e: DeclaredMethod, _: Callees) =>
             if (debug) {
-                assert(e == state.callContext.method)
+                elidedAssert(e == state.callContext.method)
                 _trace.traceCalleesUpdate(e)
             }
-            handleUpdateOfCallees(eps.asInstanceOf[EPS[DeclaredMethod, Callees]])(state)
+            handleUpdateOfCallees(eps.asInstanceOf[EPS[DeclaredMethod, Callees]])(using state)
 
         case EUBP(e: Method, _: MethodFieldReadAccessInformation) =>
             if (debug) {
-                assert(e == state.callContext.method.definedMethod)
+                elidedAssert(e == state.callContext.method.definedMethod)
                 _trace.traceReadAccessUpdate(e)
             }
-            handleUpdateOfReadAccesses(eps.asInstanceOf[EPS[Method, MethodFieldReadAccessInformation]])(state)
+            handleUpdateOfReadAccesses(eps.asInstanceOf[EPS[Method, MethodFieldReadAccessInformation]])(using state)
 
         case EUBP(e: Method, _: MethodFieldWriteAccessInformation) =>
             if (debug) {
-                assert(e == state.callContext.method.definedMethod)
+                elidedAssert(e == state.callContext.method.definedMethod)
                 _trace.traceWriteAccessUpdate(e)
             }
-            handleUpdateOfWriteAccesses(eps.asInstanceOf[EPS[Method, MethodFieldWriteAccessInformation]])(state)
+            handleUpdateOfWriteAccesses(eps.asInstanceOf[EPS[Method, MethodFieldWriteAccessInformation]])(using state)
 
         case EUBP(e: TypeSetEntity, t: InstantiatedTypes) if e == state.typeSetEntity =>
             if (debug) _trace.traceTypeUpdate(state.callContext.method, e, t.types)
-            handleUpdateOfOwnTypeSet(eps.asInstanceOf[EPS[TypeSetEntity, InstantiatedTypes]])(state)
+            handleUpdateOfOwnTypeSet(eps.asInstanceOf[EPS[TypeSetEntity, InstantiatedTypes]])(using state)
 
         case EUBP(e: TypeSetEntity, t: InstantiatedTypes) =>
             if (debug) _trace.traceTypeUpdate(state.callContext.method, e, t.types)
-            handleUpdateOfBackwardPropagationTypeSet(eps.asInstanceOf[EPS[TypeSetEntity, InstantiatedTypes]])(state)
+            handleUpdateOfBackwardPropagationTypeSet(eps.asInstanceOf[EPS[TypeSetEntity, InstantiatedTypes]])(
+                using state
+            )
 
         case _ =>
             sys.error("received unexpected update")
@@ -191,7 +206,7 @@ final class TypePropagationAnalysis private[analyses] (
     ): ProperPropertyComputationResult = {
         val previouslySeenTypes = state.ownInstantiatedTypes.size
         state.updateOwnInstantiatedTypesDependee(eps)
-        val unseenTypes = UIDSet(eps.ub.dropOldest(previouslySeenTypes).toSeq: _*)
+        val unseenTypes = UIDSet(eps.ub.dropOldest(previouslySeenTypes).toSeq*)
 
         implicit val partialResults: ArrayBuffer[SomePartialResult] = ArrayBuffer.empty[SomePartialResult]
         for (fpe <- state.forwardPropagationEntities.iterator().asScala) {
@@ -214,7 +229,7 @@ final class TypePropagationAnalysis private[analyses] (
         val typeSetEntity = eps.e
         val previouslySeenTypes = state.seenTypes(typeSetEntity)
         state.updateBackwardPropagationDependee(eps)
-        val unseenTypes = UIDSet(eps.ub.dropOldest(previouslySeenTypes).toSeq: _*)
+        val unseenTypes = UIDSet(eps.ub.dropOldest(previouslySeenTypes).toSeq*)
 
         val filters = state.backwardPropagationFilters(typeSetEntity)
         val propagationResult = propagateTypes(state.typeSetEntity, unseenTypes, filters)
@@ -255,7 +270,7 @@ final class TypePropagationAnalysis private[analyses] (
         state:          State,
         partialResults: ArrayBuffer[SomePartialResult]
     ): Unit = {
-        val bytecode = state.callContext.method.definedMethod.body.get
+        val bytecodeOpt = if (state.methodHasBody) Some(state.callContext.method.definedMethod.body.get) else None
         for {
             pc <- callees.callSitePCs(state.callContext)
             calleeContext <- callees.callees(state.callContext, pc)
@@ -264,27 +279,27 @@ final class TypePropagationAnalysis private[analyses] (
         } {
             // Some sanity checks ...
             // Methods with multiple defined methods should never appear as callees.
-            assert(!callee.hasMultipleDefinedMethods)
+            elidedAssert(!callee.hasMultipleDefinedMethods)
             // Instances of DefinedMethod we see should only be those where the method is defined in the class file of
             // the declaring class type (i.e., it is not a DefinedMethod instance of some inherited method).  However,
             // in inconsistent bytecode scenarios, the call graph may resolve to a non-implemented abstract method.
-            assert(!callee.hasSingleDefinedMethod ||
+            elidedAssert(!callee.hasSingleDefinedMethod ||
                 (callee.declaringClassType == callee.asDefinedMethod.definedMethod.classFile.thisType) ||
                 callee.asDefinedMethod.definedMethod.isAbstract)
 
             // Remember callee (with PC) so we don't have to process it again later.
             state.addSeenCallee(pc, callee)
 
-            maybeRegisterMethodForForwardPropagation(callee, pc, bytecode)
+            maybeRegisterMethodForForwardPropagation(callee, pc, bytecodeOpt)
 
-            maybeRegisterMethodForBackwardPropagation(callee, pc, bytecode)
+            maybeRegisterMethodForBackwardPropagation(callee, pc, bytecodeOpt)
         }
     }
 
     private def processReadAccesses(
         readAccesses: MethodFieldReadAccessInformation
     )(implicit state: State, partialResults: ArrayBuffer[SomePartialResult]): Unit = {
-        val bytecode = state.callContext.method.definedMethod.body.get
+        val bytecodeOpt = if (state.methodHasBody) Some(state.callContext.method.definedMethod.body.get) else None
         for {
             pc <- readAccesses.getAccessSites(state.callContext)
             numDirectAccess = readAccesses.numDirectAccesses(state.callContext, pc)
@@ -300,10 +315,11 @@ final class TypePropagationAnalysis private[analyses] (
                 // Internally, generic fields have type "Object" due to type erasure. In many cases
                 // (but not all!), the Java compiler will place the "actual" return type within a checkcast
                 // instruction right after the field read instruction.
-                val nextInstruction = bytecode.instructions(bytecode.pcOfNextInstruction(pc))
+                val nextInstructionOpt =
+                    bytecodeOpt.map(bytecode => bytecode.instructions(bytecode.pcOfNextInstruction(pc)))
                 val mostPreciseFieldType =
-                    if (nextInstruction.isCheckcast)
-                        nextInstruction.asInstanceOf[CHECKCAST].referenceType
+                    if (nextInstructionOpt.isDefined && nextInstructionOpt.get.isCheckcast)
+                        nextInstructionOpt.get.asInstanceOf[CHECKCAST].referenceType
                     else
                         declaredField.fieldType.asReferenceType
 
@@ -355,9 +371,9 @@ final class TypePropagationAnalysis private[analyses] (
     }
 
     private def maybeRegisterMethodForForwardPropagation(
-        callee:   DeclaredMethod,
-        pc:       Int,
-        bytecode: Code
+        callee:      DeclaredMethod,
+        pc:          Int,
+        bytecodeOpt: Option[Code]
     )(
         implicit
         state:          State,
@@ -373,7 +389,9 @@ final class TypePropagationAnalysis private[analyses] (
 
         // If the call is not static, we need to take the implicit "this" parameter into account.
         if (callee.hasSingleDefinedMethod && !callee.definedMethod.isStatic ||
-            !callee.hasSingleDefinedMethod && !bytecode.instructions(pc).isInvokeStatic
+            // If we can't ask the target if it is static, we look in the bytecode. If we do not have any bytecode,
+            // we soundly assume that the call might be virtual and need to add "this".
+            !callee.hasSingleDefinedMethod && !bytecodeOpt.exists(_.instructions(pc).isInvokeStatic)
         ) {
             params += callee.declaringClassType
         }
@@ -388,15 +406,17 @@ final class TypePropagationAnalysis private[analyses] (
     }
 
     private def maybeRegisterMethodForBackwardPropagation(
-        callee:   DeclaredMethod,
-        pc:       Int,
-        bytecode: Code
+        callee:      DeclaredMethod,
+        pc:          Int,
+        bytecodeOpt: Option[Code]
     )(
         implicit
         state:          State,
         partialResults: ArrayBuffer[SomePartialResult]
     ): Unit = {
-        val returnValueIsUsed = {
+        // If the method body is not available, we have to assume the return value might be used
+        val returnValueIsUsed = if (!state.methodHasBody) true
+        else {
             val tacIndex = state.tac.properStmtIndexForPC(pc)
             val tacInstr = state.tac.instructions(tacIndex)
             tacInstr.isAssignment
@@ -407,10 +427,13 @@ final class TypePropagationAnalysis private[analyses] (
             // (but not all!), the Java compiler will place the "actual" return type within a checkcast
             // instruction right after the call.
             val mostPreciseReturnType = {
-                val nextPc = bytecode.pcOfNextInstruction(pc)
-                val nextInstruction = bytecode.instructions(nextPc)
-                if (nextInstruction.isCheckcast) {
-                    nextInstruction.asInstanceOf[CHECKCAST].referenceType
+                val nextInstructionOpt = bytecodeOpt.map { bytecode =>
+                    val nextPc = bytecode.pcOfNextInstruction(pc)
+                    bytecode.instructions(nextPc)
+                }
+                // If method body is not available, we will assume the callee descriptor return type as well
+                if (nextInstructionOpt.exists(_.isCheckcast)) {
+                    nextInstructionOpt.get.asInstanceOf[CHECKCAST].referenceType
                 } else {
                     callee.descriptor.returnType
                 }
@@ -490,43 +513,6 @@ final class TypePropagationAnalysis private[analyses] (
         }
     }
 
-    private def candidateMatchesTypeFilter(candidateType: ReferenceType, filterType: ReferenceType): Boolean = {
-        val answer = classHierarchy.isASubtypeOf(candidateType, filterType)
-
-        if (answer.isYesOrNo) {
-            // Here, we know for sure that the candidate type is or is not a subtype of the filter type.
-            answer.isYes
-        } else {
-            // If the answer is Unknown, we don't know for sure whether the candidate is a subtype of the filter type.
-            // However, ClassHierarchy returns Unknown even for cases where it is very unlikely that this is the case.
-            // Therefore, we take some more features into account to make the filtering more precise.
-
-            // Important: This decision is a possible but unlikely cause of unsoundness in the call graph!
-
-            // If the filter type is not a project type (i.e., it is external), we assume that any candidate type
-            // is a subtype. This can be any external type or project types for which we have incomplete supertype
-            // information.
-            // If the filter type IS a project type, we consider the candidate type not to be a subtype since this is
-            // very likely to be not the case. For the candidate type, there are two options: Either it is an external
-            // type, in which case the candidate type could only be a subtype if project types are available in the
-            // external type's project at compile time. This is very unlikely since external types are almost always
-            // from libraries (like the JDK) which are not available in the analysis context, and which were almost
-            // certainly compiled separately ("Separate Compilation Assumption").
-            // The other option is that the candidate is also a project type, in which case we should have gotten a
-            // definitive Yes/No answer before. Since we didn't get one, the candidate type probably has a supertype
-            // which is not a project type. In that case, the above argument applies similarly.
-
-            val filterTypeIsProjectType = if (filterType.isClassType) {
-                project.isProjectType(filterType.asClassType)
-            } else {
-                val at = filterType.asArrayType
-                project.isProjectType(at.elementType.asClassType)
-            }
-
-            !filterTypeIsProjectType
-        }
-    }
-
     private def propagateTypes[E >: Null <: TypeSetEntity](
         targetSetEntity: E,
         newTypes:        UIDSet[ReferenceType],
@@ -539,11 +525,11 @@ final class TypePropagationAnalysis private[analyses] (
 
         val filteredTypes = newTypes.foldLeft(UIDSet.newBuilder[ReferenceType]) { (builder, nt) =>
             val fitr = filters.iterator
-            var canditateMatches = false
-            while (!canditateMatches && fitr.hasNext) {
+            var candidateMatches = false
+            while (!candidateMatches && fitr.hasNext) {
                 val tf = fitr.next()
                 if (candidateMatchesTypeFilter(nt, tf)) {
-                    canditateMatches = true
+                    candidateMatches = true
                     builder += nt
                 }
             }

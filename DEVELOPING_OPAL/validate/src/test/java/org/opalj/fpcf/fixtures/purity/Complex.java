@@ -39,22 +39,22 @@ class Complex {
         staticNonFinal = a;
     }
 
-    // Methods depending on side-effect free method which are pure internally
+    // Methods depending on side-effect-free method which are pure internally
 
-    @SideEffectFree("Calls a side-effect free method")
-    @Impure(value = "Calls side-effect free method", analyses = L0PurityAnalysis.class)
+    @SideEffectFree("Calls a side-effect-free method")
+    @Impure(value = "Calls side-effect-free method", analyses = L0PurityAnalysis.class)
     public static int sef_0_0(int a) {
         return a + Complex.sefBase();
     }
 
-    @SideEffectFree("Transitively calls a side-effect free method")
-    @Impure(value = "Transitively calls side-effect free method", analyses = L0PurityAnalysis.class)
+    @SideEffectFree("Transitively calls a side-effect-free method")
+    @Impure(value = "Transitively calls side-effect-free method", analyses = L0PurityAnalysis.class)
     public static int sef_0_1(int a, int b) {
         return sef_0_0(1) + sef_0_2(a - 1, b);
     }
 
-    @SideEffectFree("Transitively calls a side-effect free method")
-    @Impure(value = "Transitively calls side-effect free method", analyses = L0PurityAnalysis.class)
+    @SideEffectFree("Transitively calls a side-effect-free method")
+    @Impure(value = "Transitively calls side-effect-free method", analyses = L0PurityAnalysis.class)
     public static int sef_0_2(int a, int b) {
         if (a < 0) {
             return 0;
@@ -63,8 +63,8 @@ class Complex {
         }
     }
 
-    @SideEffectFree("Transitively calls a side-effect free method")
-    @Impure(value = "Transitively calls side-effect free method", analyses = L0PurityAnalysis.class)
+    @SideEffectFree("Transitively calls a side-effect-free method")
+    @Impure(value = "Transitively calls side-effect-free method", analyses = L0PurityAnalysis.class)
     public static int sef_0_3(int a) {
         return a - sef_0_0(a);
     }
@@ -125,7 +125,7 @@ class Complex {
         }
     }
 
-    // Methods depending on side-effect free method which are impure
+    // Methods depending on side-effect-free method which are impure
 
     @Impure("Modifies static field")
     public static void impure_2_0() {

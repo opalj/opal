@@ -4,7 +4,6 @@ package fpcf
 package scheduling
 
 /**
- * Smallest Phase Merge Scheduling (SPS) Strategy.
  * Merging batches based on the number of analyses to keep merged batches of similar sizes.
  */
 object SmallestPhaseMergeScheduling extends PhaseMergeScheduling {

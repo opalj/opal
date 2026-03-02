@@ -3,6 +3,9 @@ package org.opalj
 package br
 package instructions
 
+import scala.util.boundary
+import scala.util.boundary.break
+
 import org.opalj.br.cfg.CFG
 import org.opalj.br.cfg.CFGFactory
 
@@ -36,7 +39,7 @@ case class RET(
         code:           Code,
         classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy
     ): List[Int /*PC*/ ] = {
-        nextInstructions(currentPC, () => CFGFactory(code, classHierarchy))
+        nextInstructions(currentPC, () => CFGFactory(using code, classHierarchy))
     }
 
     override def jumpTargets(
@@ -54,8 +57,7 @@ case class RET(
         cfg:       () => CFG[Instruction, Code]
     )(
         implicit code: Code
-    ): List[Int /*PC*/ ] = {
-
+    ): List[Int /*PC*/ ] = boundary {
         // If we have just one subroutine it is sufficient to collect the
         // successor instructions of all JSR instructions.
         var jumpTargetPCs: List[Int] = List.empty
@@ -68,7 +70,7 @@ case class RET(
 
                     case RET.opcode =>
                         // we have found another RET ... hence, we have at least two subroutines
-                        return cfg().successors(currentPC).toList;
+                        break(cfg().successors(currentPC).toList);
 
                     case _ =>
                     // we don't care

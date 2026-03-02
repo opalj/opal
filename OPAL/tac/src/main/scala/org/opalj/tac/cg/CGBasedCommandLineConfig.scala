@@ -35,18 +35,25 @@ trait CGBasedCommandLineConfig extends AIBasedCommandLineConfig with PropertySto
         AndroidManifestArg
     )
 
-    args(cgArgs: _*)
+    args(cgArgs*)
 
     cgArgs.foreach { arg => argGroups += arg -> cgArgGroup }
 
-    def setupCallGaph(project: Project): (CallGraph, Seconds) = {
+    def setupCallGraph(project: Project): (CallGraph, Seconds) = {
         var callGraphTime = Seconds.None
-        val callGraph = time {
-            project.get(get(CallGraphArg, RTACallGraphKey))
-        } { t =>
-            OPALLogger.info("analysis progress", s"setting up call graph took ${t.toSeconds} ")(project.logContext)
-            callGraphTime = t.toSeconds
+        val callGraphKeyOpt = apply(CallGraphArg)
+        if (callGraphKeyOpt.isEmpty) {
+            (null, Seconds(0))
+        } else {
+            val callGraph = time {
+                project.get(callGraphKeyOpt.get)
+            } { t =>
+                OPALLogger.info("analysis progress", s"setting up call graph took ${t.toSeconds} ")(
+                    using project.logContext
+                )
+                callGraphTime = t.toSeconds
+            }
+            (callGraph, callGraphTime)
         }
-        (callGraph, callGraphTime)
     }
 }

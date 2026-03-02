@@ -25,8 +25,8 @@ trait Project {
     /**
      * Here, the usage of the project information key does not lead to its initialization!
      */
-    private[this] val projectInformationKeyInitializationData = {
-        new ConcurrentHashMap[ProjectInformationKey[_ <: Project, AnyRef, AnyRef], AnyRef]()
+    private val projectInformationKeyInitializationData = {
+        new ConcurrentHashMap[ProjectInformationKey[? <: Project, AnyRef, AnyRef], AnyRef]()
     }
 
     /**
@@ -52,7 +52,7 @@ trait Project {
     ): I = {
         projectInformationKeyInitializationData.computeIfAbsent(
             key.asInstanceOf[ProjectInformationKey[P, AnyRef, AnyRef]],
-            (_: ProjectInformationKey[_, AnyRef, AnyRef]) => info
+            (_: ProjectInformationKey[?, AnyRef, AnyRef]) => info
         ).asInstanceOf[I]
     }
 
@@ -68,7 +68,7 @@ trait Project {
         info: Option[I] => I
     ): I = {
         projectInformationKeyInitializationData.compute(
-            key.asInstanceOf[ProjectInformationKey[Project, AnyRef, AnyRef]],
+            key.asInstanceOf[ProjectInformationKey[P, AnyRef, AnyRef]],
             (_, current: AnyRef) =>
                 {
                     info(Option(current.asInstanceOf[I]))
@@ -109,7 +109,7 @@ trait Project {
      *       requirements; failing to specify a requirement can end up in a deadlock.'''
      * @see [[ProjectInformationKey]] for further information.
      */
-    def get[P <: Project, T <: AnyRef](pik: ProjectInformationKey[P, T, _]): T = {
+    def get[P <: Project, T <: AnyRef](pik: ProjectInformationKey[P, T, ?]): T = {
         val pikUId = pik.uniqueId
 
         /* Synchronization is done by the caller! */
@@ -153,7 +153,7 @@ trait Project {
             }
         } else {
             // We have to synchronize w.r.t. "this" object on write accesses
-            // to make sure that we do not loose a concurrent update or
+            // to make sure that we do not lose a concurrent update or
             // derive an information more than once.
             this.synchronized {
                 val projectInformation = this.projectInformation
@@ -179,7 +179,7 @@ trait Project {
      *
      * @see [[ProjectInformationKey]] for further information.
      */
-    def has[P <: Project, T <: AnyRef](pik: ProjectInformationKey[P, T, _]): Option[T] = {
+    def has[P <: Project, T <: AnyRef](pik: ProjectInformationKey[P, T, ?]): Option[T] = {
         val pikUId = pik.uniqueId
 
         if (pikUId < this.projectInformation.length())

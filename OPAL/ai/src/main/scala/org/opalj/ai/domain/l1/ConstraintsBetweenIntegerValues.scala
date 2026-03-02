@@ -4,13 +4,15 @@ package ai
 package domain
 package l1
 
-import java.util.{IdentityHashMap => IDMap}
-import scala.jdk.CollectionConverters._
+import java.util.IdentityHashMap as IDMap
+import scala.compiletime.uninitialized
+import scala.jdk.CollectionConverters.*
 
 import org.opalj.br.LiveVariables
 import org.opalj.br.instructions.Instruction
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.constraints.NumericConstraints
+import org.opalj.util.elidedAssert
 
 /**
  * Domain that traces the relationship between integer values; currently, the domain only
@@ -20,9 +22,9 @@ import org.opalj.constraints.NumericConstraints
  */
 trait ConstraintsBetweenIntegerValues
     extends CoreDomainFunctionality
-    with IntegerRangeValues // IMRPOVE Define a common trait that specifies that the values support aliasing analyses
+    with IntegerRangeValues // IMPROVE Define a common trait that specifies that the values support aliasing analyses
     with TheCodeStructure {
-    domain: CorrelationalDomainSupport with Configuration with ExceptionsFactory =>
+    domain: CorrelationalDomainSupport & Configuration & ExceptionsFactory =>
 
     type Constraint = NumericConstraints.Value
 
@@ -35,7 +37,7 @@ trait ConstraintsBetweenIntegerValues
     //
 
     // We store the constraints that are in effect for each instruction
-    private[this] var constraints: Array[ConstraintsStore] = null
+    private var constraints: Array[ConstraintsStore] = uninitialized
 
     abstract override def setCodeStructure(
         theInstructions: Array[Instruction],
@@ -47,7 +49,7 @@ trait ConstraintsBetweenIntegerValues
         constraints = new Array[ConstraintsStore](theInstructions.length)
     }
 
-    private[this] var lastConstraint: Option[(Int /*PC*/, IntegerLikeValue, IntegerLikeValue, Constraint)] = {
+    private var lastConstraint: Option[(Int /*PC*/, IntegerLikeValue, IntegerLikeValue, Constraint)] = {
         None
     }
 
@@ -64,7 +66,7 @@ trait ConstraintsBetweenIntegerValues
         c:     Constraint
     ): ConstraintsStore = {
 
-        assert(v1 ne v2)
+        elidedAssert(v1 ne v2)
 
         var m = store.get(v1)
         if (m == null) {
@@ -101,7 +103,7 @@ trait ConstraintsBetweenIntegerValues
         putConstraintInStore(store, v1, v2, c)
     }
 
-    private[this] def addConstraint(
+    private def addConstraint(
         pc: Int,
         v1: IntegerLikeValue,
         v2: IntegerLikeValue,
@@ -111,7 +113,7 @@ trait ConstraintsBetweenIntegerValues
         this.lastConstraint = Some((pc, v1, v2, c))
     }
 
-    private[this] def addConstraint(
+    private def addConstraint(
         pc: Int,
         v1: DomainValue,
         v2: DomainValue,
@@ -125,7 +127,7 @@ trait ConstraintsBetweenIntegerValues
         )
     }
 
-    private[this] def getConstraint(
+    private def getConstraint(
         pc: Int,
         v1: IntegerLikeValue,
         v2: IntegerLikeValue
@@ -142,7 +144,7 @@ trait ConstraintsBetweenIntegerValues
         }
     }
 
-    private[this] def getConstraint(
+    private def getConstraint(
         pc: Int,
         v1: DomainValue,
         v2: DomainValue
@@ -159,7 +161,7 @@ trait ConstraintsBetweenIntegerValues
         val it = store.entrySet().iterator
         while (it.hasNext) {
             val e = it.next()
-            newStore.put(e.getKey(), e.getValue().clone().asInstanceOf[IDMap[IntegerLikeValue, Constraint]])
+            newStore.put(e.getKey, e.getValue.clone().asInstanceOf[IDMap[IntegerLikeValue, Constraint]])
         }
         newStore
     }
@@ -191,19 +193,19 @@ trait ConstraintsBetweenIntegerValues
                 val e = it.next()
                 if (stillExists(e.getKey)) {
                     val inner_newStore = new IDMap[IntegerLikeValue, Constraint]()
-                    val inner_it = e.getValue().entrySet().iterator
+                    val inner_it = e.getValue.entrySet().iterator
                     while (inner_it.hasNext) {
                         val inner_e = inner_it.next()
                         if (stillExists(inner_e.getKey)) {
                             inner_newStore.put(inner_e.getKey, inner_e.getValue)
                         }
                     }
-                    if (!inner_newStore.isEmpty()) {
+                    if (!inner_newStore.isEmpty) {
                         newStore.put(e.getKey, inner_newStore)
                     }
                 }
             }
-            if (newStore.isEmpty())
+            if (newStore.isEmpty)
                 null
             else
                 newStore
@@ -247,7 +249,7 @@ trait ConstraintsBetweenIntegerValues
 
     }
 
-    private[this] val updatedValues = new IDMap[DomainValue, DomainValue]
+    private val updatedValues = new IDMap[DomainValue, DomainValue]
 
     abstract override def updateMemoryLayout(
         oldValue: DomainValue,
@@ -264,7 +266,7 @@ trait ConstraintsBetweenIntegerValues
         super.updateMemoryLayout(oldValue, newValue, operands, locals)
     }
 
-    private[this] def currentValue(value: DomainValue): DomainValue = {
+    private def currentValue(value: DomainValue): DomainValue = {
         val updatedValue = this.updatedValues.get(value)
         if (updatedValue != null)
             updatedValue
@@ -288,11 +290,11 @@ trait ConstraintsBetweenIntegerValues
                 val constraint = getConstraint(pc, value1, value2)
                 if (constraint.isDefined)
                     constraint.get match {
-                        case NumericConstraints.!= => No
-                        case NumericConstraints.>  => No
-                        case NumericConstraints.<  => No
-                        case NumericConstraints.== => Yes
-                        case _                     => Unknown
+                        case NumericConstraints.unequal => No
+                        case NumericConstraints.>       => No
+                        case NumericConstraints.<       => No
+                        case NumericConstraints.equal   => Yes
+                        case _                          => Unknown
                     }
                 else
                     Unknown
@@ -311,11 +313,11 @@ trait ConstraintsBetweenIntegerValues
                 val constraint = getConstraint(pc, left, right)
                 if (constraint.isDefined)
                     constraint.get match {
-                        case NumericConstraints.>  => No
-                        case NumericConstraints.>= => No
-                        case NumericConstraints.<  => Yes
-                        case NumericConstraints.== => No
-                        case _                     => Unknown
+                        case NumericConstraints.>     => No
+                        case NumericConstraints.>=    => No
+                        case NumericConstraints.<     => Yes
+                        case NumericConstraints.equal => No
+                        case _                        => Unknown
                     }
                 else
                     Unknown
@@ -330,11 +332,11 @@ trait ConstraintsBetweenIntegerValues
                 val constraint = getConstraint(pc, left, right)
                 if (constraint.isDefined)
                     constraint.get match {
-                        case NumericConstraints.>  => No
-                        case NumericConstraints.<  => Yes
-                        case NumericConstraints.<= => Yes
-                        case NumericConstraints.== => Yes
-                        case _                     => Unknown
+                        case NumericConstraints.>     => No
+                        case NumericConstraints.<     => Yes
+                        case NumericConstraints.<=    => Yes
+                        case NumericConstraints.equal => Yes
+                        case _                        => Unknown
                     }
                 else
                     Unknown
@@ -361,7 +363,7 @@ trait ConstraintsBetweenIntegerValues
 
         // we do not need to add a constraint
 
-        updatedValues.clear
+        updatedValues.clear()
         result
     }
 
@@ -377,7 +379,7 @@ trait ConstraintsBetweenIntegerValues
 
         // we do not need to add a constraint; this situation is handled by the domain
 
-        updatedValues.clear
+        updatedValues.clear()
         result
     }
 
@@ -393,7 +395,7 @@ trait ConstraintsBetweenIntegerValues
 
         addConstraint(pc, currentValue(value1), currentValue(value2), NumericConstraints.!=)
 
-        updatedValues.clear
+        updatedValues.clear()
         result
     }
 
@@ -409,7 +411,7 @@ trait ConstraintsBetweenIntegerValues
 
         addConstraint(pc, currentValue(left), currentValue(right), NumericConstraints.<)
 
-        updatedValues.clear
+        updatedValues.clear()
         result
     }
 
@@ -425,7 +427,7 @@ trait ConstraintsBetweenIntegerValues
 
         addConstraint(pc, currentValue(left), currentValue(right), NumericConstraints.<=)
 
-        updatedValues.clear
+        updatedValues.clear()
         result
     }
 
@@ -439,7 +441,7 @@ trait ConstraintsBetweenIntegerValues
     //        (value1, value2) match {
     //            case (IntegerRange(lb1, ub1), IntegerRange(lb2, ub2)) =>
     //                // to identify overflows we simply do the "add" on long values
-    //                // and check afterwards
+    //                // and check afterward
     //                val lb = lb1.toLong + lb2.toLong
     //                val ub = ub1.toLong + ub2.toLong
     //                if (lb < Int.MinValue || ub > Int.MaxValue)
@@ -586,19 +588,19 @@ trait ConstraintsBetweenIntegerValues
     //
     // -----------------------------------------------------------------------------------
 
-    protected[this] def constraintsToText(
+    protected def constraintsToText(
         pc:            Int,
         valueToString: AnyRef => String
     ): String = {
         if (constraints(pc) == null)
             return "No constraints found."
 
-        val cs = (constraints(pc).asScala.map { e =>
+        val cs = constraints(pc).asScala.flatMap { e =>
             val (v1, v2c) = e
             val jv2c = v2c.asScala
             for ((v2, c) <- jv2c)
                 yield s"${valueToString(v1)} $c ${valueToString(v2)}"
-        }).flatten
+        }
         cs.mkString("Constraints:\n\t", "\n\t", "")
     }
 

@@ -14,5 +14,5 @@ case object SASTORE extends PrimitiveArrayStoreInstruction with PrimitiveArrayAc
 
     final val mnemonic = "sastore"
 
-    final val elementTypeComputationalType = ComputationalTypeInt
+    final val elementTypeComputationalType: ComputationalTypeInt.type = ComputationalTypeInt
 }

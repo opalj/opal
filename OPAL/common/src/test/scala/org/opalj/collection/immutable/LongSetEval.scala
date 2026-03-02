@@ -33,16 +33,20 @@ abstract class LongSetEval {
                 PerformanceEvaluation.time {
                     var allSets = List.empty[T]
                     var i = 0
-                    do {
+                    while {
                         var l = 0
                         var s = empty()
-                        do {
+                        while {
                             s = add(s)(rngGen.nextLong)
                             l += 1
-                        } while (l < maxSize)
+
+                            l < maxSize
+                        } do ()
                         allSets ::= s
                         i += 1
-                    } while (i < numberOfSets)
+
+                        i < numberOfSets
+                    } do ()
                     allSets
                 } { t => println(s"\tcreation took: ${t.toSeconds}") }
             } { m => println(s"\trequired: ${m / 1024 / 1024} MB") }
@@ -102,29 +106,26 @@ abstract class LongSetEval {
     }
 
     /*
-            it("when comparing with Set[Long]") {
-
-
-                var opalS = org.opalj.collection.immutable.LongTrieSet.empty
-                var scalaS = Set.empty[Long]
-                for { i <- 0 to 1000000 } {
-                    val v = rngGen.nextLong()
-                    opalS += v
-                    scalaS += v
-                }
-
-                var opalTotal = 0L
-                PerformanceEvaluation.time {
-                    for { v <- opalS } { opalTotal += v }
-                } { t => info(s"OPAL ${t.toSeconds} for foreach") }
-
-                var scalaTotal = 0L
-                PerformanceEvaluation.time {
-                    for { v <- scalaS } { scalaTotal += v }
-                } { t => info(s"Scala ${t.toSeconds} for foreach") }
-
-                assert(opalTotal == scalaTotal, s"$opalS vs. $scalaS")
+        it("when comparing with Set[Long]") {
+            var opalS = org.opalj.collection.immutable.LongTrieSet.empty
+            var scalaS = Set.empty[Long]
+            for { i <- 0 to 1000000 } {
+                val v = rngGen.nextLong()
+                opalS += v
+                scalaS += v
             }
+
+            var opalTotal = 0L
+            PerformanceEvaluation.time {
+                for { v <- opalS } { opalTotal += v }
+            } { t => info(s"OPAL ${t.toSeconds} for foreach") }
+
+            var scalaTotal = 0L
+            PerformanceEvaluation.time {
+                for { v <- scalaS } { scalaTotal += v }
+            } { t => info(s"Scala ${t.toSeconds} for foreach") }
+
+            assert(opalTotal == scalaTotal, s"$opalS vs. $scalaS")
         }
 
         it("for small sets (up to 8 elements) creation and contains check should finish in reasonable time (all values are positive)") {

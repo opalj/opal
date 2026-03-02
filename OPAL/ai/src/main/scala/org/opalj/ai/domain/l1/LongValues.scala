@@ -17,7 +17,7 @@ import org.opalj.value.IsLongValue
  * @author David Becker
  */
 trait LongValues extends LongValuesDomain with ConcreteLongValues {
-    domain: IntegerValuesFactory with ExceptionsFactory with Configuration =>
+    domain: IntegerValuesFactory & ExceptionsFactory & Configuration =>
 
     // -----------------------------------------------------------------------------------
     //

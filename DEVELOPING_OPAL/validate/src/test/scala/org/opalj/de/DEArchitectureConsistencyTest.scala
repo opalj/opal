@@ -8,7 +8,7 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.junit.JUnitRunner
 
-import org.opalj.av.checking._
+import org.opalj.av.checking.*
 import org.opalj.br.reader.InvokedynamicRewriting
 import org.opalj.util.ScalaMajorVersion
 
@@ -57,7 +57,7 @@ class DEArchitectureConsistencyTest extends AnyFlatSpec with Matchers with Befor
                     "org.opalj.de.*" except DependencyExtractorElements
                 }
 
-                Symbol("DependencyExtractorCore") is_only_allowed_to (USE, empty)
+                Symbol("DependencyExtractorCore").is_only_allowed_to(USE, empty)
             }
 
         val result = expected.analyze()

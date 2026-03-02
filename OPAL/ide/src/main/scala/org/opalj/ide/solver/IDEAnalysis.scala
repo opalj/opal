@@ -3,9 +3,9 @@ package org.opalj
 package ide
 package solver
 
-import scala.collection.mutable.{Map => MutableMap}
-import scala.collection.mutable.{Queue => MutableQueue}
-import scala.collection.mutable.{Set => MutableSet}
+import scala.collection.mutable.Map as MutableMap
+import scala.collection.mutable.Queue as MutableQueue
+import scala.collection.mutable.Set as MutableSet
 
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.FPCFAnalysis
@@ -323,7 +323,7 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
          * for the path.
          */
         def getSummaryFunction(path: Path): SummaryFunction = {
-            summaryFunctions.getOrElse(path, allTopEdgeFunction) // else part handels IDE lines 3 - 4
+            summaryFunctions.getOrElse(path, allTopEdgeFunction) // else part handles IDE lines 3 - 4
         }
 
         /**
@@ -692,7 +692,7 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
                         val edgeFunction =
                             handleEdgeFunctionResult(
                                 problem.getAdditionalSeedsEdgeFunction(stmt, fact, callable),
-                                processAdditionalSeed _
+                                () => processAdditionalSeed()
                             )
                         propagateSeed(path, callable, edgeFunction)
                     }

@@ -66,7 +66,7 @@ trait InstructionLike {
     /**
      * Determines if this instruction is isomorphic to the given instruction.
      *
-     * Two instructions are isomporphic if they access the same operand and register
+     * Two instructions are isomorphic if they access the same operand and register
      * values and if the instructions have the same bytecode representation, except
      * of (A) (potential) padding bytes and (B) the branch offset of JSR(_W) instructions.
      * In the first case the branch offsets are corrected by the number of padding bytes and
@@ -103,7 +103,7 @@ trait InstructionLike {
      * @note In case of some of the [[StackManagementInstruction]] the number of popped values is
      *      not fixed. In that case the number depends on the concrete layout of the
      *      operand stack. E.g., the [[POP2]] instruction may just pop one
-     *      ''categeory 2'' value (of type `long` or `double`) or two ''category 1''
+     *      ''category 2'' value (of type `long` or `double`) or two ''category 1''
      *      values.
      *
      * @param   ctg A function that returns the computational type category of
@@ -122,7 +122,7 @@ trait InstructionLike {
      * @note In case of some of the [[StackManagementInstruction]] this number is
      *      not fixed. In that case the number depends on the concrete layout of the
      *      operand stack. E.g., the [[DUP2]]
-     *      instruction may just duplicate one ''categeory 2'' value (result is 1)
+     *      instruction may just duplicate one ''category 2'' value (result is 1)
      *      (of type long or double) or two ''category 1'' values (result is 2).
      *
      * @param   ctg A function that returns the computational type category of

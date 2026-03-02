@@ -14,5 +14,5 @@ case object BASTORE extends PrimitiveArrayStoreInstruction with PrimitiveArrayAc
 
     final val mnemonic = "bastore"
 
-    final val elementTypeComputationalType = ComputationalTypeInt
+    final val elementTypeComputationalType: ComputationalTypeInt.type = ComputationalTypeInt
 }

@@ -29,7 +29,7 @@ trait IFXNullInstruction[T <: IFXNullInstruction[T]]
 
 object IFXNullInstruction {
 
-    def unapply(i: IFXNullInstruction[_]): Some[(RelationalOperator, Int)] = {
+    def unapply(i: IFXNullInstruction[?]): Some[(RelationalOperator, Int)] = {
         Some((i.condition, i.branchoffset))
     }
 

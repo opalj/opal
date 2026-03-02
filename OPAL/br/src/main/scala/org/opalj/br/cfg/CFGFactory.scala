@@ -26,6 +26,7 @@ import org.opalj.br.instructions.RET
 import org.opalj.br.instructions.TABLESWITCH
 import org.opalj.br.instructions.UnconditionalBranchInstruction
 import org.opalj.collection.immutable.IntArraySet
+import org.opalj.util.elidedAssert
 
 /**
  * A factory for computing control flow graphs for methods.
@@ -35,14 +36,14 @@ import org.opalj.collection.immutable.IntArraySet
 object CFGFactory {
 
     def apply(method: Method, classHierarchy: ClassHierarchy): Option[CFG[Instruction, Code]] = {
-        method.body.map(code => apply(code, classHierarchy))
+        method.body.map(code => apply(using code, classHierarchy))
     }
 
     /**
      * Constructs the control flow graph for a given method.
      *
-     * The constructed [[CFG]] basically consists of the code's basic blocks. Additionally,
-     * two artifical exit nodes are added.
+     * The constructed [[CFG]] basically consists of the code's basic blocks. Additionally,
+     * two artificial exit nodes are added.
      * One artificial exit node is added to facilitate the navigation to all normal
      * return instructions. A second artificial node is added that enables the navigation
      * to all instructions that led to an abnormal return. Exception handlers are
@@ -181,7 +182,7 @@ object CFGFactory {
                     sourceBB.addSuccessor(newTargetBB)
                     (sourceBB, newTargetBB)
                 } else {
-                    assert(
+                    elidedAssert(
                         targetBB.startPC == targetBBStartPC,
                         s"targetBB's startPC ${targetBB.startPC} does not equal $pc"
                     )
@@ -318,7 +319,7 @@ object CFGFactory {
                     runningBB = null
 
                 case _ /* INSTRUCTIONS THAT EITHER FALL THROUGH OR THROW A (JVM-BASED) EXCEPTION*/ =>
-                    assert(instruction.nextInstructions(pc, regularSuccessorsOnly = true).size == 1)
+                    elidedAssert(instruction.nextInstructions(pc, regularSuccessorsOnly = true).size == 1)
 
                     val currentBB = useRunningBB()
 
@@ -345,7 +346,7 @@ object CFGFactory {
                                 }
                             }
                             if (!isHandled) {
-                                // also connect with exit unless we found a finally handler
+                                // also connect with exit unless we found a finally-handler
                                 currentBB.addSuccessor(abnormalReturnNode)
                                 abnormalReturnNode.addPredecessor(currentBB)
                             }

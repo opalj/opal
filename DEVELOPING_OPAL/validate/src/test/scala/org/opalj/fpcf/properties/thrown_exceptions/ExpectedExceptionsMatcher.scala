@@ -51,7 +51,7 @@ private[thrown_exceptions] trait ExceptionTypeExtractor extends AbstractProperty
 }
 
 /**
- * Matches a methods's `ThrownExceptions` property.
+ * Matches a method's `ThrownExceptions` property.
  *
  * @author Andreas Muttscheller
  */

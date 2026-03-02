@@ -17,8 +17,7 @@ trait AttributesAbstractions {
     //
 
     /** Specifying a lower bound is necessary to implement a generic `skipAttribute` method. */
-    type Attribute >: Null <: AnyRef
-    implicit val attributeType: ClassTag[Attribute] // TODO: Replace in Scala 3 with `type Attribute: ClassTag`
+    type Attribute >: Null <: AnyRef: ClassTag
 
     type Attributes = ArraySeq[Attribute]
 

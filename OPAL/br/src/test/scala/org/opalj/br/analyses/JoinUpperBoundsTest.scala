@@ -19,11 +19,11 @@ import org.opalj.log.GlobalLogContext
 @RunWith(classOf[JUnitRunner])
 class JoinUpperBoundsTest extends AnyFunSpec with Matchers {
 
-    val classhierachy =
+    val classhierarchy: ClassHierarchy =
         ClassHierarchy(
             Iterable.empty,
             List(() => this.getClass.getResourceAsStream("ClassHierarchyUpperBounds.ths"))
-        )(GlobalLogContext)
+        )(using GlobalLogContext)
 
     implicit def stringToUIDSetClassType(str: String): UIDSet[ClassType] = UIDSet(ClassType(str))
 
@@ -41,7 +41,7 @@ class JoinUpperBoundsTest extends AnyFunSpec with Matchers {
         def mkString(param: UIDSet[ClassType]) = {
             param.toSeq.map(_.toJava).mkString("{", ",", "}")
         }
-        val result1_2 = classhierachy.joinUpperTypeBounds(param1, param2, reflexive)
+        val result1_2 = classhierarchy.joinUpperTypeBounds(param1, param2, reflexive)
         if (result1_2 != expected) {
             fail(
                 s"${mkString(param1)} join${if (reflexive) "(reflexive)" else ""}" +
@@ -50,7 +50,7 @@ class JoinUpperBoundsTest extends AnyFunSpec with Matchers {
             )
         }
 
-        val result2_1 = classhierachy.joinUpperTypeBounds(param2, param1, reflexive)
+        val result2_1 = classhierarchy.joinUpperTypeBounds(param2, param1, reflexive)
         if (result2_1 != expected) {
             fail(s"${mkString(param2)} join${if (reflexive) "(reflexive)" else ""}" +
                 s" ${mkString(param1)} is ${mkString(result2_1)};" +
@@ -59,9 +59,9 @@ class JoinUpperBoundsTest extends AnyFunSpec with Matchers {
 
     }
 
-    describe("the behavior of the method joinUpperTypeBounds of ClassHierachy") {
+    describe("the behavior of the method joinUpperTypeBounds of ClassHierarchy") {
         // uncomment to display the test graph:
-        // io.writeAndOpen((toDot.generateDot(Set(classhierachy.toGraph))), "test", ".dot")
+        // io.writeAndOpen((toDot.generateDot(Set(classhierarchy.toGraph))), "test", ".dot")
 
         describe("the behavior of joins with classes") {
             describe("the behavior of joins with sets containing one class") {

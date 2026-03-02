@@ -11,7 +11,7 @@ package mutable
  * @note This is not a general purpose data-structure due to the requirements on the immutability
  *       of added collections.
  *
- * @tparam A A type which is NOT a subtype of `Iterator[_]`.
+ * @tparam A A type which is NOT a subtype of `Iterator[?]`.
  *
  * @author Michael Eichberg
  */

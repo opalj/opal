@@ -40,7 +40,7 @@ import org.opalj.value.TypeOfReferenceValue
  * @author Michael Eichberg
  */
 trait NullPropertyRefinement extends CoreDomainFunctionality {
-    domain: ReferenceValuesDomain with Origin =>
+    domain: ReferenceValuesDomain & Origin =>
 
     abstract override def afterEvaluation(
         pc:                       Int,
@@ -73,7 +73,7 @@ trait NullPropertyRefinement extends CoreDomainFunctionality {
                         // the NullPointerException was created by the JVM, because
                         // the objectRef is (assumed to be) null
                         val exception = newOperands.head
-                        val TypeOfReferenceValue(utb) = exception
+                        val TypeOfReferenceValue(utb) = exception: @unchecked
                         (utb.head eq ClassType.NullPointerException) && {
                             val origins = originsIterator(exception)
                             origins.nonEmpty && {
@@ -146,7 +146,7 @@ trait NullPropertyRefinement extends CoreDomainFunctionality {
                 val arrayRef = oldOperands.head
                 establishNullProperty(arrayRef)
 
-            case MONITORENTER.opcode /* not necessary: | MONITOREXIT.opcode (every monitorexit is preceeded by a monitorenter) */ =>
+            case MONITORENTER.opcode /* not necessary: | MONITOREXIT.opcode (every monitorexit is preceded by a monitorenter) */ =>
                 val monitor = oldOperands.head
                 establishNullProperty(monitor)
 

@@ -53,7 +53,7 @@ object EscapeAnalysis extends ProjectsAnalysisApplication {
         with CGBasedCommandLineConfig {
         val description = "Determines escape information for every allocation site and every formal parameter"
 
-        private val analysisLevelArg = new AnalysisLevelArg(EscapeArg.description, EscapeArg.levels: _*) {
+        private val analysisLevelArg = new AnalysisLevelArg(EscapeArg.description, EscapeArg.levels*) {
             override val defaultValue: Option[String] = Some("L1")
             override val withNone = false
         }
@@ -82,10 +82,10 @@ object EscapeAnalysis extends ProjectsAnalysisApplication {
             if (analysisConfig.analysis eq EagerSimpleEscapeAnalysis) {
                 manager.runAll(EagerSimpleEscapeAnalysis, LazyL0BaseAIAnalysis, TACAITransformer)
             } else {
-                analysisConfig.setupCallGaph(project)
+                analysisConfig.setupCallGraph(project)
                 manager.runAll(EagerInterProceduralEscapeAnalysis)
             }
-        } { t => info("progress", s"escape analysis took ${t.toSeconds}")(project.logContext) }
+        } { t => info("progress", s"escape analysis took ${t.toSeconds}")(using project.logContext) }
 
         val escapeEntities = propertyStore.entities(EscapeProperty.key).toSeq
 

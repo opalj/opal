@@ -19,9 +19,10 @@ import org.opalj.tac.fpcf.properties.TACAI
  * @author Maximilian Rüsch
  */
 case class L1NonVirtualFunctionCallInterpreter()(
-    implicit val p:             SomeProject,
-    implicit val ps:            PropertyStore,
-    implicit val highSoundness: Boolean
+    implicit
+    val p:             SomeProject,
+    val ps:            PropertyStore,
+    val highSoundness: Boolean
 ) extends AssignmentLikeBasedStringInterpreter
     with L1FunctionCallInterpreter {
 
@@ -32,20 +33,20 @@ case class L1NonVirtualFunctionCallInterpreter()(
     override def interpretExpr(instr: T, expr: E)(implicit
         state: InterpretationState
     ): ProperPropertyComputationResult = {
-        val target = expr.receiver.asVar.toPersistentForm(state.tac.stmts)
+        val target = expr.receiver.asVar.toPersistentForm(using state.tac.stmts)
         val calleeMethod = expr.resolveCallTarget(state.dm.definedMethod.classFile.thisType)
         if (calleeMethod.isEmpty) {
             return StringInterpreter.uninterpretedCall(
                 expr,
-                expr.receiverOption.map { _.asVar.toPersistentForm(state.tac.stmts) }
+                expr.receiverOption.map { _.asVar.toPersistentForm(using state.tac.stmts) }
             )
         }
 
         val m = calleeMethod.value
-        val params = getParametersForPC(state.pc).map(_.asVar.toPersistentForm(state.tac.stmts))
+        val params = getParametersForPC(state.pc).map(_.asVar.toPersistentForm(using state.tac.stmts))
         val callState =
             new FunctionCallState(expr, target, params, Seq(m), Map((m, ps(m, TACAI.key))), invalidatesParameters = true)
 
-        interpretArbitraryCallToFunctions(state, callState)
+        interpretArbitraryCallToFunctions(using state, callState)
     }
 }

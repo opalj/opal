@@ -11,7 +11,7 @@ import org.opalj.br.fpcf.properties.ThrownExceptions
 import org.opalj.fpcf.properties.AbstractPropertyMatcher
 
 /**
- * Matches a methods's `ThrownExceptions` property.
+ * Matches a method's `ThrownExceptions` property.
  *
  * @author Andreas Muttscheller
  */

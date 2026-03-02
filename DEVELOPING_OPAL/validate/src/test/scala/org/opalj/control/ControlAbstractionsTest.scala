@@ -61,7 +61,7 @@ class ControlAbstractionsTest extends AnyFlatSpec with Matchers {
         assert(success)
     }
 
-    it should "should execute the given function the given numeber of times" in {
+    it should "should execute the given function the given number of times" in {
         var index = 0
         repeat(5) { index += 1 }
         assert(index == 5)

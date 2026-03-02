@@ -8,7 +8,7 @@ package l0
  * @author Michael Eichberg
  */
 trait ReturnInstructionsDomain extends ai.ReturnInstructionsDomain with MonitorInstructionsTracker {
-    domain: ValuesDomain with Configuration with ExceptionsFactory =>
+    domain: ValuesDomain & Configuration & ExceptionsFactory =>
 
     /**
      * Creates a computation object that encapsulates the result of a computation that
@@ -17,7 +17,7 @@ trait ReturnInstructionsDomain extends ai.ReturnInstructionsDomain with MonitorI
      *
      * @param pc The program counter of a return instruction.
      */
-    protected[this] def handleReturn(pc: Int): Computation[Nothing, ExceptionValue] = {
+    protected def handleReturn(pc: Int): Computation[Nothing, ExceptionValue] = {
         if (isMonitorInstructionUsed && throwIllegalMonitorStateException) {
             val exception = IllegalMonitorStateException(ValueOriginForImmediateVMException(pc))
             ComputationWithSideEffectOrException(exception)

@@ -112,8 +112,8 @@ class L0FieldAssignabilityAnalysis private[analyses] (val project: SomeProject) 
     )(implicit state: AnalysisState): Boolean = {
         val assignable = if (faiEP.hasUBP) {
             val (seenDirectAccesses, seenIndirectAccesses) = state.latestFieldWriteAccessInformation match {
-                case Some(UBP(fai)) => (fai.numDirectAccesses, fai.numIndirectAccesses)
-                case _              => (0, 0)
+                case Some(UBP(fai: FieldWriteAccessInformation)) => (fai.numDirectAccesses, fai.numIndirectAccesses)
+                case _                                           => (0, 0)
             }
 
             faiEP.ub.getNewestAccesses(

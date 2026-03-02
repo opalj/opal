@@ -81,7 +81,7 @@ abstract class ArraycopyPointsToAnalysis private[pointsto] (
             handleArrayStore(ArrayType.ArrayOfObject, targetArr.get.asVar.definedBy, IntTrieSet(index))
         }
 
-        Results(createResults(state))
+        Results(createResults)
     }
 }
 

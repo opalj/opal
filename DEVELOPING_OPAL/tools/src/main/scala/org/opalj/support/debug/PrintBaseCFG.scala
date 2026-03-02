@@ -31,7 +31,7 @@ object PrintBaseCFG extends MethodAnalysisApplication {
 
         val classFile = m.classFile
         val code = m.body.get
-        val theCFG = cfg.CFGFactory(code)
+        val theCFG = cfg.CFGFactory(using code)
 
         val rootNodes = Set(theCFG.startBlock) ++ theCFG.catchNodes
         val graph = toDot(rootNodes)
@@ -48,7 +48,7 @@ object PrintBaseCFG extends MethodAnalysisApplication {
         result.append(cfJoins.mkString("CFJoins               :", ", ", "\n"))
         result.append(cfForksInfo.mkString("CFForks               :", ", ", "\n"))
 
-        val (predecessorPCs, exitPCs, _) = code.predecessorPCs(p.classHierarchy)
+        val (predecessorPCs, exitPCs, _) = code.predecessorPCs(using p.classHierarchy)
         result.append(predecessorPCs.zipWithIndex.map(_.swap).mkString("Predecessors:\n\t", "\n\t", "\n\n"))
         result.append(exitPCs.mkString("ExitPCs:", ",", "\n\n"))
         val liveVariables = code.liveVariables(predecessorPCs, exitPCs, cfJoins)

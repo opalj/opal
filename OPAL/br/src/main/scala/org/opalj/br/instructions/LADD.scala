@@ -14,6 +14,6 @@ case object LADD extends AddInstruction {
 
     final val mnemonic = "ladd"
 
-    final val computationalType = ComputationalTypeLong
+    final val computationalType: ComputationalTypeLong.type = ComputationalTypeLong
 
 }

@@ -35,5 +35,5 @@ public @interface AtMostEscapeViaParameterAndReturn {
     Class<? extends FPCFAnalysis>[] analyses() default { SimpleEscapeAnalysis.class,
             InterProceduralEscapeAnalysis.class };
 
-    boolean performInvokationsDomain() default true;
+    boolean performInvocationsDomain() default true;
 }

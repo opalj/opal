@@ -69,7 +69,7 @@ class TrivialStringAnalysis(override val project: SomeProject) extends FPCFAnaly
         eps match {
             case tacaiEPS: EPS[_, _] if eps.pk == TACAI.key =>
                 state.tacDependee = tacaiEPS.asInstanceOf[EPS[Method, TACAI]]
-                determinePossibleStrings(state)
+                determinePossibleStrings(using state)
 
             case _ =>
                 throw new IllegalArgumentException(s"Unknown EPS given in continuation: $eps")

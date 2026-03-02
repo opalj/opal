@@ -9,6 +9,7 @@ import org.opalj.collection.immutable.IntRefPair
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.collection.mutable.FixedSizeBitSet
 import org.opalj.collection.mutable.IntArrayStack
+import org.opalj.log.GlobalLogContext
 
 /**
  * Representation of the dominance frontiers.
@@ -59,7 +60,7 @@ final class DominanceFrontiers private (
         val worklist = new IntArrayStack(Math.min(10, maxNodeId / 3))
         worklist.push(x)
 
-        do {
+        while {
             val x = worklist.pop()
 
             df(x) foreach { y =>
@@ -69,7 +70,9 @@ final class DominanceFrontiers private (
                     f(y)
                 }
             }
-        } while (worklist.nonEmpty)
+
+            worklist.nonEmpty
+        } do ()
     }
 
     //
@@ -93,7 +96,7 @@ final class DominanceFrontiers private (
             val (df, s /*index*/ ) = e
             if (isNodeValid(s)) {
                 if (df == null) {
-                    g addVertice s
+                    g.addVertex(s)
                 } else {
                     df.foreach { t => g.addEdge(s, t) }
                 }
@@ -139,14 +142,14 @@ object DominanceFrontiers {
      *
      * @param   dt The dominator tree of the specified (flow) graph. We provide basic support
      *          for augmented post dominator trees: [[PostDominatorTree]]; we in particular
-     *          handle common cases related to additional exit nodes as created by the implented(!)
+     *          handle common cases related to additional exit nodes as created by the implemented(!)
      *          post dominator tree computation algorithm.
      *          However, the following case:
      *          {{{
      *          while (true) {
      *               if (i < 0) {
      *                   i += 1000;
-     *                   // Exit Piont 1
+     *                   // Exit Point 1
      *               } else {
      *                   i -= 100;
      *                   // Exit Point 2
@@ -156,7 +159,7 @@ object DominanceFrontiers {
      *          is not yet supported; it would require a significant transformation of the
      *          computed PDT, which we currently do not perform.
      *          Basically, in the PDT we would need to make both bodies dependent on the
-     *          artifical exit node of the loop to ensure that both bodies are control-dependent
+     *          artificial exit node of the loop to ensure that both bodies are control-dependent
      *          on the "if" node.
      *
      * @param   isValidNode A function that returns `true` if the given id represents a node of the
@@ -246,7 +249,7 @@ object DominanceFrontiers {
                     org.opalj.log.OPALLogger.warn(
                         "computing dominance frontier",
                         s"the augmentation of $dt is not understood and ignored"
-                    )(org.opalj.log.GlobalLogContext)
+                    )(using GlobalLogContext)
             }
         }
         new DominanceFrontiers(dfs)

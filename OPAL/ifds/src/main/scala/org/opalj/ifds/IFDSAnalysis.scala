@@ -2,7 +2,7 @@
 package org.opalj
 package ifds
 
-import scala.collection.{Set => SomeSet}
+import scala.collection.Set as SomeSet
 import scala.collection.mutable
 
 import org.opalj.br.analyses.SomeProject
@@ -192,7 +192,7 @@ case class PathEdges[Fact <: AbstractIFDSFact, S, C <: AnyRef](
  * The state of the analysis. For each method and source fact, there is a separate state.
  *
  * @param source The callable and input fact for which the callable is analyzed.
- * @param subsumes The subsuming function, return whether a new fact is subsume by the existing ones
+ * @param subsumes The subsuming function, return whether a new fact is subsumed by the existing ones
  */
 protected class IFDSState[Fact <: AbstractIFDSFact, C <: AnyRef, S, WorklistItem](
     val source: (C, IFDSFact[Fact, C, S]),
@@ -364,7 +364,7 @@ class IFDSAnalysis[Fact <: AbstractIFDSFact, C <: AnyRef, S, ICFG <: ide.solver.
      */
     private def handleCall(
         call:    S,
-        callees: SomeSet[_ <: C],
+        callees: SomeSet[? <: C],
         in:      Fact
     )(
         implicit
@@ -426,7 +426,7 @@ class IFDSAnalysis[Fact <: AbstractIFDSFact, C <: AnyRef, S, ICFG <: ide.solver.
             val exitFacts: Map[S, Set[Fact]] = if (newEntity == state.source) {
                 // handle self dependency on our own because property store can't handle it
                 state.selfDependees += work
-                collectResult(state)
+                collectResult
             } else {
                 // handle all other dependencies using property store
                 val callFlows = state.dependees

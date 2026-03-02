@@ -13,7 +13,7 @@ object ScalaLongSetEval extends LongSetEval {
             (set: Set[Long]) => set.size,
             (set: Set[Long]) => set.+,
             (set: Set[Long]) => set.contains,
-            (set: Set[Long]) => set.foreach _,
+            (set: Set[Long]) => set.foreach,
             (set: Set[Long]) => set.foldLeft[Long]
         )
     }

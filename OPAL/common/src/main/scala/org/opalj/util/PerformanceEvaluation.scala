@@ -4,6 +4,8 @@ package util
 
 import java.lang.management.ManagementFactory
 import scala.collection.mutable.Map
+import scala.util.boundary
+import scala.util.boundary.break
 
 import org.opalj.concurrent.Locking
 import org.opalj.log.GlobalLogContext
@@ -20,7 +22,7 @@ import org.opalj.log.OPALLogger
  */
 class PerformanceEvaluation extends Locking {
 
-    private[this] val timeSpans: Map[Symbol, Nanoseconds] = Map.empty
+    private val timeSpans: Map[Symbol, Nanoseconds] = Map.empty
 
     /**
      * Times the execution of the given method / function literal / code block and
@@ -49,7 +51,7 @@ class PerformanceEvaluation extends Locking {
      * ==Thread Safety==
      * The `time` method takes care of the synchronization.
      */
-    protected[this] def doUpdateTimes(s: Symbol, timeSpan: Nanoseconds): Unit = {
+    protected def doUpdateTimes(s: Symbol, timeSpan: Nanoseconds): Unit = {
         val oldTimeSpan = timeSpans.getOrElseUpdate(s, Nanoseconds.None)
         timeSpans.update(s, oldTimeSpan + timeSpan)
     }
@@ -71,7 +73,7 @@ class PerformanceEvaluation extends Locking {
      * ==Thread Safety==
      * The `getTime` method takes care of the synchronization.
      */
-    protected[this] def doGetTime(s: Symbol): Nanoseconds = {
+    protected def doGetTime(s: Symbol): Nanoseconds = {
         timeSpans.getOrElse(s, Nanoseconds.None)
     }
 
@@ -86,7 +88,7 @@ class PerformanceEvaluation extends Locking {
      * ==Thread Safety==
      * The `reset` method takes care of the synchronization.
      */
-    private[this] def doReset(s: Symbol): Unit = timeSpans.remove(s)
+    private def doReset(s: Symbol): Unit = timeSpans.remove(s)
 
     /**
      * Resets everything. The effect is comparable to creating a new
@@ -100,7 +102,7 @@ class PerformanceEvaluation extends Locking {
      * ==Thread Safety==
      * The `resetAll` method takes care of the synchronization.
      */
-    private[this] def doResetAll(): Unit = timeSpans.clear()
+    private def doResetAll(): Unit = timeSpans.clear()
 
 }
 
@@ -131,12 +133,12 @@ object GlobalPerformanceEvaluation extends PerformanceEvaluation
 object PerformanceEvaluation {
 
     /**
-     * Measures the amount of memory that is used as a side-effect
+     * Measures the amount of memory that is used as a side effect
      * of executing the given function `f`. I.e., the amount of memory is measured that is
      * used before and after executing `f`; i.e., the permanent data structures that are created
      * by `f` are measured.
      *
-     * @note    If large data structures are used by `f` that are not used anymore afterwards
+     * @note    If large data structures are used by `f` that are not used anymore afterward
      *          then it may happen that the used amount of memory is negative.
      */
     def memory[T](
@@ -198,8 +200,8 @@ object PerformanceEvaluation {
      *
      * ==Example Usage==
      * {{{
-     * import org.opalj.util.PerformanceEvaluation._
-     * import org.opalj.util._
+     * import org.opalj.util.PerformanceEvaluation.*
+     * import org.opalj.util.*
      * time[String](2,4,3,{Thread.sleep(300).toString}){ (t, ts) =>
      *     val sTs = ts.map(t => f"\${t.toSeconds.timeSpan}%1.4f").mkString(", ")
      *     println(f"Avg: \${avg(ts).timeSpan}%1.4f; T: \${t.toSeconds.timeSpan}%1.4f; Ts: \$sTs")
@@ -229,7 +231,7 @@ object PerformanceEvaluation {
      *
      * @note    If epsilon is too small we can get an endless loop as the termination
      *          condition is never met. However, in practice often a value such as "1 or 2"
-     *          is still useable.
+     *          is still usable.
      *
      * @note    This method can generally only be used to measure the time of some process
      *          that does not require user interaction or disk/network access. In the latter
@@ -246,7 +248,7 @@ object PerformanceEvaluation {
      *          the last run is only considered if it is at most `consideredRunsEpsilon%`
      *          slower than the average. Hence, it is even possible that the average may rise
      *          during the evaluation of `f`.
-     * @param   f The side-effect free function that will be measured.
+     * @param   f The side-effect-free function that will be measured.
      * @param   r A function that is called back whenever `f` was successfully evaluated.
      *          The signature is:
      *          {{{
@@ -272,71 +274,64 @@ object PerformanceEvaluation {
         runGC:                       Boolean = false
     )(
         r: (Nanoseconds, Seq[Nanoseconds]) => Unit
-    ): T = {
+    ): T = boundary {
 
-        try {
-            require(minimalNumberOfRelevantRuns >= 3)
+        require(minimalNumberOfRelevantRuns >= 3)
 
-            require(
-                consideredRunsEpsilon > epsilon,
-                s"epsilon ($epsilon) < consideredRunsEpsilon ($consideredRunsEpsilon)"
-            )
+        require(
+            consideredRunsEpsilon > epsilon,
+            s"epsilon ($epsilon) < consideredRunsEpsilon ($consideredRunsEpsilon)"
+        )
 
-            var result: T = 0.asInstanceOf[T]
+        var result: T = 0.asInstanceOf[T]
 
-            val e = epsilon.toDouble / 100.0d
-            val filterE = (consideredRunsEpsilon + 100).toDouble / 100.0d
+        val e = epsilon.toDouble / 100.0d
+        val filterE = (consideredRunsEpsilon + 100).toDouble / 100.0d
 
-            var runsSinceLastUpdate = 0
-            var times = List.empty[Nanoseconds]
-            if (runGC) gc()
-            time { result = f } { t =>
-                times = t :: times
-                if (t.timeSpan <= 999 /*ns*/ ) {
-                    r(t, times)
-                    OPALLogger.warn(
-                        "common",
-                        s"the time required by the function (${t.toString}) " +
-                            "is too small to get meaningful measurements."
-                    )(GlobalLogContext)
+        var runsSinceLastUpdate = 0
+        var times = List.empty[Nanoseconds]
+        if (runGC) gc()
+        time { result = f } { t =>
+            times = t :: times
+            if (t.timeSpan <= 999 /*ns*/ ) {
+                r(t, times)
+                OPALLogger.warn(
+                    "common",
+                    s"the time required by the function (${t.toString}) " +
+                        "is too small to get meaningful measurements."
+                )(using GlobalLogContext)
 
-                    // Non local-returns will be deprecated in Scala 3
-                    // Replace this by scala.util.control.NonLocalReturns in Scala 3
-                    throw Return[T](result)
-                }
+                break(result);
             }
-            var avg: Double = times.head.timeSpan.toDouble
-            do {
-                if (runGC) gc()
-                time {
-                    result = f
-                } { t =>
-                    if (t.timeSpan <= avg * filterE) {
-                        // let's throw away all runs that are significantly slower than the last run
-                        times = t :: times.filter(_.timeSpan <= t.timeSpan * filterE)
+        }
+        var avg: Double = times.head.timeSpan.toDouble
+        while {
+            if (runGC) gc()
+            time {
+                result = f
+            } { t =>
+                if (t.timeSpan <= avg * filterE) {
+                    // let's throw away all runs that are significantly slower than the last run
+                    times = t :: times.filter(_.timeSpan <= t.timeSpan * filterE)
+                    avg = times.map(_.timeSpan).sum.toDouble / times.size.toDouble
+                    runsSinceLastUpdate = 0
+                } else {
+                    runsSinceLastUpdate += 1
+                    if (runsSinceLastUpdate > minimalNumberOfRelevantRuns * 2) {
+                        // for whatever reason the current average seems to be "too" slow
+                        // let's add the last run to rise the average
+                        times = t :: times
                         avg = times.map(_.timeSpan).sum.toDouble / times.size.toDouble
                         runsSinceLastUpdate = 0
-                    } else {
-                        runsSinceLastUpdate += 1
-                        if (runsSinceLastUpdate > minimalNumberOfRelevantRuns * 2) {
-                            // for whatever reason the current average seems to be "too" slow
-                            // let's add the last run to rise the average
-                            times = t :: times
-                            avg = times.map(_.timeSpan).sum.toDouble / times.size.toDouble
-                            runsSinceLastUpdate = 0
-                        }
                     }
-                    r(t, times)
                 }
-            } while (times.size < minimalNumberOfRelevantRuns ||
-                     Math.abs(avg - times.head.timeSpan) > avg * e
-            )
+                r(t, times)
+            }
 
-            result
+            times.size < minimalNumberOfRelevantRuns || Math.abs(avg - times.head.timeSpan) > avg * e
+        } do ()
 
-        } catch {
-            case Return(result) => result.asInstanceOf[T]
-        }
+        result
     }
 
     /**

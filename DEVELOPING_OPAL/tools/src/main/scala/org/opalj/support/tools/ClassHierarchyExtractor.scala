@@ -69,9 +69,9 @@ object ClassHierarchyExtractor {
             if (classFiles.forall(cf => cf.thisType != ClassType.Object)) {
                 println("the class files do not contain java.lang.Object; adding default type hierarchy")
                 // load pre-configured class hierarchy...
-                ClassHierarchy(classFiles)(GlobalLogContext)
+                ClassHierarchy(classFiles)(using GlobalLogContext)
             } else {
-                ClassHierarchy(classFiles, Seq.empty)(GlobalLogContext)
+                ClassHierarchy(classFiles, Seq.empty)(using GlobalLogContext)
             }
 
         val supertype = ClassType(supertypeName)

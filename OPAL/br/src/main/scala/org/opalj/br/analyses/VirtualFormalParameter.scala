@@ -10,7 +10,7 @@ package analyses
  * The first parameter explicitly defined by the method will have the origin `-2`, the second one
  * will have the origin `-3` and so on.
  * That is, the origin of an explicitly declared parameter is always `-(parameter_index + 2)`.
- * The origin of the `this` parameter is `-1`.
+ * The origin of the this-parameter is `-1`.
  *
  * @note The computational type category of the parameters is ignored to ease the mapping.
  *

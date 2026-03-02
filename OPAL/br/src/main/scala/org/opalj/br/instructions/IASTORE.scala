@@ -14,5 +14,5 @@ case object IASTORE extends PrimitiveArrayStoreInstruction with PrimitiveArrayAc
 
     final val mnemonic = "iastore"
 
-    final val elementTypeComputationalType = ComputationalTypeInt
+    final val elementTypeComputationalType: ComputationalTypeInt.type = ComputationalTypeInt
 }

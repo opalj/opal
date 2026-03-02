@@ -25,7 +25,7 @@ import org.opalj.value.ValueInformation
  *
  * @author Michael Eichberg
  */
-object LazyDetachedTACAIKey extends TACAIKey[Method => Domain with RecordDefUse] {
+object LazyDetachedTACAIKey extends TACAIKey[Method => Domain & RecordDefUse] {
 
     /**
      * TACAI code has no special prerequisites.
@@ -33,7 +33,7 @@ object LazyDetachedTACAIKey extends TACAIKey[Method => Domain with RecordDefUse]
     override def requirements(project: SomeProject): Seq[ProjectInformationKey[Nothing, Nothing]] = Nil
 
     /**
-     * Returns an factory which computes and caches the 3-address code of a method when required.
+     * Returns a factory which computes and caches the 3-address code of a method when required.
      *
      * All methods belonging to a project are converted using the same `domainFactory`. Hence,
      * the `domainFactory` needs to be set (using `setProjectInformationKeyInitializationData`)
@@ -65,7 +65,7 @@ object LazyDetachedTACAIKey extends TACAIKey[Method => Domain with RecordDefUse]
                 case Some(taCode) => taCode
                 case None         =>
                     val brCode = m.body.get
-                    // Basically, we use double checked locking; we really don't want to
+                    // Basically, we use double-checked locking; we really don't want to
                     // transform the code more than once!
                     brCode.synchronized {
                         taCodes.get(m) match {

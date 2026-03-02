@@ -72,7 +72,7 @@ trait FPCFAnalysisScheduler[P <: Project] extends ComputationSpecification[FPCFA
  */
 private[fpcf] object FPCFAnalysisScheduler {
 
-    private[this] val idGenerator: AtomicInteger = new AtomicInteger(0)
+    private val idGenerator: AtomicInteger = new AtomicInteger(0)
 
     private[FPCFAnalysisScheduler] def nextId: Int = idGenerator.getAndIncrement()
 

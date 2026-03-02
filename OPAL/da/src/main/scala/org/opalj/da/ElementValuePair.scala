@@ -20,7 +20,7 @@ case class ElementValuePair(
     final def attribute_length: Int = 2 + element_value.attribute_length
 
     def toXHTML(implicit cp: Constant_Pool): Node = {
-        val name = cp(element_name_index).toString(cp)
+        val name = cp(element_name_index).toString
 
         <li class="element_value_pair">
             {Seq(<span class="element_name">{name}</span>, Text("="), element_value.toXHTML)}

@@ -8,6 +8,7 @@ package l1
 
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.FPCFLazyAnalysisScheduler
+import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyStore
 import org.opalj.tac.fpcf.analyses.string.flowanalysis.LazyMethodStringFlowAnalysis
 import org.opalj.tac.fpcf.analyses.string.interpretation.LazyStringFlowAnalysis
@@ -25,6 +26,8 @@ object LazyL1StringFlowAnalysis extends LazyStringFlowAnalysis {
         LazyMethodStringFlowAnalysis,
         LazyL1StringFlowAnalysis
     )
+
+    override final def uses: Set[PropertyBounds] = super.uses ++ L1InterpretationHandler.uses
 
     override def init(p: SomeProject, ps: PropertyStore): InitializationData = L1InterpretationHandler(p)
 }

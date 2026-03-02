@@ -4,9 +4,10 @@ package ide
 package problem
 
 import java.io.Writer
-import scala.collection.mutable.{ListBuffer => MutableListBuffer}
-import scala.collection.mutable.{Map => MutableMap}
-import scala.collection.mutable.{Set => MutableSet}
+import scala.collection.mutable.ListBuffer as MutableListBuffer
+import scala.collection.mutable.Map as MutableMap
+import scala.collection.mutable.Set as MutableSet
+import scala.compiletime.uninitialized
 
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.PropertyStore
@@ -70,7 +71,7 @@ class FlowRecordingIDEProblem[Fact <: IDEFact, Value <: IDEValue, Statement, Cal
 
     private val collectedEdgeFunctions = MutableMap.empty[DotEdge, EdgeFunction[Value]]
 
-    private var writer: Writer = _
+    private var writer: Writer = uninitialized
 
     override val nullFact: Fact = baseProblem.nullFact
 

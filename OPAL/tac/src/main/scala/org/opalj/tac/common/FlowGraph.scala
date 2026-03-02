@@ -53,7 +53,7 @@ object FlowGraph extends TypedGraphFactory[FlowGraphNode, DiEdge[FlowGraphNode]]
      * @return The flow graph obtained from the CFG.
      */
     def apply[V <: Var[V]](cfg: CFG[Stmt[V], TACStmts[V]]): FlowGraph = {
-        val toPC = mapInstrIndexToPC(cfg) _
+        val toPC = (index: Int) => mapInstrIndexToPC(cfg)(index)
 
         val edges = cfg.allNodes.flatMap {
             case bb: BasicBlock =>
@@ -98,7 +98,7 @@ object FlowGraph extends TypedGraphFactory[FlowGraphNode, DiEdge[FlowGraphNode]]
         }
     }
 
-    private[this] def entryFromCFG[V <: Var[V]](cfg: CFG[Stmt[V], TACStmts[V]]): Statement =
+    private def entryFromCFG[V <: Var[V]](cfg: CFG[Stmt[V], TACStmts[V]]): Statement =
         Statement(mapInstrIndexToPC(cfg)(cfg.startBlock.nodeId))
 
     /**

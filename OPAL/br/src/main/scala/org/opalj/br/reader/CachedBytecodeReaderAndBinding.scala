@@ -3,7 +3,7 @@ package org.opalj
 package br
 package reader
 
-import org.opalj.br.instructions._
+import org.opalj.br.instructions.*
 import org.opalj.bytecode.BytecodeProcessingFailedException
 import org.opalj.collection.immutable.IntIntPair
 import org.opalj.control.fillArraySeq
@@ -11,7 +11,7 @@ import org.opalj.control.fillIntArray
 
 /**
  * Defines a method to parse an array of bytes (containing Java bytecode instructions) and
- * to return an array of [[org.opalj.br.instructions.Instruction]]`s.
+ * to return an array of [[org.opalj.br.instructions.Instruction]]s.
  *
  * The target array has the same size as the source array to make sure that branch offsets
  * etc. point to the correct instruction.
@@ -40,7 +40,7 @@ trait CachedBytecodeReaderAndBinding extends InstructionsDeserializer {
 
         val bas = new ByteArrayInputStream(source)
         val in = new DataInputStream(bas)
-        val codeLength = source.size
+        val codeLength = source.length
         val instructions = new Array[Instruction](codeLength)
 
         var wide: Boolean = false
@@ -410,7 +410,7 @@ trait CachedBytecodeReaderAndBinding extends InstructionsDeserializer {
                     WIDE
 
                 case opcode =>
-                    throw new BytecodeProcessingFailedException("unsupported opcode: " + opcode)
+                    throw BytecodeProcessingFailedException("unsupported opcode: " + opcode)
             }
 
         }

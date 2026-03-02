@@ -13,7 +13,7 @@ case object AnyMethod extends SourceElementPredicate[Method] {
 
     override final def apply(method: Method): Boolean = true
 
-    def toDescription(): String = "/*any method*/"
+    def toDescription: String = "/*any method*/"
 
 }
 
@@ -26,7 +26,7 @@ case class MethodWithName(name: String) extends SourceElementPredicate[Method] {
         method.name == name
     }
 
-    def toDescription(): String = name
+    def toDescription: String = name
 
 }
 
@@ -42,6 +42,6 @@ case class MethodWithSignature(
         method.name == this.name && method.descriptor == this.descriptor
     }
 
-    def toDescription(): String = descriptor.toJava(name)
+    def toDescription: String = descriptor.toJava(name)
 
 }

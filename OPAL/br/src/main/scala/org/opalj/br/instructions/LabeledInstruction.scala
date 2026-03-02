@@ -6,7 +6,7 @@ package instructions
 /**
  * An instruction where the jump targets are identified using `Symbols` associated with the
  * instructions which should be executed in case of a jump.
- * The labels are `InstructionLabel`s; however, the eDSL provides implicits to faciliate the
+ * The labels are `InstructionLabel`s; however, the eDSL provides implicits to facilitate the
  * usage of standard scala Symbols as labels.
  *
  * @author Malte Limmeroth

@@ -3,6 +3,8 @@ package org.opalj
 package av
 package checking
 
+import org.opalj.util.elidedAssert
+
 /**
  * Helper class to mark those places where a string using binary notation (i.e.,
  * where packages are separated using "/" instead of ".") is expected.
@@ -11,7 +13,7 @@ package checking
  */
 final class BinaryString private (private val string: String) {
 
-    assert(string.indexOf('.') == -1)
+    elidedAssert(string.indexOf('.') == -1)
 
     def asString: String = this.string
 
@@ -24,7 +26,7 @@ final class BinaryString private (private val string: String) {
 
     override def hashCode: Int = string.hashCode()
 
-    override def toString: String = string.toString()
+    override def toString: String = string
 }
 
 object BinaryString {

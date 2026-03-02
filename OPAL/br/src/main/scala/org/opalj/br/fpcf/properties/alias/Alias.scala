@@ -108,7 +108,7 @@ object Alias extends AliasPropertyMetaInformation {
     final val PropertyKeyName = "opalj.Alias"
 
     /**
-     * The key used to access alias properties. It's name is "opalj.Alias" and the fallback value is [[MayAlias]].
+     * The key used to access alias properties. Its name is "opalj.Alias" and the fallback value is [[MayAlias]].
      */
     final val key: PropertyKey[Alias] = {
         PropertyKey.create(

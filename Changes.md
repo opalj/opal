@@ -1,35 +1,72 @@
 # Changes
 
+## 7.0.0 - Released December 16th 2025
+- *we are now using Scala 3.7.3*
+- *we are now using sbt 1.11.7*
+- various API changes due to new major Scala version
+- fixed typos and minor code style issues
+- introduced custom assertions, Scala 3 no longer supports -Xdisable-assertions
+
+## 6.0.0 - Released October 9th 2025
+- *we are now using sbt 1.9.7*
+- *we are now using scalafmt instead of Scalariform*
+    - introduce auto formatting via `sbt format`
+    - add pre-commit hook to verify (`sbt checkFormat`) and apply formatting
+- *unify command line interface for all OPAL runners using Scallop*
+    - all runners support the same syntax and shared subsets of arguments
+    - override custom configuration options via CLI arguments
+- full support for Java 20 up to 25
+    - support for Java 25 main entry method definitions
+    - rename ObjectType to ClassType according to JVM 24 specification
+- OPAL can now select default analyses for properties
+- support for Android call graph generation
+- introduce declared fields
+    - explicitly provide information about field accesses (reads and writes) via dedicated analysis
+    - handle reflective field accesses
+    - field access information is computed as a triggered analysis
+- add alias properties and corresponding analysis
+- made points-to analysis modules configurable
+- move non-Java specific code into SI subproject (analysis manager, registry and schedulers, project and project information keys)
+- introduce PDUWeb, a persistable (i.e., a bytecode program counter based) representation of def-use webs
+- add framework for dataflow analysis based on structural analysis
+- add solver for interprocedural distributed environment (IDE) problems
+- remove `AggregateableValueProperty` and `ExplicitlyNamedProperty`
+- add several scheduling strategies to group analyses into different phases
+- rename `RTJar` to `JavaBase`
+- DependencyExtractor now supports modules, records, nests and permitted subclasses
+- add analysis to track string values
+- add ConfigurationExplorer to better document configuration values
+
 ## 5.0.0 - Released January 23rd 2023
 - *we are now using sbt 1.6.2*
 - *we are now using Scala 2.13*
-  - Scala 2.13 changes:
-    - replace Unicode arrows (⇒,→,←) by ASCII arrows (=>,->,<-)
-    - replace Traversable by scala.collection.Iterable
-    - replace TraversableOnce by scala.collection.IterableOnce
-    - changes to OPAL's custom data structures:
-      - replace RefIterator by scala.collection.iterator
-      - replace Chain by scala.collection.immutable.List
-      - replace RefArray and IntArray by scala.collection.immutable.ArraySeq
-      - replace RefArrayStack by scala.collection.immutable.Stack
-      - replace RefAppendChain by scala.collection.mutable.ArrayDeque
-      - replace RefArrayBuffer by scala.collection.mutable.ArrayBuffer
+    - Scala 2.13 changes:
+        - replace Unicode arrows (⇒,→,←) by ASCII arrows (=>,->,<-)
+        - replace Traversable by scala.collection.Iterable
+        - replace TraversableOnce by scala.collection.IterableOnce
+        - changes to OPAL's custom data structures:
+            - replace RefIterator by scala.collection.iterator
+            - replace Chain by scala.collection.immutable.List
+            - replace RefArray and IntArray by scala.collection.immutable.ArraySeq
+            - replace RefArrayStack by scala.collection.immutable.Stack
+            - replace RefAppendChain by scala.collection.mutable.ArrayDeque
+            - replace RefArrayBuffer by scala.collection.mutable.ArrayBuffer
 - full support for Java 17 up to 19
-  - support for Java 17 Sealed Classes
-  - added isStrict attribute to classes
-  - ignore isStrict attribute on classes and methods for Java >= 17
+    - support for Java 17 Sealed Classes
+    - added isStrict attribute to classes
+    - ignore isStrict attribute on classes and methods for Java >= 17
 - completed framework for call graph analyses
-  - introduced TypeIterator to uniformly access type information
-  - using contexts instead of methods to enable context-sensitive analysis (0-1-CFA, 1-1-CFA)
-  - support library analysis with CFA
+    - introduced TypeIterator to uniformly access type information
+    - using contexts instead of methods to enable context-sensitive analysis (0-1-CFA, 1-1-CFA)
+    - support library analysis with CFA
 - introduced new immutability analyses
-  - replaced FieldMutabilityAnalysis with FieldAssignabilityAnalysis
-    - support for thread-safe and unsafe lazy initialization
-    - support for clone pattern
-  - introduced new FieldImmutabilityAnalysis to integrate field assignability with mutability of values
-    - support for transitive and non-transitive immutability
-    - support for immutability dependent on generic type parameters
-  - updated ClassImmutabilityAnalysis and TypeImmutabilityAnalysis to use new FieldImmutability properties
+    - replaced FieldMutabilityAnalysis with FieldAssignabilityAnalysis
+        - support for thread-safe and unsafe lazy initialization
+        - support for clone pattern
+    - introduced new FieldImmutabilityAnalysis to integrate field assignability with mutability of values
+        - support for transitive and non-transitive immutability
+        - support for immutability dependent on generic type parameters
+    - updated ClassImmutabilityAnalysis and TypeImmutabilityAnalysis to use new FieldImmutability properties
 - added EntrypointsFinder for Android apps
 - allow flushing caches for ClassTypes/ArrayTypes to free memory when creating many projects in a row
 
@@ -43,9 +80,9 @@
 - parallel implementation for the PropertyStore
 - FPCF analyses now use sets for their dependencies
 - added preliminary framework for FPCF call graphs
-  - includes CHA, RTA, XTA/MTA/FTA/CTA and points-to based call graphs
-  - also includes modules for reflection, static initializers, finalizers, serialization, threads, selected native methods and to load dynamic data on reflective calls recorded by TamiFlex
-  - allows resolution of calls by method signature for library analyses
+    - includes CHA, RTA, XTA/MTA/FTA/CTA and points-to based call graphs
+    - also includes modules for reflection, static initializers, finalizers, serialization, threads, selected native methods and to load dynamic data on reflective calls recorded by TamiFlex
+    - allows resolution of calls by method signature for library analyses
 - added an analysis to collect information about the usage of a class within a project
 - added `LongTrieSet`, `LongLinkedTrieSet` and `LongTrieSetWithList` to optimize storage of Long values
 - removed `PrecomputedPartialResult`
@@ -60,9 +97,9 @@
 ## 3.0.0 - Snapshot available since June 7th, 2019
 
 - added a preliminary IFDS framework
-- the Hermes and BugPicker UI projects were deleted (JavaFX was removed from the JDK 11 which makes the overall development and deplyoment process to cost intensive)
+- the Hermes and BugPicker UI projects were deleted (JavaFX was removed from the JDK 11 which makes the overall development and deployment process to cost intensive)
 - Hermes was promoted to a real project: TOOLS/hermes
-- renamed `DefaultOneStepAnalysis` to `ProjectAnalysisApplication`; added a new subclass `MethodAnalysisApplication` to facilitate the developmen of respective analysis
+- renamed `DefaultOneStepAnalysis` to `ProjectAnalysisApplication`; added a new subclass `MethodAnalysisApplication` to facilitate the development of respective analysis
 - added support for analyses using the monotone framework; the monotone framework itself was added to `CFG`
 - the three-address code has been moved to its own subproject (`ThreeAddressCode`) in the folder OPAL/tac
 - fixed the name of the static analysis infrastructure project (the name of the project on Maven Central has changed)
@@ -89,7 +126,7 @@
 ## 2.0.1 - Released Oct. 10th 2018
 
 - fixed a bug in the identification of closed strongly connected components
-- fixed a bug when computing the stackmap table when a register store instruction is found in a try block of a finally handler and therefore is considered to be throwing an exception by the VM when it tries to verify the bytecode
+- fixed a bug when computing the stackmap table when a register store instruction is found in a try block of a finally-handler and therefore is considered to be throwing an exception by the VM when it tries to verify the bytecode
 - fixed a bug when a simple property of an entity is queried in a later phase (after the analysis was run) and the analysis didn't compute a value
 
 ## 2.0.0 - Released Oct. 2nd 2018
@@ -100,13 +137,13 @@
 - support for Java 11
 - rewriting StringConcatFactory based invokedynamics
 - support for analyzing Scala 2.12.6-7 invokedynamics
-- Hermes now has extended visualization capabilities to make it even easiere to comprehend the differences between projects
-- the overall performance has been improved (in particular on multi-core systems with 4 or more cores)
+- Hermes now has extended visualization capabilities to make it even easier to comprehend the differences between projects
+- the overall performance has been improved (in particular on multicore systems with 4 or more cores)
 - moved to sbt 1.2.x
 - fixed issues in some tests which open a huge number of files
 - fixed a rare issue in the identification of closed strongly connected components
 - completely reimplemented the property store
-  - added various analyses related to deriving the purity of methods, the immutabiliy of classes, escape information etc.
+    - added various analyses related to deriving the purity of methods, the immutability of classes, escape information etc.
 - very much improved OPAL's collection library w.r.t. optimized data structures for Int values
 
 ## 1.0.0 - Released Oct. 25th 2017
@@ -132,9 +169,9 @@
 ### General
 
 - the call graph construction algorithms finally completely support Java 8 (e.g., default methods, static methods in interfaces, lambda expressions)
-- ***Assertions are turned-off by default when you checkout the latest stable release of OPAL***; to turn them on rename `local.sbt.template` to `local.sbt`; assertions are still turned on, when you depend on a development snapshot from Maven Central
-- removed the Eclipse plug-in sub-project; it wasn't maintained anymore and is now replaced by the ATOM plug-in
-- removed the Viz sub-project; it wasn't maintained anymore and OPAL has gained the possibility to generate SVGs using [a JavaScript based Graphviz version](https://github.com/mdaines/viz.js) which is executed using JDK's Nashorn JavaScript engine
+- ***Assertions are turned-off by default when you check out the latest stable release of OPAL***; to turn them on rename `local.sbt.template` to `local.sbt`; assertions are still turned on, when you depend on a development snapshot from Maven Central
+- removed the Eclipse plug-in subproject; it wasn't maintained anymore and is now replaced by the ATOM plug-in
+- removed the Viz subproject; it wasn't maintained anymore and OPAL has gained the possibility to generate SVGs using [a JavaScript based Graphviz version](https://github.com/mdaines/viz.js) which is executed using JDK's Nashorn JavaScript engine
 - fixed several minor bugs and issues when analyzing bytecode which contains compile-time dead code; the Groovy compiler frequently generated (generates?) such code
 - renamed packages called "analysis" to "analyses"
 
@@ -199,7 +236,7 @@
 - the AI now prevents simple, unnecessary joins if a variable is known to be dead when multiple control flow paths join
 - added a simple live variables analysis to `br.Code.liveVariables` which computes liveness information for a code's locals (operand stack values are not considered because standard compilers generally don't create "dead operands" and the intended usage are performance and precision improvements)
 - refined the implementations of Graphs
-- added efficient implementatin of Tarjan's algorithm for finding strongly connected components (the implementation can easily handle graphs with millions of nodes)
+- added efficient implementation of Tarjan's algorithm for finding strongly connected components (the implementation can easily handle graphs with millions of nodes)
 - added support for converting dot files to SVG using vis-js.com
 - completely reworked `org.opalj.collection.immmutable.UIDSet`; instead of a simple binary search tree - which had significant scalability issues - we are now using a trie.
 - initial release of Hermes

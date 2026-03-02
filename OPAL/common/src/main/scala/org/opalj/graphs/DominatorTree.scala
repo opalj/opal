@@ -99,7 +99,7 @@ object DominatorTree {
      *          </pre>
      *
      *          '''This implementation does not use non-tailrecursive methods and hence
-     *          also handles very large degenerated graphs (e.g., a graph which consists of a
+     *          also handles very large degenerated graphs (e.g., a graph which consists of
      *          a very, very long single path.).'''
      */
     def apply[D <: AbstractDominatorTree](

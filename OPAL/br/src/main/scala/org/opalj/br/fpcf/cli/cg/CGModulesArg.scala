@@ -28,7 +28,7 @@ object EnabledCGModulesArg extends CGModulesArg {
 object DisabledCGModulesArg extends CGModulesArg {
     override val name: String = "disabledCGModules"
     override val argName: String = "modules"
-    override val description: String = "Modules to be diabled for call-graph generation, e.g., FinalizerAnalysis"
+    override val description: String = "Modules to be disabled for call-graph generation, e.g., FinalizerAnalysis"
 
     override def operation(currentModules: util.List[String], argumentModules: util.List[String]): Unit =
         currentModules.removeAll(argumentModules)

@@ -25,9 +25,9 @@ import org.opalj.br.ReferenceType
  * @author Michael Eichberg
  */
 trait SimpleTypeLevelInvokeInstructions extends MethodCallsDomain {
-    domain: ReferenceValuesDomain with ValuesFactory with Configuration =>
+    domain: ReferenceValuesDomain & ValuesFactory & Configuration =>
 
-    protected[this] def handleInstanceBasedInvoke(
+    protected def handleInstanceBasedInvoke(
         pc:               Int,
         methodDescriptor: MethodDescriptor,
         operands:         Operands

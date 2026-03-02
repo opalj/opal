@@ -15,6 +15,7 @@ import org.opalj.br.analyses.DeclaredMethodsKey.MethodContext
 import org.opalj.br.analyses.DeclaredMethodsKey.MethodContextQuery
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger.info
+import org.opalj.util.elidedAssert
 
 /**
  * The set of all [[org.opalj.br.DeclaredMethod]]s (potentially used by the property store).
@@ -22,16 +23,16 @@ import org.opalj.log.OPALLogger.info
  * @author Dominik Helm
  */
 class DeclaredMethods(
-    private[this] val p: SomeProject,
+    private val p: SomeProject,
     // We need concurrent, mutable maps here, as VirtualDeclaredMethods may be added when they
     // are queried. This can result in DeclaredMethods added for a type not yet seen, too (e.g.
-    // methods on type Object when not analyzing the JDK.
-    private[this] val data:      ConcurrentHashMap[ReferenceType, ConcurrentHashMap[MethodContext, DeclaredMethod]],
-    private[this] var id2method: Array[DeclaredMethod],
-    private[this] var idCounter: Int
+    // methods on type Object when not analyzing the JDK).
+    private val data:      ConcurrentHashMap[ReferenceType, ConcurrentHashMap[MethodContext, DeclaredMethod]],
+    private var id2method: Array[DeclaredMethod],
+    private var idCounter: Int
 ) {
 
-    private[this] final val lock = new ReentrantReadWriteLock()
+    private final val lock = new ReentrantReadWriteLock()
 
     private var extensionSize = 1000
 
@@ -119,7 +120,7 @@ class DeclaredMethods(
         }
 
         method = dmSet.get(context)
-        assert(method ne null)
+        elidedAssert(method ne null)
         method
     }
 
@@ -148,7 +149,7 @@ class DeclaredMethods(
     }
 
     def declaredMethods: Iterator[DeclaredMethod] = {
-        import scala.jdk.CollectionConverters._
+        import scala.jdk.CollectionConverters.*
         // Thread-safe as .values() creates a view of the current state
         data.values().asScala.iterator.flatMap { _.values().asScala }
     }

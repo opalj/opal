@@ -65,7 +65,7 @@ object TACTemplate extends ProjectsAnalysisApplication {
             if m.body.isDefined
             if methodSignature.isEmpty || methodSignature.get.exists(s => m.signature.toJava.contains(s._2 + s._3))
             c = tac(m)
-            VirtualFunctionCallStatement(VirtualFunctionCall(
+            case VirtualFunctionCallStatement(VirtualFunctionCall(
                 pc,
                 declaringClass: ClassType,
                 _,

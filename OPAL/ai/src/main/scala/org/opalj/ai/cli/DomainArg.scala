@@ -12,17 +12,17 @@ import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.cli.ProjectBasedArg
 import org.opalj.cli.ParsedArg
 
-object DomainArg extends ParsedArg[String, Class[_ <: Domain]] with ProjectBasedArg[String, Class[_ <: Domain]] {
+object DomainArg extends ParsedArg[String, Class[? <: Domain]] with ProjectBasedArg[String, Class[? <: Domain]] {
     override val name: String = "domain"
     override val argName: String = "fqn"
     override val description: String = "Fully-qualified class name of the abstract interpretation domain to use"
-    override val defaultValue: Option[String] = Some(classOf[DefaultPerformInvocationsDomainWithCFGAndDefUse[_]].getName)
+    override val defaultValue: Option[String] = Some(classOf[DefaultPerformInvocationsDomainWithCFGAndDefUse[?]].getName)
 
-    override def parse(arg: String): Class[_ <: Domain] = {
+    override def parse(arg: String): Class[? <: Domain] = {
         Class.forName(arg).asInstanceOf[Class[Domain]]
     }
 
-    override def apply(project: SomeProject, value: Option[Class[_ <: Domain]]): Unit = {
+    override def apply(project: SomeProject, value: Option[Class[? <: Domain]]): Unit = {
         value.foreach { domain =>
             project.updateProjectInformationKeyInitializationData(AIDomainFactoryKey) {
                 case None               => Set(domain)

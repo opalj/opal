@@ -17,7 +17,7 @@ import static java.lang.annotation.RetentionPolicy.CLASS;
  * Describes a method call at a specific call site and states which methods
  * the call must be resolved to.
  * Using this annotation implies that the call edges must be
- * directly available within the call graph from the specified call site. Therefore, this annoation
+ * directly available within the call graph from the specified call site. Therefore, this annotation
  * can be used to specify monomorphic or polymorphic method calls but are not suited to specify
  * indirect call targets, e.g., reflective call targets.
  * Furthermore, it is possible to exclude certain target methods.

@@ -10,7 +10,7 @@ package br
 abstract class SimilarityTestConfiguration {
 
     /**
-     * Selects those fields which should be compared. By default all fields are selected.
+     * Selects those fields which should be compared. By default, all fields are selected.
      */
     def compareFields(
         leftContext: ClassFile,
@@ -19,7 +19,7 @@ abstract class SimilarityTestConfiguration {
     ): (Iterable[JVMField], Iterable[JVMField])
 
     /**
-     * Selects those methods which should be compared. By default all methods are selected.
+     * Selects those methods which should be compared. By default, all methods are selected.
      *
      * If, e.g., the `left` methods belong to the class which is derived from the `right` one
      * and should contain all methods except of the default constructor, then the default
@@ -67,7 +67,7 @@ class CompareAllConfiguration extends SimilarityTestConfiguration {
     }
 
     /**
-     * Selects the attributes which should be compared. By default all attributes except
+     * Selects the attributes which should be compared. By default, all attributes except
      * of unknown ones are selected.
      */
     override def compareAttributes(

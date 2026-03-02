@@ -13,7 +13,7 @@ package br
 trait StructureIdentifier {
 
     /**
-     * Returns a compact, human readable representation of this structure element.
+     * Returns a compact, human-readable representation of this structure element.
      * This representation is not guaranteed to return a unique representation.
      * However, it should be precise enough to enable developers (with some
      * additional context information) to precisely identify the structure element.
@@ -54,7 +54,6 @@ case class MethodIdentifier(
             case ct: ClassType            => Some(ct.packageName);
             case ArrayType(ct: ClassType) => Some(ct.packageName);
             case _: ArrayType             => Some("java/lang"); // handles Arrays of primitives
-            case _                        => None
         }
 }
 
@@ -65,5 +64,5 @@ case class FieldIdentifier(
 
     def toHRR: String = declaringClassType.toJava + "." + fieldName
 
-    def declaringPackage = Some(declaringClassType.packageName)
+    def declaringPackage: Some[String] = Some(declaringClassType.packageName)
 }

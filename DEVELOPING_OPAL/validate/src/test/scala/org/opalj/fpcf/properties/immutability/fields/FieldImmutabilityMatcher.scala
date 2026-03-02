@@ -74,7 +74,7 @@ class DependentlyImmutableFieldMatcher
 
         if (!properties.exists(p =>
                 p match {
-                    case DependentlyImmutableField(annotationParameters) =>
+                    case org.opalj.br.fpcf.properties.immutability.DependentlyImmutableField(annotationParameters) =>
                         val annotationType = a.annotationType.asFieldType.asClassType
                         val analysisParameters =
                             getValue(project, annotationType, a.elementValuePairs, "parameter").asArrayValue.values.map(

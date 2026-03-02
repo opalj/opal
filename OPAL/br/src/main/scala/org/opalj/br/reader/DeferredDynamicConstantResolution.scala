@@ -37,7 +37,7 @@ trait DeferredDynamicConstantResolution extends ConstantPoolBinding with CodeBin
      *
      * @param   classFile The [[ClassFile]] with which the deferred action was registered.
      * @param   cp The class file's [[Constant_Pool]].
-     * @param   dynamicInfo The consttant pool entry describing the dynamic constant.
+     * @param   dynamicInfo The constant pool entry describing the dynamic constant.
      * @param   instructions This method's array of [[instructions.Instruction]]s.
      *          (The array returned by the [[#Instructions]] method.)
      * @param   pc The program counter of the `invokedynamic` instruction.

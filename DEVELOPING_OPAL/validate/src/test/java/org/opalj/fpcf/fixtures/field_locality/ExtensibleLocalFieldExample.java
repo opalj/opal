@@ -5,6 +5,6 @@ import org.opalj.fpcf.properties.field_locality.ExtensibleLocalField;
 
 public class ExtensibleLocalFieldExample {
 
-    @ExtensibleLocalField("This field is local only for this precise type, a subtype coud leak it")
+    @ExtensibleLocalField("This field is local only for this precise type, a subtype could leak it")
     private int[] extensibleLocalField;
 }

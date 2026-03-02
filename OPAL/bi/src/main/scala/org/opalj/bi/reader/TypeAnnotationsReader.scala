@@ -22,8 +22,7 @@ trait TypeAnnotationsReader extends AnnotationsAbstractions {
     // TYPE DEFINITIONS AND FACTORY METHODS
     //
 
-    type TypeAnnotation <: AnyRef
-    implicit val typeAnnotationType: ClassTag[TypeAnnotation] // TODO: Replace in Scala 3 by `type TypeAnnotation : ClassTag`
+    type TypeAnnotation <: AnyRef: ClassTag
     type TypeAnnotations = ArraySeq[TypeAnnotation]
 
     type TypeAnnotationTarget <: AnyRef

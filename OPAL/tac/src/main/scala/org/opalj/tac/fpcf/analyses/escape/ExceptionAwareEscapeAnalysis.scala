@@ -21,7 +21,7 @@ import org.opalj.tac.common.DefinitionSiteLike
  */
 trait ExceptionAwareEscapeAnalysis extends AbstractEscapeAnalysis {
 
-    override protected[this] def handleThrow(
+    override protected def handleThrow(
         aThrow: Throw[V]
     )(implicit context: AnalysisContext, state: AnalysisState): Unit = {
         if (state.usesDefSite(aThrow.exception)) {
@@ -35,9 +35,9 @@ trait ExceptionAwareEscapeAnalysis extends AbstractEscapeAnalysis {
             var abnormalReturned = false
             for (pc <- successors) {
                 if (pc.isCatchNode) {
-                    val exceptionType = context.entity match {
+                    val exceptionType = (context.entity: @unchecked) match {
                         case (_: Context, defSite: DefinitionSiteLike) =>
-                            val Assignment(_, left, _) = tacai.stmts.find(_.pc == defSite.pc).get
+                            val Assignment(_, left, _) = tacai.stmts.find(_.pc == defSite.pc).get: @unchecked
                             classHierarchy.joinReferenceTypesUntilSingleUpperBound(
                                 left.value.asReferenceValue.upperTypeBound
                             )

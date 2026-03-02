@@ -61,7 +61,7 @@ class DataFlowAnalysis[Data, Environment <: DataFlowEnvironment[Data, Environmen
         node: FlowGraphNode,
         env:  Environment
     ): Environment = {
-        val pipe = pipeThroughNode(flowFunctionByPc) _
+        val pipe = (node: FlowGraphNode, env: Environment) => pipeThroughNode(flowFunctionByPc)(node, env)
         val innerChildNodes = controlTree.get(node).diSuccessors.map(n => superFlowGraph.get(n.outer))
 
         def processBlock(entry: FlowGraphNode): Environment = {
@@ -107,15 +107,14 @@ class DataFlowAnalysis[Data, Environment <: DataFlowEnvironment[Data, Environmen
         }
 
         def handleProperSubregion[A <: FlowGraphNode, G <: SuperFlowGraph](
-            g:          G,
-            innerNodes: Set[G#NodeT],
-            entry:      A
-        ): Environment = {
+            g:     G,
+            entry: A
+        )(innerNodes: Set[g.NodeT]): Environment = {
             val entryNode = g.get(entry)
             val sortedNodes = _nodeOrderings.getOrElseUpdate(
                 node, {
                     val ordering = g.NodeOrdering((in1, in2) => in1.compare(in2))
-                    val traverser = entryNode.innerNodeTraverser(Parameters(BreadthFirst))
+                    val traverser = entryNode.innerNodeTraverser(using Parameters(BreadthFirst))
                         .withOrdering(ordering)
                         .withSubgraph(nodes = innerNodes.contains)
                     // We know that the graph is acyclic here, so we can be sure that the topological sort never fails
@@ -138,7 +137,7 @@ class DataFlowAnalysis[Data, Environment <: DataFlowEnvironment[Data, Environmen
         }
 
         def processProper(entry: FlowGraphNode): Environment = {
-            handleProperSubregion[FlowGraphNode, superFlowGraph.type](superFlowGraph, innerChildNodes, entry)
+            handleProperSubregion[FlowGraphNode, superFlowGraph.type](superFlowGraph, entry)(innerChildNodes)
         }
 
         def processSelfLoop(entry: FlowGraphNode): Environment = {
@@ -190,9 +189,8 @@ class DataFlowAnalysis[Data, Environment <: DataFlowEnvironment[Data, Environmen
                 // Handle resulting acyclic region
                 val resultEnv = handleProperSubregion[FlowGraphNode, removedBackEdgesGraph.type](
                     removedBackEdgesGraph,
-                    removedBackEdgesGraph.nodes.toSet,
                     entry
-                )
+                )(removedBackEdgesGraph.nodes.toSet)
                 // IMPROVE only update affected variables instead of all
                 if (resultEnv != env && highSoundness) env.updateAll(env.top)
                 else resultEnv

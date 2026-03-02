@@ -8,6 +8,7 @@ import java.lang.Math.abs
 
 import org.opalj.br.ComputationalTypeInt
 import org.opalj.br.CTIntType
+import org.opalj.util.elidedAssert
 
 /**
  * This domain implements the tracking of integer values at the level of ranges.
@@ -15,7 +16,7 @@ import org.opalj.br.CTIntType
  * @author Michael Eichberg
  */
 trait DefaultIntegerRangeValues extends DefaultSpecialDomainValuesBinding with IntegerRangeValues {
-    domain: CorrelationalDomainSupport with Configuration with ExceptionsFactory =>
+    domain: CorrelationalDomainSupport & Configuration & ExceptionsFactory =>
 
     /**
      * Represents a specific but unknown Integer value.
@@ -68,7 +69,7 @@ trait DefaultIntegerRangeValues extends DefaultSpecialDomainValuesBinding with I
      */
     class IntegerRange(val lowerBound: Int, val upperBound: Int) extends super.IntegerRangeLike {
 
-        assert(
+        elidedAssert(
             lowerBound <= upperBound,
             s"the lower bound $lowerBound is larger than the upper bound $upperBound"
         )
@@ -102,8 +103,8 @@ trait DefaultIntegerRangeValues extends DefaultSpecialDomainValuesBinding with I
                     } else if (newLB == thisLB && newUB == thisUB) {
                         // This is NOT a "NoUpdate" since we have two values that may
                         // have the same range, but which can still be two different
-                        // runtime values (they were not created at the same time!
-                        // The "CorrelationalDomain" will make sure that this udpate is
+                        // runtime values (they were not created at the same time!)
+                        // The "CorrelationalDomain" will make sure that this update is
                         // handled.
                         MetaInformationUpdate(IntegerRange(newLB, newUB))
                     } else if (thisLB == thisUB && otherLB == otherUB) {
@@ -111,8 +112,8 @@ trait DefaultIntegerRangeValues extends DefaultSpecialDomainValuesBinding with I
                         // create a "true" range.
                         StructuralUpdate(IntegerRange(newLB, newUB))
                     } else if (abs(newLB.toLong - newUB.toLong) > maxCardinalityOfIntegerRanges) {
-                        // let's just use one of the default ranges..
-                        var adjustedNewLB =
+                        // let's just use one of the default ranges
+                        var adjustedNewLB: Int =
                             if (newLB < Short.MinValue) {
                                 Int.MinValue
                             } else if (newLB < Byte.MinValue) {
@@ -123,7 +124,7 @@ trait DefaultIntegerRangeValues extends DefaultSpecialDomainValuesBinding with I
                                 0
                             }
 
-                        val adjustedNewUB =
+                        val adjustedNewUB: Int =
                             if (newUB > Char.MaxValue) {
                                 Int.MaxValue
                             } else if (newUB > Short.MaxValue) {

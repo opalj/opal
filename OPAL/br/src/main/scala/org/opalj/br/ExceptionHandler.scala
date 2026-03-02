@@ -10,7 +10,7 @@ package br
  * @param  endPC An index into the code array that points to the instruction after the
  *         "try-block" (exclusive).
  * @param  handlerPC Points to the first instruction of the exception handler.
- * @param  catchType The type of the exception that is catched. `None` in case of
+ * @param  catchType The type of the exception that is caught. `None` in case of
  *         a finally block.
  *
  * @author Michael Eichberg

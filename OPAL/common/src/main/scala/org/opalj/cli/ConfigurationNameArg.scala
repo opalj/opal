@@ -4,6 +4,8 @@ package cli
 
 import java.util.Calendar
 
+import org.rogach.scallop._
+
 object ConfigurationNameArg extends PlainArg[String] {
     override val name: String = "configName"
     override val argName: String = "name"
