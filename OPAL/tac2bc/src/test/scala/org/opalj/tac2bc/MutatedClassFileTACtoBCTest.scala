@@ -40,7 +40,7 @@ class MutatedClassFileTACtoBCTest extends TACtoBCTest {
         val extraFiles = if (directory.exists && directory.isDirectory) {
             directory.listFiles((_, name) => name.startsWith(baseFileName))
         } else {
-            Array.empty
+            Array.empty[File]
         }
 
         extraFiles.iterator.map(file => file.toPath).toList

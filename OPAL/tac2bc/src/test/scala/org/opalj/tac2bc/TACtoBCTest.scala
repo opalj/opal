@@ -85,8 +85,7 @@ trait TACtoBCTest extends AnyFunSpec with Matchers {
                 val logContext = new StandardLogContext()
                 OPALLogger.register(logContext)
                 implicit val project: Project[URL] =
-                    Project(Paths.get(testInputDir, testClassFileName).toFile, logContext, config)
-
+                    Project(Paths.get(testInputDir, testClassFileName).toFile, config, logContext)
                 // Load the test class file
                 val classFile = project.allClassFiles.head
 
@@ -165,7 +164,7 @@ trait TACtoBCTest extends AnyFunSpec with Matchers {
             throw new RuntimeException(s"Compilation of Java file ($fileName) failed.")
     }
 
-    def invokeMainMethod(clazz: Class[_]): String = {
+    def invokeMainMethod(clazz: Class[?]): String = {
         val outputStream = new ByteArrayOutputStream()
         Console.withOut(outputStream) {
             clazz.getMethod("main", classOf[Array[String]]).invoke(null, Array[String]())
@@ -173,7 +172,7 @@ trait TACtoBCTest extends AnyFunSpec with Matchers {
         outputStream.toString.trim
     }
 
-    def loadClasses(paths: List[Path]): Iterable[Class[_]] = {
+    def loadClasses(paths: List[Path]): Iterable[Class[?]] = {
         val classes = paths.map { classFilePath =>
             val className = classFilePath.getFileName.toString.replace(".class", "")
             className -> Files.readAllBytes(classFilePath)

@@ -275,7 +275,7 @@ object ExprProcessor {
 
     // Helper function to infer the element type from the array reference expression
     private[tac2bc] def inferElementType(expr: Expr[V]): FieldType = {
-        expr.asVar.value.asInstanceOf[IsSReferenceValue[_]].theUpperTypeBound match {
+        expr.asVar.value.asInstanceOf[IsSReferenceValue[?]].theUpperTypeBound match {
             case ArrayType(componentType) => componentType
             case _                        => throw new IllegalArgumentException(s"Expected an array type but found: ${expr.cTpe}")
         }

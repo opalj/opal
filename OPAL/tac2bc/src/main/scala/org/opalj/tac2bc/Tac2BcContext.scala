@@ -243,9 +243,9 @@ class Tac2BcContext(
     /**
      * Returns the given expression and returns the first UVar found, if any.
      */
-    private def findUVarInExpr(expr: Expr[V], defIdx: Int): Option[UVar[_]] = {
+    private def findUVarInExpr(expr: Expr[V], defIdx: Int): Option[UVar[?]] = {
         // First, check the root expression itself.
-        var found: Option[UVar[_]] = expr match {
+        var found: Option[UVar[?]] = expr match {
             case u: UVar[_] if u.definedBy.contains(defIdx) => return Some(u)
             case _ => None
         }
