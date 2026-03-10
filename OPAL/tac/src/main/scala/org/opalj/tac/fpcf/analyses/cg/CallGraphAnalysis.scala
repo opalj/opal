@@ -74,7 +74,7 @@ class CallGraphAnalysis private[cg] (
             case UBP(_: TACAI) =>
                 throw new IllegalStateException("there was already a tac defined")
 
-            case EPS(e) =>
+            case EPS(_) =>
                 val relevantCallSites = state.dependersOf(eps.toEPK).asInstanceOf[Set[CallSite]]
 
                 // ensures, that we only add new calls

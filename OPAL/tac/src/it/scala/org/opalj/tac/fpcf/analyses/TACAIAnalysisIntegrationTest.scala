@@ -65,10 +65,10 @@ class TACAIAnalysisIntegrationTest extends AnyFunSpec with Matchers {
             ps.waitOnPhaseCompletion()
             p.allMethodsWithBody foreach { method =>
                 val aiResultProperty = ps(method, BaseAIResult.key)
-                val Some(aiResult) = aiResultProperty.asFinal.p.aiResult
+                val Some(_) = aiResultProperty.asFinal.p.aiResult
                 // ... smoke test...
                 val tacaiProperty = ps(method, TACAI.key)
-                val Some(tac) = tacaiProperty.asFinal.p.tac
+                val Some(_) = tacaiProperty.asFinal.p.tac
                 // ... smoke test...
                 counter.incrementAndGet()
             }
@@ -84,10 +84,10 @@ class TACAIAnalysisIntegrationTest extends AnyFunSpec with Matchers {
             val (ps, _ /*executed analyses*/ ) = fpcfManager.runAll(EagerL0TACAIAnalysis)
             p.allMethodsWithBody foreach { method =>
                 val aiResultProperty = ps(method, BaseAIResult.key)
-                val Some(aiResult) = aiResultProperty.asFinal.p.aiResult
+                val Some(_) = aiResultProperty.asFinal.p.aiResult
                 // ... smoke test...
                 val tacaiProperty = ps(method, TACAI.key)
-                val Some(tac) = tacaiProperty.asFinal.p.tac
+                val Some(_) = tacaiProperty.asFinal.p.tac
                 // ... smoke test...
                 counter.incrementAndGet()
             }

@@ -931,7 +931,7 @@ sealed abstract class PropertyStoreTest[PS <: PropertyStore]
 
                 def c(dependeeP: SomeEPS): ProperPropertyComputationResult = {
                     // Get the set of currently reachable nodes of the dependee:
-                    val EUBP(dependeeE, ReachableNodes(depeendeeReachableNodes)) = dependeeP
+                    val EUBP(_, ReachableNodes(depeendeeReachableNodes)) = dependeeP
                     // Compute the new set of reachable nodes
                     val pr = createPartialResult(depeendeeReachableNodes)
                     dependeePs = dependeePs.filter(_.e ne dependeeP.e)

@@ -46,7 +46,8 @@ class NonVirtualCalls(implicit hermes: HermesConfig) extends DefaultFeatureQuery
             (classFile, source) <- project.projectClassFilesWithSources
             if !isInterrupted()
             classFileLocation = ClassFileLocation(source, classFile)
-            method @ MethodWithBody(body) <- classFile.methods
+            method <- classFile.methods
+            MethodWithBody(body) = method
             methodLocation = MethodLocation(classFileLocation, method)
             pcAndInvocation <- body collect ({
                 case spec: INVOKESPECIAL => spec

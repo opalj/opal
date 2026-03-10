@@ -339,7 +339,7 @@ private[immutable] object LongLinkedTrieSetNShared {
                         } else {
                             new LongLinkedTrieSetN4_1_3(l._0, l._1)
                         }
-                    case l: LongLinkedTrieSetN4 =>
+                    case _: LongLinkedTrieSetN4 =>
                         if (sharedBits == 0L /*test the last bit...*/ )
                             new LongLinkedTrieSetNShared_0(n)
                         else

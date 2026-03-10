@@ -19,7 +19,8 @@ package object translator {
         exitStates
     }
 
-    def globalObject: ObjectLabel[Context] = ObjectLabel.make(ECMAScriptObjects.GLOBAL, ObjectLabel.Kind.OBJECT).asInstanceOf[ObjectLabel[Context]]
+    def globalObject: ObjectLabel[Context] =
+        ObjectLabel.make(ECMAScriptObjects.GLOBAL, ObjectLabel.Kind.OBJECT).asInstanceOf[ObjectLabel[Context]]
 
     def tajsIdentifier(string: String): PKey.StringPKey = PKey.StringPKey.make(string)
 }

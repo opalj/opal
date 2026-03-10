@@ -3,9 +3,6 @@ package org.opalj
 package xl
 
 import java.net.URL
-//import java.util.concurrent.TimeUnit
-
-import org.opalj.xl.logger.PointsToInteractionLogger
 
 import org.opalj.br.Method
 import org.opalj.br.analyses.AnalysisApplication
@@ -48,6 +45,7 @@ import org.opalj.tac.fpcf.analyses.fieldassignability.LazyL2FieldAssignabilityAn
 import org.opalj.tac.fpcf.analyses.pointsto.AllocationSiteBasedLibraryPointsToAnalysisScheduler
 import org.opalj.value.ValueInformation
 import org.opalj.xl.connector.svf.AllocationSiteBasedSVFConnectorDetectorScheduler
+import org.opalj.xl.logger.PointsToInteractionLogger
 import org.opalj.xl.utility.AnalysisResult
 import org.opalj.xl.utility.InterimAnalysisResult
 
@@ -67,7 +65,7 @@ object Coordinator extends AnalysisApplication with OneStepAnalysis[URL, Reporta
         isInterrupted: () => Boolean
     ): BasicReport = {
 
-      //  val start = System.currentTimeMillis
+        //  val start = System.currentTimeMillis
 
         var analyses: List[FPCFAnalysisScheduler] = List(LazyTACAIProvider)
 
@@ -125,7 +123,7 @@ object Coordinator extends AnalysisApplication with OneStepAnalysis[URL, Reporta
             .flatMap(_.methods)
             .foreach(method => {
                 propertyStore(method, AnalysisResult.key) match {
-                    case FinalP(InterimAnalysisResult(tajsStore)) =>
+                    case FinalP(InterimAnalysisResult(tajsStore @ _)) =>
                     // println(s"TAJS result: $tajsStore")
                     case x => println(s"other case: $x")
                 }
@@ -134,7 +132,7 @@ object Coordinator extends AnalysisApplication with OneStepAnalysis[URL, Reporta
         println("OPAL results:")
         defSites.forEach(defSite => {
             propertyStore(defSite, AllocationSitePointsToSet.key) match {
-                case FinalEP(DefinitionSite(method, pc), pointsToSet) =>
+                case FinalEP(DefinitionSite(method @ _, pc @ _), pointsToSet @ _) =>
                     // println(method)
                     try {
                         // val taCode = tacaiKey(method)
@@ -166,8 +164,8 @@ object Coordinator extends AnalysisApplication with OneStepAnalysis[URL, Reporta
         val dependentlyImmutable = fields.filter(ep => ep.asEPS.ub.isInstanceOf[DependentlyImmutableField]).size
         val mutable = fields.filter(ep => ep.asEPS.ub == MutableField).size
 
-        //val timeNeeded = System.currentTimeMillis - start;
-       // val seconds = TimeUnit.MILLISECONDS.toSeconds(timeNeeded)
+        // val timeNeeded = System.currentTimeMillis - start;
+        // val seconds = TimeUnit.MILLISECONDS.toSeconds(timeNeeded)
 
         var firstRM = true
         var recheableMethods = 0

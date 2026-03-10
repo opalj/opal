@@ -60,7 +60,8 @@ class Library(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
             fieldTypes = classFile.fields.filter(f => f.isNotFinal && !f.isPrivate).collect {
                 case f: Field if f.fieldType.id >= 0 => f.fieldType.id
             }
-            method @ MethodWithBody(body) <- classFile.methods
+            method <- classFile.methods
+            MethodWithBody(body) = method
             paramTypes = method.parameterTypes.map(_.id).filter(_ >= 0)
             if (fieldTypes.nonEmpty || paramTypes.nonEmpty)
             methodLocation = MethodLocation(classFileLocation, method)

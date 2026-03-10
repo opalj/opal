@@ -4,37 +4,46 @@ package fpcf
 package xltest
 
 import java.net.URL
-
 import scala.util.matching.Regex
 
-import com.typesafe.config.Config
-import com.typesafe.config.ConfigFactory
-
-import org.opalj.br.DefinedMethod
-import org.opalj.br.analyses.Project
-import org.opalj.br.fpcf.properties.SimpleContext
-import org.opalj.br.fpcf.properties.pointsto.{AllocationSitePointsToSet, PointsToSetLike}
-import org.opalj.br.fpcf.{ContextProviderKey, FPCFAnalysisScheduler}
-import org.opalj.fpcf.{PropertiesTest, PropertyStore, SomeEPS}
-import org.opalj.tac.cg.AllocationSiteBasedPointsToCallGraphKey
-import org.opalj.tac.common.DefinitionSite
-import org.opalj.tac.fpcf.analyses.LazyTACAIProvider
-import org.opalj.tac.fpcf.analyses.cg.AllocationSitesPointsToTypeIterator
-import org.opalj.xl.connector.AllocationSiteBasedTriggeredTajsConnectorScheduler
-import org.opalj.xl.javaanalyses.detector.scriptengine.AllocationSiteBasedScriptEngineDetectorScheduler
 import org.scalatest.Reporter
 import org.scalatest.events.Event
 import org.scalatest.events.SuiteCompleted
 import org.scalatest.events.TestFailed
 import org.scalatest.events.TestSucceeded
 import org.scalatest.tools.Runner
-import org.opalj.log.LogContext
+
+import com.typesafe.config.Config
+import com.typesafe.config.ConfigFactory
+
+import org.opalj.br.DefinedMethod
+import org.opalj.br.analyses.Project
+import org.opalj.br.fpcf.ContextProviderKey
+import org.opalj.br.fpcf.FPCFAnalysisScheduler
 import org.opalj.br.fpcf.PropertyStoreKey
+import org.opalj.br.fpcf.properties.SimpleContext
+import org.opalj.br.fpcf.properties.pointsto.AllocationSitePointsToSet
+import org.opalj.br.fpcf.properties.pointsto.PointsToSetLike
+import org.opalj.fpcf.PropertiesTest
+import org.opalj.fpcf.PropertyStore
+import org.opalj.fpcf.SomeEPS
+import org.opalj.log.LogContext
+import org.opalj.tac.cg.AllocationSiteBasedPointsToCallGraphKey
+import org.opalj.tac.common.DefinitionSite
+import org.opalj.tac.fpcf.analyses.LazyTACAIProvider
+import org.opalj.tac.fpcf.analyses.cg.AllocationSitesPointsToTypeIterator
+import org.opalj.xl.connector.AllocationSiteBasedTriggeredTajsConnectorScheduler
+import org.opalj.xl.javaanalyses.detector.scriptengine.AllocationSiteBasedScriptEngineDetectorScheduler
 
 object RunXLJavaScriptPointsToTests {
     def main(args: Array[String]): Unit = {
-        //val test = new XLJavaScriptTests()
-        Runner.run(Array("-C", "org.opalj.fpcf.xltest.MyCustomReporterPointsTo", "-s", "org.opalj.fpcf.xltest.XLJavaScriptPointsToTests"))
+        // val test = new XLJavaScriptTests()
+        Runner.run(Array(
+            "-C",
+            "org.opalj.fpcf.xltest.MyCustomReporterPointsTo",
+            "-s",
+            "org.opalj.fpcf.xltest.XLJavaScriptPointsToTests"
+        ))
     }
 }
 
@@ -42,13 +51,13 @@ class MyCustomReporterPointsTo extends Reporter {
     override def apply(event: Event): Unit = {
         // testName: "test JavaScript XL points-to-sets xl.js.controlflow.intraprocedural.unidirectional.arithmetic.Div{ public static void main(java.lang.String[]){ @PointsToSet } }"
         event match {
-            case TestSucceeded(ordinal, suiteName, suiteId, suiteClassName, testName, testText, recordedEvents, duration, formatter, location, rerunner, payload, threadName, timeStamp) => {
+            case TestSucceeded(_, _, _, _, testName, _, _, _, _, _, _, _, _, _) => {
                 succeededClassnames += extractClassname(testName).get
             }
-            case TestFailed(ordinal, message, suiteName, suiteId, suiteClassName, testName, testText, recordedEvents, analysis, throwable, duration, formatter, location, rerunner, payload, threadName, timeStamp) => {
+            case TestFailed(_, _, _, _, _, testName, _, _, _, _, _, _, _, _, _, _, _) => {
                 failedClassnames += extractClassname(testName).get
             }
-            case SuiteCompleted(ordinal, suiteName, suiteId, suiteClassName, duration, formatter, location, rerunner, payload, threadName, timeStamp) => {
+            case SuiteCompleted(_, _, _, _, _, _, _, _, _, _, _) => {
                 printTestcaseSummary()
             }
             case _ =>
@@ -74,10 +83,13 @@ class MyCustomReporterPointsTo extends Reporter {
 
         val allTestcases = failedClassnames ++ succeededClassnames
         val failedGrouped = failedClassnames.filter(extractCategory(_).isDefined).groupBy(cl => extractCategory(cl).get)
-        val succeededGrouped = succeededClassnames.filter(extractCategory(_).isDefined).groupBy(cl => extractCategory(cl).get)
-        val sucdfaild = allTestcases.flatMap(extractCategory).map(cat => (cat -> (
-            succeededGrouped.getOrElse(cat, Set.empty[String]), failedGrouped.getOrElse(cat, Set.empty[String])
-        ))).toSeq
+        val succeededGrouped =
+            succeededClassnames.filter(extractCategory(_).isDefined).groupBy(cl => extractCategory(cl).get)
+        val sucdfaild = allTestcases.flatMap(extractCategory).map(cat =>
+            (cat -> (
+                succeededGrouped.getOrElse(cat, Set.empty[String]), failedGrouped.getOrElse(cat, Set.empty[String])
+            ))
+        ).toSeq
         sucdfaild.foreach {
             case (category, (succeededTests, failedTests)) =>
                 val failedCount = failedTests.size
@@ -140,9 +152,9 @@ class MyCustomReporterPointsTo extends Reporter {
 
         val tableData = List(
             List("Category", "Passed / Total"),
-            List.empty[String]  // Empty line for special header separator
+            List.empty[String] // Empty line for special header separator
         ) ++ categoryData ++ List(
-            List.empty[String],  // Empty line for special overall separator
+            List.empty[String], // Empty line for special overall separator
             List("Overall", s"$totalsucceeded / $total")
         )
 
@@ -181,13 +193,15 @@ class XLJavaScriptPointsToTests extends PropertiesTest {
 
     override def fixtureProjectPackage: List[String] = {
         List("org/opalj/fpcf/fixtures/xl/js/")
-        //List("org/opalj/fpcf/fixtures/xl/js/stateaccess/intraprocedural/unidirectional/JSAccessJava/")
+        // List("org/opalj/fpcf/fixtures/xl/js/stateaccess/intraprocedural/unidirectional/JSAccessJava/")
     }
 
     override def createConfig(): Config = ConfigFactory.load("reference.conf")
 
     override def init(p: Project[URL]): Unit = {
-        p.updateProjectInformationKeyInitializationData(ContextProviderKey)(_ => new AllocationSitesPointsToTypeIterator(p))
+        p.updateProjectInformationKeyInitializationData(ContextProviderKey)(_ =>
+            new AllocationSitesPointsToTypeIterator(p)
+        )
 
         implicit val logContext: LogContext = p.logContext
         p.getOrCreateProjectInformationKeyInitializationData(
@@ -197,7 +211,6 @@ class XLJavaScriptPointsToTests extends PropertiesTest {
                 org.opalj.fpcf.par.PKECPropertyStore.MaxThreads = 1
                 org.opalj.fpcf.par.PKECPropertyStore(context: _*)
             }
-
         )
     }
     def addAnalyses(): Iterable[FPCFAnalysisScheduler] = {
@@ -210,7 +223,7 @@ class XLJavaScriptPointsToTests extends PropertiesTest {
     describe("test JavaScript XL points-to-sets") {
         val statistics =
             FixtureProject
-                .statistics.map(kv => "- "+kv._1+": "+kv._2)
+                .statistics.map(kv => "- " + kv._1 + ": " + kv._2)
                 .toList.sorted.reverse
                 .mkString("project statistics:\n\t", "\n\t", "\n")
         info(statistics)
@@ -231,8 +244,8 @@ class XLJavaScriptPointsToTests extends PropertiesTest {
             val epss = as.propertyStore.properties(ds).toIndexedSeq
 
             val properties = epss.map(_.toFinalEP.p)
-            val contextP = properties.find(_.isInstanceOf[PointsToSetLike[_, _, _]]).
-                map(_.asInstanceOf[PointsToSetLike[_, _, _]])
+            val contextP =
+                properties.find(_.isInstanceOf[PointsToSetLike[_, _, _]]).map(_.asInstanceOf[PointsToSetLike[_, _, _]])
 
             println(contextP)
         }
@@ -245,8 +258,8 @@ class XLJavaScriptPointsToTests extends PropertiesTest {
             val epss = as.propertyStore.properties(c).toIndexedSeq
 
             val properties = epss.map(_.toFinalEP.p)
-            val contextP = properties.find(_.isInstanceOf[PointsToSetLike[_, _, _]]).
-                map(_.asInstanceOf[PointsToSetLike[_, _, _]])
+            val contextP =
+                properties.find(_.isInstanceOf[PointsToSetLike[_, _, _]]).map(_.asInstanceOf[PointsToSetLike[_, _, _]])
 
             println(contextP)
         }
@@ -255,17 +268,26 @@ class XLJavaScriptPointsToTests extends PropertiesTest {
 
         for (m <- definedMethods) {
             val dm = m.definedMethod
-            val defsitesInMethod = ps.entities(propertyFilter = _.e.isInstanceOf[DefinitionSite]).map(_.asInstanceOf[DefinitionSite]).filter(_.method == dm).toSet
+            val defsitesInMethod = ps.entities(propertyFilter = _.e.isInstanceOf[DefinitionSite]).map(
+                _.asInstanceOf[DefinitionSite]
+            ).filter(_.method == dm).toSet
             println(defsitesInMethod)
-            val pts = defsitesInMethod.map(defsite => (defsite, ps.properties(defsite).map(_.toFinalEP.p).find(_.isInstanceOf[AllocationSitePointsToSet]).map(_.asInstanceOf[AllocationSitePointsToSet])))
+            val pts = defsitesInMethod.map(defsite =>
+                (
+                    defsite,
+                    ps.properties(defsite).map(_.toFinalEP.p).find(_.isInstanceOf[AllocationSitePointsToSet]).map(
+                        _.asInstanceOf[AllocationSitePointsToSet]
+                    )
+                )
+            )
             println("points to sets: ")
             println(pts)
         }
         validateProperties(as, methodsWithAnnotations(as.project), Set("PointsToSetIncludes", "TAJSEnvironment"))
         // tally.
-        //succeededTestcases.foreach(println)
-        //failedTestcases.foreach(println)
-        //printTestcaseSummary(failedTestcases, succeededTestcases)
+        // succeededTestcases.foreach(println)
+        // failedTestcases.foreach(println)
+        // printTestcaseSummary(failedTestcases, succeededTestcases)
     }
 
 }

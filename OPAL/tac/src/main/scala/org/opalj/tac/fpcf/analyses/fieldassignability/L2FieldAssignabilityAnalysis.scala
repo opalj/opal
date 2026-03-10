@@ -94,11 +94,11 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
     )(implicit state: AnalysisState): Boolean = {
 
         val field = state.field
-   //     println(s"field: ${field.name}")
+        //     println(s"field: ${field.name}")
         val method = definedMethod.definedMethod
         val stmts = taCode.stmts
         // --- xlanguage
-        if(receiver==null)
+        if (receiver == null)
             return true;
         val receiverVar = receiver.map(uVarForDefSites(_, taCode.pcToIndex))
 
@@ -288,17 +288,17 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
                 fieldReadAccessInformation.numIndirectAccesses - seenIndirectAccesses
             ).exists { readAccess =>
                 val method = contextProvider.contextFromId(readAccess._1).method
-                    //determines whether
-              //  (method.definedMethod.classFile != state.field.classFile && writeAccess._1.definedMethod.isInitializer && method.definedMethod.isInitializer) ||
-                    (writeAccess._1 eq method) && {
-                        val taCode = state.tacDependees(method.asDefinedMethod).ub.tac.get
+                // determines whether
+                //  (method.definedMethod.classFile != state.field.classFile && writeAccess._1.definedMethod.isInitializer && method.definedMethod.isInitializer) ||
+                (writeAccess._1 eq method) && {
+                    val taCode = state.tacDependees(method.asDefinedMethod).ub.tac.get
 
-                        if (readAccess._3.isDefined && readAccess._3.get._2.forall(isFormalParameter)) {
-                            false
-                        } else {
-                            !dominates(writeAccess._4, taCode.pcToIndex(readAccess._2), taCode)
-                        }
+                    if (readAccess._3.isDefined && readAccess._3.get._2.forall(isFormalParameter)) {
+                        false
+                    } else {
+                        !dominates(writeAccess._4, taCode.pcToIndex(readAccess._2), taCode)
                     }
+                }
             }
         }
     }
@@ -382,7 +382,7 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
         val code = taCode.stmts
         val cfg = taCode.cfg
         println(s"code(writeIndex): ${code(writeIndex)}")
-        if(!code(writeIndex).isFieldWriteAccessStmt) {
+        if (!code(writeIndex).isFieldWriteAccessStmt) {
             println(s"special case: ${code(writeIndex)}")
             return Assignable
         }

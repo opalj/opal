@@ -175,7 +175,7 @@ class L0SelfReferenceLeakageAnalysis(
         propertyStore(superTypes, SelfReferenceLeakageKey) foreach {
             case epk @ EPK(e, _)                   => dependees += ((e, epk))
             case UBP(LeaksSelfReference)           => return Result(classFile, LeaksSelfReference);
-            case ELBP(e, DoesNotLeakSelfReference) => // nothing to do ...
+            case ELBP(_, DoesNotLeakSelfReference) => // nothing to do ...
             case eps @ EPS(e)                      => dependees += ((e, eps))
         }
 

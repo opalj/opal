@@ -7,42 +7,42 @@ package scriptengine
 
 import scala.collection.immutable.ArraySeq
 
+import org.opalj.br.MethodDescriptor
+import org.opalj.br.ObjectType
+import org.opalj.br.ReferenceType
+import org.opalj.br.VoidType
+import org.opalj.br.analyses.DeclaredMethods
+import org.opalj.br.analyses.DeclaredMethodsKey
+import org.opalj.br.analyses.ProjectInformationKeys
+import org.opalj.br.analyses.SomeProject
+import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
+import org.opalj.br.fpcf.FPCFAnalysis
+import org.opalj.br.fpcf.properties.cg.Callees
+import org.opalj.br.fpcf.properties.pointsto.AllocationSitePointsToSet
+import org.opalj.br.fpcf.properties.pointsto.TypeBasedPointsToSet
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyComputationResult
 import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.PropertyMetaInformation
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Results
-import org.opalj.br.analyses.SomeProject
-import org.opalj.br.ReferenceType
-import org.opalj.br.analyses.DeclaredMethods
-import org.opalj.br.analyses.DeclaredMethodsKey
-import org.opalj.br.fpcf.properties.pointsto.AllocationSitePointsToSet
-import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.br.MethodDescriptor
-import org.opalj.br.ObjectType
-import org.opalj.br.analyses.ProjectInformationKeys
-import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
-import org.opalj.br.fpcf.properties.pointsto.TypeBasedPointsToSet
 import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.common.DefinitionSitesKey
-import org.opalj.tac.fpcf.analyses.pointsto.AbstractPointsToBasedAnalysis
-import org.opalj.tac.fpcf.analyses.pointsto.PointsToAnalysisBase
 import org.opalj.tac.fpcf.analyses.APIBasedAnalysis
+import org.opalj.tac.fpcf.analyses.pointsto.AbstractPointsToBasedAnalysis
 import org.opalj.tac.fpcf.analyses.pointsto.AllocationSiteBasedAnalysis
+import org.opalj.tac.fpcf.analyses.pointsto.PointsToAnalysisBase
 import org.opalj.tac.fpcf.analyses.pointsto.TypeBasedAnalysis
-import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.xl.detector.CrossLanguageInteraction
 import org.opalj.xl.utility.Language
-import ScriptEngineDetector.engineManager
-import ScriptEngineDetector.getEngine
-import ScriptEngineDetector.scriptEngine
 import org.opalj.xl.utility.Language.Language
+
+import ScriptEngineDetector.engineManager
 import ScriptEngineDetector.engineNames
 import ScriptEngineDetector.extensions
+import ScriptEngineDetector.getEngine
 import ScriptEngineDetector.mimetypes
-
-import org.opalj.br.VoidType
+import ScriptEngineDetector.scriptEngine
 
 /**
  * Detects calls of put, get, eval, on the Java ScriptEngine object.
@@ -50,7 +50,7 @@ import org.opalj.br.VoidType
  * @author Tobias Roth
  * @author Dominik Helm
  */
-abstract class ScriptEngineDetector( final val project: SomeProject) extends PointsToAnalysisBase {
+abstract class ScriptEngineDetector(final val project: SomeProject) extends PointsToAnalysisBase {
     self =>
 
     val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
@@ -65,10 +65,20 @@ abstract class ScriptEngineDetector( final val project: SomeProject) extends Poi
 
         override protected[this] def emptyPointsToSet: PointsToSet = self.emptyPointsToSet
 
-        override protected[this] def createPointsToSet(pc: Int, callContext: ContextType, allocatedType: ReferenceType,
-                                                       isConstant: Boolean, isEmptyArray: Boolean): PointsToSet = {
-            self.createPointsToSet(pc, callContext.asInstanceOf[self.ContextType],
-                allocatedType, isConstant, isEmptyArray)
+        override protected[this] def createPointsToSet(
+            pc:            Int,
+            callContext:   ContextType,
+            allocatedType: ReferenceType,
+            isConstant:    Boolean,
+            isEmptyArray:  Boolean
+        ): PointsToSet = {
+            self.createPointsToSet(
+                pc,
+                callContext.asInstanceOf[self.ContextType],
+                allocatedType,
+                isConstant,
+                isEmptyArray
+            )
         }
 
         @inline override protected[this] def getTypeOf(element: ElementType): ReferenceType = {
@@ -87,26 +97,50 @@ abstract class ScriptEngineDetector( final val project: SomeProject) extends Poi
     def process(project: SomeProject): PropertyComputationResult = {
         val analyses: List[APIBasedAnalysis] = List(
             new ScriptEngineAllocationAnalysis(
-                project, declaredMethods(engineManager, "", engineManager, "getEngineByName", getEngine), engineNames
+                project,
+                declaredMethods(engineManager, "", engineManager, "getEngineByName", getEngine),
+                engineNames
             ) with PointsToBase,
             new ScriptEngineAllocationAnalysis(
-                project, declaredMethods(engineManager, "", engineManager, "getEngineByExtension", getEngine), extensions
+                project,
+                declaredMethods(engineManager, "", engineManager, "getEngineByExtension", getEngine),
+                extensions
             ) with PointsToBase,
             new ScriptEngineAllocationAnalysis(
-                project, declaredMethods(engineManager, "", engineManager, "getEngineByMimeType", getEngine), mimetypes
+                project,
+                declaredMethods(engineManager, "", engineManager, "getEngineByMimeType", getEngine),
+                mimetypes
             ) with PointsToBase,
             new ScriptEngineInteractionAnalysisPut(
-                project, declaredMethods(scriptEngine, "", scriptEngine, "put",
-                MethodDescriptor(ArraySeq(ObjectType.String, ObjectType.Object), VoidType))
+                project,
+                declaredMethods(
+                    scriptEngine,
+                    "",
+                    scriptEngine,
+                    "put",
+                    MethodDescriptor(ArraySeq(ObjectType.String, ObjectType.Object), VoidType)
+                )
             ) with PointsToBase,
             new ScriptEngineInteractionAnalysisEval(
-                project, declaredMethods(scriptEngine, "", scriptEngine, "eval",
-                MethodDescriptor(ObjectType.String, ObjectType.Object))
+                project,
+                declaredMethods(
+                    scriptEngine,
+                    "",
+                    scriptEngine,
+                    "eval",
+                    MethodDescriptor(ObjectType.String, ObjectType.Object)
+                )
             ) with PointsToBase,
             new ScriptEngineInteractionAnalysisGet(
-                project, declaredMethods(scriptEngine, "", scriptEngine, "get",
-                MethodDescriptor(ObjectType.String, ObjectType.Object))
-            ) with PointsToBase,
+                project,
+                declaredMethods(
+                    scriptEngine,
+                    "",
+                    scriptEngine,
+                    "get",
+                    MethodDescriptor(ObjectType.String, ObjectType.Object)
+                )
+            ) with PointsToBase
         )
         Results(analyses.map(_.registerAPIMethod()))
     }
@@ -118,15 +152,15 @@ object ScriptEngineDetector {
     val getEngine: MethodDescriptor = MethodDescriptor(ObjectType.String, scriptEngine)
 
     val engineNames: Map[String, Language] = Map.from(
-        Set("nashorn", "rhino", "js", "javascript", "ecmascript", "graal.js").
-            map(_ -> Language.JavaScript)
+        Set("nashorn", "rhino", "js", "javascript", "ecmascript", "graal.js").map(_ -> Language.JavaScript)
     )
 
     val extensions: Map[String, Language] = Map.from(Set("js").map(_ -> Language.JavaScript))
 
     val mimetypes: Map[String, Language] = Map.from(
-        Set("application/javascript", "application/ecmascript", "text/javascript", "text/ecmascript").
-            map(_ -> Language.JavaScript)
+        Set("application/javascript", "application/ecmascript", "text/javascript", "text/ecmascript").map(
+            _ -> Language.JavaScript
+        )
     )
 }
 

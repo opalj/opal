@@ -5,9 +5,8 @@ package javaanalyses
 package detector
 package scriptengine
 
-import org.opalj.xl.translator.JavaJavaScriptTranslator
-
 import org.opalj.br.fpcf.properties.pointsto.PointsToSetLike
+import org.opalj.xl.translator.JavaJavaScriptTranslator
 
 class SEUtil[PointsToSet >: Null <: PointsToSetLike[_, _, PointsToSet], ContextType] {
     def java2js = JavaJavaScriptTranslator.Java2JavaScript[PointsToSet, ContextType] _

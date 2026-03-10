@@ -171,7 +171,8 @@ object MoreCheckers {
                 classFile <- classFiles
                 if !classFile.isAnnotationDeclaration
                 if classFile.superclassType.isDefined
-                method @ Method(_, "clone", MethodDescriptor(Seq(), ObjectType.Object)) <- classFile.methods
+                method <- classFile.methods
+                Method(_, "clone", MethodDescriptor(Seq(), ObjectType.Object)) = method
                 if classHierarchy.isASubtypeOf(classFile.thisType, ObjectType("java/lang/Cloneable")).isYesOrUnknown
             } yield (classFile.thisType.fqn, method.name)
         }(t => collect("CN_IMPLEMENTS_CLONE_BUT_NOT_CLONEABLE", t /*nsToSecs(t)*/ ))
@@ -188,7 +189,8 @@ object MoreCheckers {
             for {
                 comparable <- classHierarchy.allSubtypes(ObjectType("java/lang/Comparable"), false)
                 classFile <- getClassFile.get(comparable).toList
-                method @ Method(_, "compareTo", MethodDescriptor(Seq(parameterType), IntegerType)) <- classFile.methods
+                method <- classFile.methods
+                Method(_, "compareTo", MethodDescriptor(Seq(parameterType), IntegerType)) = method
                 if parameterType != ObjectType("java/lang/Object")
             } yield (classFile, method)
         }(t => collect("CO_SELF_NO_OBJECT/CO_ABSTRACT_SELF", t /*nsToSecs(t)*/ ))

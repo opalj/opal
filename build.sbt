@@ -94,6 +94,9 @@ addCommandAlias(
 
 addCommandAlias("cleanBuild", "; project OPAL ; cleanAll ; buildAll ")
 
+addCommandAlias("format", "; scalafmt; Test / scalafmt; IntegrationTest / scalafmt")
+addCommandAlias("checkFormat", "; scalafmtCheck; Test / scalafmtCheck; IntegrationTest / scalafmtCheck")
+
 addCommandAlias("buildAllCross", "; compileAll ; unidoc ;  publishLocal ; " +
                         "project LLVM ; compileAll ; unidoc ; publishLocal ;" +
                         "project ValidateCross ; compileAll ; publishLocal ; " +

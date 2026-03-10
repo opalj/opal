@@ -17,8 +17,6 @@ import scala.collection.immutable.SortedSet
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory
-import org.opalj.xl.connector.AllocationSiteBasedTriggeredTajsConnectorScheduler
-import org.opalj.xl.javaanalyses.detector.scriptengine.AllocationSiteBasedScriptEngineDetectorScheduler
 
 import org.opalj.ai.domain
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
@@ -66,12 +64,14 @@ import org.opalj.log.LogContext
 import org.opalj.tac.cg.CallGraphKey
 import org.opalj.tac.cg.XTACallGraphKey
 import org.opalj.tac.fpcf.analyses.LazyFieldImmutabilityAnalysis
+import org.opalj.tac.fpcf.analyses.LazyFieldLocalityAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazySimpleEscapeAnalysis
 import org.opalj.tac.fpcf.analyses.fieldaccess.EagerFieldAccessInformationAnalysis
 import org.opalj.tac.fpcf.analyses.fieldassignability.LazyL2FieldAssignabilityAnalysis
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.util.Seconds
-import org.opalj.tac.fpcf.analyses.LazyFieldLocalityAnalysis
+import org.opalj.xl.connector.AllocationSiteBasedTriggeredTajsConnectorScheduler
+import org.opalj.xl.javaanalyses.detector.scriptengine.AllocationSiteBasedScriptEngineDetectorScheduler
 
 /**
  * Determines the assignability of fields and the immutability of fields, classes and types and provides several

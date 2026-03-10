@@ -53,7 +53,8 @@ class Java8InterfaceMethods(implicit hermes: HermesConfig) extends DefaultFeatur
             if !isInterrupted()
             classFileLocation = ClassFileLocation(source, classFile)
             callerType = classFile.thisType
-            method @ MethodWithBody(body) <- classFile.methods
+            method <- classFile.methods
+            MethodWithBody(body) = method
             methodLocation = MethodLocation(classFileLocation, method)
             pcAndInvocation <- body collect ({
                 case iv: INVOKEVIRTUAL if isPotentialCallOnDefaultMethod(iv, project)   => iv
@@ -67,7 +68,7 @@ class Java8InterfaceMethods(implicit hermes: HermesConfig) extends DefaultFeatur
             val l = InstructionLocation(methodLocation, pc)
 
             val kindID = invokeKind match {
-                case ii @ INVOKEINTERFACE(dc, name, md) => {
+                case INVOKEINTERFACE(dc, name, md) => {
                     val subtypes = project.classHierarchy.allSubtypes(dc.asObjectType, false)
                     val hasDefaultMethodTarget = subtypes.exists { ot =>
                         val target = project.instanceCall(callerType, ot, name, md)
@@ -84,7 +85,7 @@ class Java8InterfaceMethods(implicit hermes: HermesConfig) extends DefaultFeatur
                         1 /* interface has default method, but it's always overridden */
                     }
                 }
-                case iv @ INVOKEVIRTUAL(dc, name, md) => {
+                case INVOKEVIRTUAL(dc, name, md) => {
                     val subtypes = project.classHierarchy.allSubtypes(dc.asObjectType, true)
                     var subtypeWithMultipleInterfaces = false
                     val hasDefaultMethodTarget = subtypes.exists { ot =>
@@ -122,7 +123,7 @@ class Java8InterfaceMethods(implicit hermes: HermesConfig) extends DefaultFeatur
                     }
 
                 }
-                case is @ INVOKESTATIC(dc, true, name, md) => {
+                case INVOKESTATIC(dc, true, name, md) => {
                     val cf = project.classFile(dc)
                     if (cf.nonEmpty) {
                         val method = cf.get.findMethod(name, md)

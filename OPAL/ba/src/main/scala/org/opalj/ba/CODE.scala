@@ -2,7 +2,6 @@
 package org.opalj
 package ba
 
-import java.util.NoSuchElementException
 import scala.collection.mutable.ArrayBuffer
 
 import com.typesafe.config.Config
@@ -261,7 +260,7 @@ object CODE {
                         // JSR is live... i.e., a RET exists (which should always be the case for
                         // proper code!)
                         continueIteration = currentInstruction match {
-                            case pi: PseudoInstruction =>
+                            case _: PseudoInstruction =>
                                 true
 
                             case InstructionLikeElement(li) =>

@@ -162,7 +162,7 @@ class Java8Invokedynamics(
                 }
             }
             case REF_invokeSpecial => {
-                val InvokeSpecialMethodHandle(_, isInterface, name, methodDescriptor) = handle
+                val InvokeSpecialMethodHandle(_, _, name, methodDescriptor) = handle
                 val localMethod = m.classFile.findMethod(name, methodDescriptor)
                 val isLocal = localMethod.isDefined
                 if (isLocal) {

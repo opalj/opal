@@ -158,7 +158,7 @@ private[immutable] final class LongTrieSet1(val i1: Long) extends LongTrieSetLea
     override def equals(other: Any): Boolean = {
         other match {
             case that: LongTrieSet1 => (that eq this) || this.i1 == that.i1
-            case that               => false
+            case _                  => false
         }
     }
     override def hashCode: Int = 31 + lHashCode(i1)
@@ -211,7 +211,7 @@ private[immutable] final class LongTrieSet2(
     override def equals(other: Any): Boolean = {
         other match {
             case that: LongTrieSet2 => (that eq this) || this.i1 == that.i1 && this.i2 == that.i2
-            case that               => false
+            case _                  => false
         }
     }
     override def hashCode: Int = 31 * (31 + lHashCode(i1)) + lHashCode(i2)

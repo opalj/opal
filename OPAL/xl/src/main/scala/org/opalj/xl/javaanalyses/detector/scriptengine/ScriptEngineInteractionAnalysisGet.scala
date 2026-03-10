@@ -5,14 +5,9 @@ package javaanalyses
 package detector
 package scriptengine
 
-import dk.brics.tajs.lattice.PKey
-import dk.brics.tajs.lattice.Value
-import org.opalj.xl.translator.JavaJavaScriptTranslator
-import org.opalj.xl.utility.InterimAnalysisResult
-import org.opalj.xl.Coordinator
-import org.opalj.xl.utility.AnalysisResult
-import org.opalj.xl.Coordinator.V
-
+import org.opalj.br.DeclaredMethod
+import org.opalj.br.analyses.SomeProject
+import org.opalj.br.fpcf.properties.NoContext
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.InterimPartialResult
@@ -23,42 +18,49 @@ import org.opalj.fpcf.SomeEOptionP
 import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.SomePartialResult
 import org.opalj.fpcf.UBP
-import org.opalj.br.DeclaredMethod
-import org.opalj.br.analyses.SomeProject
-import org.opalj.br.fpcf.properties.NoContext
-import org.opalj.tac.fpcf.analyses.cg.AllocationsUtil
+import org.opalj.tac.Expr
 import org.opalj.tac.Stmt
 import org.opalj.tac.TACMethodParameter
-import org.opalj.tac.fpcf.analyses.cg.BaseAnalysisState
-import org.opalj.tac.fpcf.analyses.pointsto.PointsToAnalysisBase
-import org.opalj.tac.Expr
-import org.opalj.tac.fpcf.analyses.cg.TypeIteratorState
-import org.opalj.tac.fpcf.analyses.pointsto.PointsToAnalysisState
-import org.opalj.tac.fpcf.properties.TheTACAI
 import org.opalj.tac.TACode
 import org.opalj.tac.fpcf.analyses.TACAIBasedAPIBasedAnalysis
+import org.opalj.tac.fpcf.analyses.cg.AllocationsUtil
+import org.opalj.tac.fpcf.analyses.cg.BaseAnalysisState
+import org.opalj.tac.fpcf.analyses.cg.TypeIteratorState
 import org.opalj.tac.fpcf.analyses.cg.reflection.StringUtil
+import org.opalj.tac.fpcf.analyses.pointsto.PointsToAnalysisBase
+import org.opalj.tac.fpcf.analyses.pointsto.PointsToAnalysisState
+import org.opalj.tac.fpcf.properties.TheTACAI
+import org.opalj.xl.Coordinator
+import org.opalj.xl.Coordinator.V
+import org.opalj.xl.translator.JavaJavaScriptTranslator
+import org.opalj.xl.utility.AnalysisResult
+import org.opalj.xl.utility.InterimAnalysisResult
+
+import dk.brics.tajs.lattice.PKey
+import dk.brics.tajs.lattice.Value
 
 abstract class ScriptEngineInteractionAnalysisGet(
-        final val project:            SomeProject,
-        final override val apiMethod: DeclaredMethod
+    final val project:            SomeProject,
+    override final val apiMethod: DeclaredMethod
 ) extends PointsToAnalysisBase with TACAIBasedAPIBasedAnalysis {
 
     def js2java = JavaJavaScriptTranslator.JavaScript2Java[PointsToSet, ContextType] _
 
     def handleJSResult(possibleStrings: Set[String], store: Map[Any, Any], targetVarDefSite: Entity)(
-        implicit
-        pointsToAnalysisState: PointsToAnalysisState[ElementType, PointsToSet, ContextType]
+        implicit pointsToAnalysisState: PointsToAnalysisState[ElementType, PointsToSet, ContextType]
     ): Unit = {
 
-        val possibleValues = possibleStrings.map(variableName => store.asInstanceOf[Map[PKey, Value]]
-            .getOrElse(PKey.StringPKey.make(variableName), Value.makeUndef()))
+        val possibleValues = possibleStrings.map(variableName =>
+            store.asInstanceOf[Map[PKey, Value]]
+                .getOrElse(PKey.StringPKey.make(variableName), Value.makeUndef())
+        )
 
         val (referenceTypes, pointsToSetSet, index) = js2java(possibleValues)
 
         pointsToSetSet.foreach { pointsToAnalysisState.includeSharedPointsToSet(targetVarDefSite, _) }
 
-        val jsPointsToSet = this.createPointsToSet(index, NoContext.asInstanceOf[ContextType], referenceTypes.head, false, false)
+        val jsPointsToSet =
+            this.createPointsToSet(index, NoContext.asInstanceOf[ContextType], referenceTypes.head, false, false)
         pointsToAnalysisState.includeSharedPointsToSet(targetVarDefSite, jsPointsToSet)
     }
 
@@ -72,8 +74,8 @@ abstract class ScriptEngineInteractionAnalysisGet(
         stmts:            Array[Stmt[V]],
         oldDependees:     Set[SomeEOptionP]
     )(eps: SomeEPS)(implicit
-        typeIteratorState: TypeIteratorState,
-                    pointsToAnalysisState: PointsToAnalysisState[ElementType, PointsToSet, ContextType]
+        typeIteratorState:     TypeIteratorState,
+        pointsToAnalysisState: PointsToAnalysisState[ElementType, PointsToSet, ContextType]
     ): ProperPropertyComputationResult = {
         var dependees: Set[SomeEOptionP] = oldDependees.filter(x => x.e != eps.e)
         val epk = eps.toEPK
@@ -105,9 +107,13 @@ abstract class ScriptEngineInteractionAnalysisGet(
 
         if (typeIteratorState.hasDependee(epk)) {
             AllocationsUtil.continuationForAllocation[None.type, ContextType](
-                eps, context, _ => (param, stmts), _ => true, _ => {
-                throw new Exception("TODO: What to do if param is unknown?")
-            }
+                eps,
+                context,
+                _ => (param, stmts),
+                _ => true,
+                _ => {
+                    throw new Exception("TODO: What to do if param is unknown?")
+                }
             ) { (_, _, allocationIndex, stmts) =>
                 val newParam = StringUtil.getString(allocationIndex, stmts)
                 if (newParam.isEmpty)
@@ -134,20 +140,23 @@ abstract class ScriptEngineInteractionAnalysisGet(
 
         dependees = typeIteratorState.dependees ++ dependees
 
-        Results(createResults, InterimPartialResult(
-            List.empty[SomePartialResult],
-            dependees,
-            c(
-                receiverOption,
-                callIndex,
-                possibleStrings,
-                targetVarDefSite,
-                context,
-                param,
-                stmts,
-                dependees
+        Results(
+            createResults,
+            InterimPartialResult(
+                List.empty[SomePartialResult],
+                dependees,
+                c(
+                    receiverOption,
+                    callIndex,
+                    possibleStrings,
+                    targetVarDefSite,
+                    context,
+                    param,
+                    stmts,
+                    dependees
+                )
             )
-        ))
+        )
     }
 
     override def processNewCaller(
@@ -171,9 +180,15 @@ abstract class ScriptEngineInteractionAnalysisGet(
 
         val param = params.head.get.asVar
         val possibleStrings =
-            StringUtil.getPossibleStrings(param, callerContext, None, tac.stmts, () => {
-                throw new Exception("TODO: What to do if param is unknown?")
-            })
+            StringUtil.getPossibleStrings(
+                param,
+                callerContext,
+                None,
+                tac.stmts,
+                () => {
+                    throw new Exception("TODO: What to do if param is unknown?")
+                }
+            )
 
         var dependees: Set[SomeEOptionP] = Set.empty
 
@@ -196,10 +211,22 @@ abstract class ScriptEngineInteractionAnalysisGet(
             dependees ++= getTargetDependees.valuesIterator.map(_._1)
         })
 
-        Results(createResults, InterimPartialResult(List.empty[SomePartialResult], dependees, c(
-            receiverOption,
-            callPC, possibleStrings, targetVarDefSite,
-            callerContext, param, tac.stmts, dependees
-        )))
+        Results(
+            createResults,
+            InterimPartialResult(
+                List.empty[SomePartialResult],
+                dependees,
+                c(
+                    receiverOption,
+                    callPC,
+                    possibleStrings,
+                    targetVarDefSite,
+                    callerContext,
+                    param,
+                    tac.stmts,
+                    dependees
+                )
+            )
+        )
     }
 }

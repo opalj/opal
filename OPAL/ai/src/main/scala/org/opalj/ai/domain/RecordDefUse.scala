@@ -1071,7 +1071,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode =>
                         // the RET instruction (whether it exists or not!) was not reached
                         false
                     } else {
-                        val retInstruction @ RET(lvIndex) = instructions(retPC)
+                        val RET(lvIndex) = instructions(retPC)
                         val retDefLocals = defLocals(retPC)
                         val originOfReturnAddressValue = retDefLocals(lvIndex)
                         updateUsageInformation(originOfReturnAddressValue, retPC)

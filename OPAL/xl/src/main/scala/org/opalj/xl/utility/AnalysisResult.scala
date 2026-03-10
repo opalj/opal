@@ -24,7 +24,7 @@ object AnalysisResult extends AnalysisResultPropertyMetaInformation {
         "AnalysisResultLattice",
         (_: PropertyStore, _: FallbackReason, e: Entity) => {
             e match {
-                case e: Entity => InterimAnalysisResult(null)
+                case _: Entity => InterimAnalysisResult(null)
                 case x =>
                     throw new IllegalArgumentException(s"$x is not a Field")
             }

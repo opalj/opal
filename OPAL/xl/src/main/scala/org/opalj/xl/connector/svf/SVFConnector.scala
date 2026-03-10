@@ -1,30 +1,30 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.xl.connector.svf
 
+import org.opalj.br.ReferenceType
+import org.opalj.br.analyses.DeclaredMethods
+import org.opalj.br.analyses.DeclaredMethodsKey
+import org.opalj.br.analyses.ProjectInformationKeys
+import org.opalj.br.analyses.SomeProject
+import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
+import org.opalj.br.fpcf.FPCFAnalysis
+import org.opalj.br.fpcf.properties.cg.Callees
+import org.opalj.br.fpcf.properties.pointsto.AllocationSitePointsToSet
+import org.opalj.br.fpcf.properties.pointsto.TypeBasedPointsToSet
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyComputationResult
 import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.PropertyMetaInformation
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Results
-import org.opalj.br.analyses.DeclaredMethods
-import org.opalj.br.analyses.DeclaredMethodsKey
-import org.opalj.br.analyses.ProjectInformationKeys
-import org.opalj.br.analyses.SomeProject
-import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
-import org.opalj.br.fpcf.properties.pointsto.TypeBasedPointsToSet
-import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.br.fpcf.properties.pointsto.AllocationSitePointsToSet
-import org.opalj.br.ReferenceType
 import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.common.DefinitionSitesKey
 import org.opalj.tac.fpcf.analyses.pointsto.AbstractPointsToBasedAnalysis
 import org.opalj.tac.fpcf.analyses.pointsto.AllocationSiteBasedAnalysis
 import org.opalj.tac.fpcf.analyses.pointsto.PointsToAnalysisBase
 import org.opalj.tac.fpcf.analyses.pointsto.TypeBasedAnalysis
-import org.opalj.br.fpcf.properties.cg.Callees
 
-abstract class SVFConnector( final val project: SomeProject) extends PointsToAnalysisBase {
+abstract class SVFConnector(final val project: SomeProject) extends PointsToAnalysisBase {
     self =>
 
     val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
@@ -39,10 +39,20 @@ abstract class SVFConnector( final val project: SomeProject) extends PointsToAna
 
         override protected[this] def emptyPointsToSet: PointsToSet = self.emptyPointsToSet
 
-        override protected[this] def createPointsToSet(pc: Int, callContext: ContextType, allocatedType: ReferenceType,
-                                                       isConstant: Boolean, isEmptyArray: Boolean): PointsToSet = {
-            self.createPointsToSet(pc, callContext.asInstanceOf[self.ContextType],
-                allocatedType, isConstant, isEmptyArray)
+        override protected[this] def createPointsToSet(
+            pc:            Int,
+            callContext:   ContextType,
+            allocatedType: ReferenceType,
+            isConstant:    Boolean,
+            isEmptyArray:  Boolean
+        ): PointsToSet = {
+            self.createPointsToSet(
+                pc,
+                callContext.asInstanceOf[self.ContextType],
+                allocatedType,
+                isConstant,
+                isEmptyArray
+            )
         }
 
         @inline override protected[this] def getTypeOf(element: ElementType): ReferenceType = {
@@ -61,17 +71,17 @@ abstract class SVFConnector( final val project: SomeProject) extends PointsToAna
     def process(project: SomeProject): PropertyComputationResult = {
 
         val analyses = project.allProjectClassFiles.flatMap(_.methods).filter(_.isNative)
-           /*filter(x =>
+            /*filter(x =>
                 x.classFile.thisType.packageName.contains("java/lang") ||
                     x.classFile.thisType.packageName.contains("java/util") /*||
                     x.classFile.thisType.packageName.contains("java/math") */
             ). */
-            //filter(!_.classFile.thisType.simpleName.contains("ClassLoader"))
-            //filter(_.classFile.thisType.simpleName.contains("TimeZone"))
-           // filter(!_.asMethod.classFile.thisType.fqn.contains("ThreadImpl")) //TODO remove
-            .map(method => { //.filter(_.name.contains("setOut0"))
-            new NativeAnalysis(project, declaredMethods(method)) with PointsToBase
-        })
+            // filter(!_.classFile.thisType.simpleName.contains("ClassLoader"))
+            // filter(_.classFile.thisType.simpleName.contains("TimeZone"))
+            // filter(!_.asMethod.classFile.thisType.fqn.contains("ThreadImpl")) //TODO remove
+            .map(method => { // .filter(_.name.contains("setOut0"))
+                new NativeAnalysis(project, declaredMethods(method)) with PointsToBase
+            })
         Results(analyses.map(_.registerAPIMethod()))
     }
 

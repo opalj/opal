@@ -44,7 +44,8 @@ class VirtualCalls(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
             if !isInterrupted()
             classFileLocation = ClassFileLocation(source, classFile)
             callerType = classFile.thisType
-            method @ MethodWithBody(body) <- classFile.methods
+            method <- classFile.methods
+            MethodWithBody(body) = method
             methodLocation = MethodLocation(classFileLocation, method)
             pcAndInvocation <- body collect ({
                 case iv: INVOKEVIRTUAL   => iv

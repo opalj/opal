@@ -241,7 +241,7 @@ class FanInFanOut(implicit hermes: HermesConfig) extends FeatureQuery {
                         if (ft.isObjectType)
                             referencedTypes += ft.asObjectType.id
                     } catch {
-                        case iae: IllegalArgumentException =>
+                        case _: IllegalArgumentException =>
                             referencedTypes += ObjectType(typeInfo).id
                     }
                 }

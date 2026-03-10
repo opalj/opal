@@ -963,7 +963,7 @@ private[immutable] final class IntTrieSetNJustRight private[immutable] (
 
         other match {
             case that: IntTrieSetN          => this.right.subsetOf(that.right, level + 1)
-            case that: IntTrieSetNJustLeft  => false
+            case _: IntTrieSetNJustLeft     => false
             case that: IntTrieSetNJustRight => this.right.subsetOf(that.right, level + 1)
             case that                       => this.right.subsetOf(that, level + 1)
         }
@@ -1092,10 +1092,10 @@ private[immutable] final class IntTrieSetNJustLeft private[immutable] (
             return false;
 
         other match {
-            case that: IntTrieSetN          => this.left.subsetOf(that.left, level + 1)
-            case that: IntTrieSetNJustLeft  => this.left.subsetOf(that.left, level + 1)
-            case that: IntTrieSetNJustRight => false
-            case that                       => this.left.subsetOf(that, level + 1)
+            case that: IntTrieSetN         => this.left.subsetOf(that.left, level + 1)
+            case that: IntTrieSetNJustLeft => this.left.subsetOf(that.left, level + 1)
+            case _: IntTrieSetNJustRight   => false
+            case that                      => this.left.subsetOf(that, level + 1)
         }
     }
 

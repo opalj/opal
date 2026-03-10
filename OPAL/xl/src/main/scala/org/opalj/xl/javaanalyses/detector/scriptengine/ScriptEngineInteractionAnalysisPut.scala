@@ -5,13 +5,10 @@ package javaanalyses
 package detector
 package scriptengine
 
-import org.opalj.xl.detector.ScriptEngineInteraction
-import org.opalj.xl.translator.JavaJavaScriptTranslator
-import org.opalj.xl.Coordinator.ScriptEngineInstance
-import org.opalj.xl.detector.CrossLanguageInteraction
-import org.opalj.xl.Coordinator
-import org.opalj.xl.Coordinator.V
-
+import org.opalj.br.DeclaredMethod
+import org.opalj.br.ObjectType
+import org.opalj.br.ReferenceType
+import org.opalj.br.analyses.SomeProject
 import org.opalj.fpcf.EPK
 import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.InterimEUBP
@@ -25,26 +22,28 @@ import org.opalj.fpcf.SomeEPK
 import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.SomePartialResult
 import org.opalj.fpcf.UBP
-import org.opalj.br.DeclaredMethod
-import org.opalj.br.analyses.SomeProject
-import org.opalj.br.ObjectType
-import org.opalj.br.ReferenceType
-import org.opalj.tac.fpcf.analyses.cg.AllocationsUtil
+import org.opalj.tac.Expr
 import org.opalj.tac.Stmt
 import org.opalj.tac.TACMethodParameter
-import org.opalj.tac.fpcf.analyses.cg.BaseAnalysisState
-import org.opalj.tac.fpcf.analyses.pointsto.PointsToAnalysisBase
-import org.opalj.tac.Expr
-import org.opalj.tac.fpcf.analyses.cg.TypeIteratorState
-import org.opalj.tac.fpcf.analyses.pointsto.PointsToAnalysisState
-import org.opalj.tac.fpcf.properties.TheTACAI
 import org.opalj.tac.TACode
 import org.opalj.tac.fpcf.analyses.TACAIBasedAPIBasedAnalysis
+import org.opalj.tac.fpcf.analyses.cg.AllocationsUtil
+import org.opalj.tac.fpcf.analyses.cg.BaseAnalysisState
+import org.opalj.tac.fpcf.analyses.cg.TypeIteratorState
 import org.opalj.tac.fpcf.analyses.cg.reflection.StringUtil
+import org.opalj.tac.fpcf.analyses.pointsto.PointsToAnalysisBase
+import org.opalj.tac.fpcf.analyses.pointsto.PointsToAnalysisState
+import org.opalj.tac.fpcf.properties.TheTACAI
+import org.opalj.xl.Coordinator
+import org.opalj.xl.Coordinator.ScriptEngineInstance
+import org.opalj.xl.Coordinator.V
+import org.opalj.xl.detector.CrossLanguageInteraction
+import org.opalj.xl.detector.ScriptEngineInteraction
+import org.opalj.xl.translator.JavaJavaScriptTranslator
 
 abstract class ScriptEngineInteractionAnalysisPut(
-        final val project:            SomeProject,
-        final override val apiMethod: DeclaredMethod
+    final val project:            SomeProject,
+    override final val apiMethod: DeclaredMethod
 ) extends PointsToAnalysisBase with TACAIBasedAPIBasedAnalysis {
 
     def java2js = JavaJavaScriptTranslator.Java2JavaScript[PointsToSet, ContextType] _
@@ -64,8 +63,11 @@ abstract class ScriptEngineInteractionAnalysisPut(
         assignedValue:      V,
         receiverOption:     Option[Expr[V]],
         engineAllocation:   PointsToSet
-    )(eps: SomeEPS)(implicit typeIteratorState: TypeIteratorState, pointsToAnalysisState: PointsToAnalysisState[ElementType, PointsToSet, ContextType]): ProperPropertyComputationResult = {
-        //var results = List.empty[SomePartialResult]
+    )(eps: SomeEPS)(implicit
+        typeIteratorState:     TypeIteratorState,
+        pointsToAnalysisState: PointsToAnalysisState[ElementType, PointsToSet, ContextType]
+    ): ProperPropertyComputationResult = {
+        // var results = List.empty[SomePartialResult]
         val epk = eps.toEPK
         var newEngineInteraction = engineInteraction
 
@@ -73,9 +75,13 @@ abstract class ScriptEngineInteractionAnalysisPut(
 
         if (typeIteratorState.hasDependee(epk)) {
             AllocationsUtil.continuationForAllocation[String, ContextType](
-                eps, context, _ => (param, stmts), _ => true, _ => {
-                throw new Exception("TODO: What to do if param is unknown?")
-            }
+                eps,
+                context,
+                _ => (param, stmts),
+                _ => true,
+                _ => {
+                    throw new Exception("TODO: What to do if param is unknown?")
+                }
             ) { (_, _, allocationIndex, stmts) =>
                 val newParam = StringUtil.getString(allocationIndex, stmts)
                 if (newParam.isEmpty)
@@ -86,7 +92,7 @@ abstract class ScriptEngineInteractionAnalysisPut(
                 )
 
                 newEngineInteraction = newEngineInteraction.updated(ScriptEngineInteraction(puts = puts)) */
-                throw new Exception("TODO: implement") //TODO
+                throw new Exception("TODO: implement") // TODO
             }
 
             assert(newEngineInteraction ne engineInteraction)
@@ -99,22 +105,24 @@ abstract class ScriptEngineInteractionAnalysisPut(
             // }
 
             typeIteratorState.updateDependency(eps)
-            //throw  new Exception("TODO implement 2")
+            // throw  new Exception("TODO implement 2")
         }
 
         val newPutDependees = if (oldPutDependees.contains(epk)) {
             val UBP(newPointsTo: PointsToSet @unchecked) = eps
 
             val puts = Map.from(
-                possibleStrings.map(s => (s, context, tac) -> {
-                    var tpe: Option[ObjectType] = null
-                    val actualTypes = typeIterator.typesProperty(assignedValue.asVar, context, "type", stmts)
-                    typeIterator.foreachType(assignedValue.asVar, actualTypes) { actualType =>
-                        tpe = Some(actualType.asObjectType)
-                    }
+                possibleStrings.map(s =>
+                    (s, context, tac) -> {
+                        var tpe: Option[ObjectType] = null
+                        val actualTypes = typeIterator.typesProperty(assignedValue.asVar, context, "type", stmts)
+                        typeIterator.foreachType(assignedValue.asVar, actualTypes) { actualType =>
+                            tpe = Some(actualType.asObjectType)
+                        }
 
-                    (newPointsTo, assignedValue, tpe)
-                })
+                        (newPointsTo, assignedValue, tpe)
+                    }
+                )
             )
 
             val scriptEngineInteraction = ScriptEngineInteraction[ContextType, PointsToSet](puts = puts)
@@ -199,9 +207,15 @@ abstract class ScriptEngineInteractionAnalysisPut(
 
         val param = params.head.get.asVar
         val possibleStrings =
-            StringUtil.getPossibleStrings(param, callerContext, None, tac.stmts, () => {
-                throw new Exception("TODO: What to do if param is unknown?")
-            })
+            StringUtil.getPossibleStrings(
+                param,
+                callerContext,
+                None,
+                tac.stmts,
+                () => {
+                    throw new Exception("TODO: What to do if param is unknown?")
+                }
+            )
 
         var dependees: Set[SomeEOptionP] = Set.empty
 
@@ -212,17 +226,19 @@ abstract class ScriptEngineInteractionAnalysisPut(
             pointsToSet = pointsToSet.included(allocations)
         })
         val puts = Map.from(
-            possibleStrings.map(s => (s, callerContext, TheTACAI(tac)) -> {
+            possibleStrings.map(s =>
+                (s, callerContext, TheTACAI(tac)) -> {
 
-                val actualTypes = typeIterator.typesProperty(assignedValue.asVar, callerContext, "type", tac.stmts)
+                    val actualTypes = typeIterator.typesProperty(assignedValue.asVar, callerContext, "type", tac.stmts)
 
-                var tpe: Option[ObjectType] = null
-                typeIterator.foreachType(assignedValue.asVar, actualTypes) { actualType =>
-                    tpe = Some(actualType.asObjectType)
+                    var tpe: Option[ObjectType] = null
+                    typeIterator.foreachType(assignedValue.asVar, actualTypes) { actualType =>
+                        tpe = Some(actualType.asObjectType)
+                    }
+
+                    (pointsToSet, assignedValue.asVar, tpe)
                 }
-
-                (pointsToSet, assignedValue.asVar, tpe)
-            })
+            )
         )
         val scriptEngineInteraction = ScriptEngineInteraction[ContextType, PointsToSet](puts = puts)
 
@@ -244,13 +260,27 @@ abstract class ScriptEngineInteractionAnalysisPut(
             engineDependeesMap.valuesIterator.map(_._1) ++
             putDependeesMap.valuesIterator.map(_._1)
 
-        Results(createResults, InterimPartialResult(partialResults, dependees, c(
-            callPC, scriptEngineInteraction,
-            engineDependeesMap,
-            putDependeesMap, callerContext, param, tac.stmts, possibleStrings, TheTACAI(tac), assignedValue.asVar,
-            receiverOption,
-            emptyPointsToSet
-        )))
+        Results(
+            createResults,
+            InterimPartialResult(
+                partialResults,
+                dependees,
+                c(
+                    callPC,
+                    scriptEngineInteraction,
+                    engineDependeesMap,
+                    putDependeesMap,
+                    callerContext,
+                    param,
+                    tac.stmts,
+                    possibleStrings,
+                    TheTACAI(tac),
+                    assignedValue.asVar,
+                    receiverOption,
+                    emptyPointsToSet
+                )
+            )
+        )
     }
 
     private[this] def resultsForScriptEngine(
@@ -258,12 +288,10 @@ abstract class ScriptEngineInteractionAnalysisPut(
         javaScriptInteraction: ScriptEngineInteraction[ContextType, PointsToSet],
         receiverOption:        Option[Expr[V]]
     )(implicit state: State): List[SomePartialResult] = {
-        receiverOption.get.asVar.definedBy.foldLeft(List.empty[SomePartialResult])(
-            (results, defSite) => {
-                val allocations = currentPointsToOfDefSite(depender, defSite)
-                resultsForScriptEngineAllocations(javaScriptInteraction, allocations, 0) ::: results
-            }
-        )
+        receiverOption.get.asVar.definedBy.foldLeft(List.empty[SomePartialResult])((results, defSite) => {
+            val allocations = currentPointsToOfDefSite(depender, defSite)
+            resultsForScriptEngineAllocations(javaScriptInteraction, allocations, 0) ::: results
+        })
     }
 
     private[this] def resultsForScriptEngineAllocations(
@@ -275,14 +303,19 @@ abstract class ScriptEngineInteractionAnalysisPut(
         allocations.forNewestNElements(allocations.numElements - seenElements) { alloc =>
             val instance = Coordinator.ScriptEngineInstance(alloc)
             results ::= PartialResult[ScriptEngineInstance[ElementType], CrossLanguageInteraction](
-                instance, CrossLanguageInteraction.key, {
-                case InterimUBP(p: ScriptEngineInteraction[_, _]) =>
-                    Some(InterimEUBP(instance, p.asInstanceOf[ScriptEngineInteraction[ContextType, PointsToSet]].updated(engineInteraction)))
-                case _: EPK[_, _] =>
-                    Some(InterimEUBP(instance, engineInteraction))
-                case r =>
-                    throw new IllegalStateException(s"unexpected previous result $r")
-            }
+                instance,
+                CrossLanguageInteraction.key,
+                {
+                    case InterimUBP(p: ScriptEngineInteraction[_, _]) =>
+                        Some(InterimEUBP(
+                            instance,
+                            p.asInstanceOf[ScriptEngineInteraction[ContextType, PointsToSet]].updated(engineInteraction)
+                        ))
+                    case _: EPK[_, _] =>
+                        Some(InterimEUBP(instance, engineInteraction))
+                    case r =>
+                        throw new IllegalStateException(s"unexpected previous result $r")
+                }
             )
         }
         results

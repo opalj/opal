@@ -110,7 +110,7 @@ private[fpcf] class MultiEOptionPSet[E <: Entity, P <: Property](
             val (pkId, eEOptionPs) = entry
             val newEEOptionPs =
                 eEOptionPs.filter { entry =>
-                    val (e, eOptionP) = entry
+                    val (_, eOptionP) = entry
                     if (p(eOptionP)) {
                         true
                     } else {

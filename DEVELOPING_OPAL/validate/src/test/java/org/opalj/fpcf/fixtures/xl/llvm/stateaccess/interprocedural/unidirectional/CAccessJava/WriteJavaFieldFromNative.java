@@ -2,7 +2,6 @@
 package org.opalj.fpcf.fixtures.xl.llvm.stateaccess.interprocedural.unidirectional.CAccessJava;
 
 import org.opalj.fpcf.properties.immutability.field_assignability.AssignableField;
-import org.opalj.fpcf.properties.immutability.field_assignability.EffectivelyNonAssignableField;
 import org.opalj.fpcf.properties.pts.JavaMethodContextAllocSite;
 import org.opalj.fpcf.properties.pts.PointsToSet;
 
@@ -15,13 +14,13 @@ public class WriteJavaFieldFromNative {
 
     @AssignableField("field is assigned in C")
     Object myfield;
-    @PointsToSet(variableDefinition = 28,
+    @PointsToSet(variableDefinition = 31,
             expectedJavaAllocSites = {
                     @JavaMethodContextAllocSite(
                             cf = WriteJavaFieldFromNative.class,
                             methodName = "main",
                             methodDescriptor = "(java.lang.String[]): void",
-                            allocSiteLinenumber = 25,
+                            allocSiteLinenumber = 28,
                             allocatedType = "java.lang.Object")
             }
     )

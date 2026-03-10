@@ -28,10 +28,10 @@ import org.opalj.tac.Assignment
 import org.opalj.tac.fpcf.analyses.ifds.JavaIFDSProblem
 import org.opalj.tac.fpcf.analyses.ifds.JavaMethod
 import org.opalj.tac.fpcf.analyses.ifds.JavaStatement
+import org.opalj.tac.fpcf.analyses.ifds.taint.AbstractJavaForwardTaintProblem
 import org.opalj.tac.fpcf.analyses.ifds.taint.ArrayElement
 import org.opalj.tac.fpcf.analyses.ifds.taint.FlowFact
 import org.opalj.tac.fpcf.analyses.ifds.taint.InstanceField
-import org.opalj.tac.fpcf.analyses.ifds.taint.AbstractJavaForwardTaintProblem
 import org.opalj.tac.fpcf.analyses.ifds.taint.StaticField
 import org.opalj.tac.fpcf.analyses.ifds.taint.TaintFact
 import org.opalj.tac.fpcf.analyses.ifds.taint.TaintNullFact
@@ -80,11 +80,18 @@ class JavaForwardTaintProblem(p: SomeProject) extends AbstractJavaForwardTaintPr
             Some(FlowFact(Seq(JavaMethod(call.method), JavaMethod(callee))))
         else None
 
-    override def createFlowFactAtExit(callee: Method, in: TaintFact, unbCallChain: Seq[Callable]): Option[TaintFact] = None
+    override def createFlowFactAtExit(callee: Method, in: TaintFact, unbCallChain: Seq[Callable]): Option[TaintFact] =
+        None
 
     // Multilingual additions here
     override def outsideAnalysisContextCall(callee: Method): Option[OutsideAnalysisContextCallHandler] = {
-        def handleNativeMethod(call: JavaStatement, successor: Option[JavaStatement], in: TaintFact, unbCallChain: Seq[Callable], dependeesGetter: Getter): Set[TaintFact] = {
+        def handleNativeMethod(
+            call:            JavaStatement,
+            successor:       Option[JavaStatement],
+            in:              TaintFact,
+            unbCallChain:    Seq[Callable],
+            dependeesGetter: Getter
+        ): Set[TaintFact] = {
             val nativeFunctionName = JNICallUtil.resolveNativeFunctionName(callee)
             val function = LLVMFunction(llvmProject.function(nativeFunctionName).get)
             var result = Set.empty[TaintFact]
@@ -93,10 +100,13 @@ class JavaForwardTaintProblem(p: SomeProject) extends AbstractJavaForwardTaintPr
                 val e = (function, entryFact)
                 val exitFacts: Map[LLVMStatement, Set[NativeTaintFact]] =
                     dependeesGetter(e, NativeTaint.key)
-                        .asInstanceOf[EOptionP[(LLVMStatement, IFDSFact[NativeTaintFact, LLVMStatement]), IFDSProperty[LLVMStatement, NativeTaintFact]]] match { // this cast is necessary
-                            case UBP(prop) => prop.flows
-                            case _         => Map.empty
-                        }
+                        .asInstanceOf[EOptionP[
+                            (LLVMStatement, IFDSFact[NativeTaintFact, LLVMStatement]),
+                            IFDSProperty[LLVMStatement, NativeTaintFact]
+                        ]] match { // this cast is necessary
+                        case UBP(prop) => prop.flows
+                        case _         => Map.empty
+                    }
                 for {
                     (exitStatement, exitStatementFacts) <- exitFacts // ifds line 15.2
                     exitStatementFact <- exitStatementFacts // ifds line 15.3
@@ -146,7 +156,7 @@ class JavaForwardTaintProblem(p: SomeProject) extends AbstractJavaForwardTaintPr
                 }.toSet
 
             // Taint element of formal parameter if element of actual parameter is tainted
-            case ArrayElement(index, taintedIndex) =>
+            case ArrayElement(index, _) =>
                 allParamsWithIndices.flatMap {
                     case (param, paramIndex) if param.asVar.definedBy.contains(index) =>
                         Some(NativeVariable(callee.function.argument(paramIndex + offset)))
@@ -164,9 +174,9 @@ class JavaForwardTaintProblem(p: SomeProject) extends AbstractJavaForwardTaintPr
 
             case StaticField(classType, fieldName) => Set(JavaStaticField(classType, fieldName))
 
-            case TaintNullFact                     => Set(NativeTaintNullFact)
+            case TaintNullFact => Set(NativeTaintNullFact)
 
-            case _                                 => Set() // Nothing to do
+            case _ => Set() // Nothing to do
 
         }
     }
@@ -195,7 +205,8 @@ class JavaForwardTaintProblem(p: SomeProject) extends AbstractJavaForwardTaintPr
         var flows: Set[TaintFact] = Set.empty
         in match {
             // Taint actual parameter if formal parameter is tainted
-            case JavaVariable(index) if index < 0 && index > -100 && JavaIFDSProblem.isRefTypeParam(nativeCallee, index) =>
+            case JavaVariable(index)
+                if index < 0 && index > -100 && JavaIFDSProblem.isRefTypeParam(nativeCallee, index) =>
                 val param = allParams(
                     JavaIFDSProblem.remapParamAndVariableIndex(index, nativeCallee.isStatic)
                 )
@@ -212,9 +223,7 @@ class JavaForwardTaintProblem(p: SomeProject) extends AbstractJavaForwardTaintPr
                 // Taint field of actual parameter if field of formal parameter is tainted
                 val param =
                     allParams(JavaIFDSProblem.remapParamAndVariableIndex(index, nativeCallee.isStatic))
-                param.asVar.definedBy.foreach { defSite =>
-                    flows += InstanceField(defSite, declClass, taintedField)
-                }
+                param.asVar.definedBy.foreach { defSite => flows += InstanceField(defSite, declClass, taintedField) }
 
             case JavaStaticField(objectType, fieldName) => flows += StaticField(objectType, fieldName)
 

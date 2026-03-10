@@ -1,6 +1,6 @@
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.fixtures.xl.assignability.llvm.lazyinitialization.unsafe;
 
-import org.opalj.fpcf.properties.immutability.field_assignability.LazilyInitializedField;
 import org.opalj.fpcf.properties.immutability.field_assignability.UnsafelyLazilyInitializedField;
 
 public class UnsafeLazyInitialization {

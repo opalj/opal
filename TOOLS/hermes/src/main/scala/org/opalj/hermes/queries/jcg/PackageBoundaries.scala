@@ -45,7 +45,8 @@ class PackageBoundaries(implicit hermes: HermesConfig) extends DefaultFeatureQue
             classFileLocation = ClassFileLocation(source, classFile)
             callerType = classFile.thisType
             callerPackage = callerType.packageName
-            method @ MethodWithBody(body) <- classFile.methods
+            method <- classFile.methods
+            MethodWithBody(body) = method
             methodLocation = MethodLocation(classFileLocation, method)
             pcAndInvocation <- body collect ({
                 case iv: INVOKEVIRTUAL => iv

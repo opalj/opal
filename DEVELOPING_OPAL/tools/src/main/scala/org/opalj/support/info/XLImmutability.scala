@@ -12,23 +12,14 @@ import java.nio.file.FileSystems
 import java.nio.file.Path
 import java.text.SimpleDateFormat
 import java.util.Calendar
-
 import scala.collection.immutable.SortedSet
 
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory
-import org.opalj.xl.connector.svf.AllocationSiteBasedSVFConnectorDetectorScheduler
 
-import org.opalj.log.LogContext
-import org.opalj.util.PerformanceEvaluation.time
-import org.opalj.util.Seconds
-import org.opalj.fpcf.ComputationSpecification
-import org.opalj.fpcf.Entity
-import org.opalj.fpcf.EPS
-import org.opalj.fpcf.OrderedProperty
-import org.opalj.fpcf.PropertyStoreContext
-import org.opalj.bytecode.JRELibraryFolder
+import org.opalj.ai.domain
+import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.br.Field
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.BasicReport
@@ -63,15 +54,23 @@ import org.opalj.br.fpcf.properties.immutability.TransitivelyImmutableField
 import org.opalj.br.fpcf.properties.immutability.TransitivelyImmutableType
 import org.opalj.br.fpcf.properties.immutability.TypeImmutability
 import org.opalj.br.fpcf.properties.immutability.UnsafelyLazilyInitialized
-import org.opalj.ai.domain
-import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
+import org.opalj.bytecode.JRELibraryFolder
+import org.opalj.fpcf.ComputationSpecification
+import org.opalj.fpcf.Entity
+import org.opalj.fpcf.EPS
+import org.opalj.fpcf.OrderedProperty
+import org.opalj.fpcf.PropertyStoreContext
+import org.opalj.log.LogContext
 import org.opalj.tac.cg.CallGraphKey
 import org.opalj.tac.cg.XTACallGraphKey
 import org.opalj.tac.fpcf.analyses.LazyFieldImmutabilityAnalysis
+import org.opalj.tac.fpcf.analyses.LazyFieldLocalityAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazySimpleEscapeAnalysis
 import org.opalj.tac.fpcf.analyses.fieldaccess.EagerFieldAccessInformationAnalysis
 import org.opalj.tac.fpcf.analyses.fieldassignability.LazyL2FieldAssignabilityAnalysis
-import org.opalj.tac.fpcf.analyses.LazyFieldLocalityAnalysis
+import org.opalj.util.PerformanceEvaluation.time
+import org.opalj.util.Seconds
+import org.opalj.xl.connector.svf.AllocationSiteBasedSVFConnectorDetectorScheduler
 
 /**
  * Determines the assignability of fields and the immutability of fields, classes and types and provides several
@@ -102,7 +101,7 @@ object XLImmutability {
         configurationName:                 Option[String],
         times:                             Int,
         callgraphKey:                      CallGraphKey,
-        analyzeNativeCode:                  Boolean
+        analyzeNativeCode:                 Boolean
     ): BasicReport = {
 
         val classFiles = projectDir match {
@@ -145,7 +144,9 @@ object XLImmutability {
 
         val allProjectClassTypes = project.allProjectClassFiles.iterator.map(_.thisType).toSet
 
-        val allFieldsInProjectClassFiles = project.allProjectClassFiles.iterator.filter(x => x.thisType.packageName.startsWith("java/lang") || x.thisType.packageName.startsWith("java/net")).flatMap { _.fields }.toSet
+        val allFieldsInProjectClassFiles = project.allProjectClassFiles.iterator.filter(x =>
+            x.thisType.packageName.startsWith("java/lang") || x.thisType.packageName.startsWith("java/net")
+        ).flatMap { _.fields }.toSet
 
         val dependencies: List[FPCFAnalysisScheduler] =
             List(
@@ -159,15 +160,13 @@ object XLImmutability {
                 LazySimpleEscapeAnalysis,
                 LazyFieldLocalityAnalysis
             ) ++ {
-                if(analyzeNativeCode)
+                if (analyzeNativeCode)
                     List(AllocationSiteBasedSVFConnectorDetectorScheduler)
                 else
                     Nil.asInstanceOf[List[FPCFAnalysisScheduler]]
             }
 
-        //++ AllocationSiteBasedPointsToCallGraphKey.allCallGraphAnalyses(project)
-
-
+        // ++ AllocationSiteBasedPointsToCallGraphKey.allCallGraphAnalyses(project)
 
         project.updateProjectInformationKeyInitializationData(AIDomainFactoryKey) { _ =>
             if (level == 0)
@@ -184,12 +183,12 @@ object XLImmutability {
             PropertyStoreKey,
             (context: List[PropertyStoreContext[AnyRef]]) => {
                 implicit val lg: LogContext = project.logContext
-              //  if (numThreads == 0) {
-                    org.opalj.fpcf.seq.PKESequentialPropertyStore(context: _*)
-              //  } else {
-              //      org.opalj.fpcf.par.PKECPropertyStore.MaxThreads = numThreads
-              //      org.opalj.fpcf.par.PKECPropertyStore(context: _*)
-              //  }
+                //  if (numThreads == 0) {
+                org.opalj.fpcf.seq.PKESequentialPropertyStore(context: _*)
+                //  } else {
+                //      org.opalj.fpcf.par.PKECPropertyStore.MaxThreads = numThreads
+                //      org.opalj.fpcf.par.PKECPropertyStore(context: _*)
+                //  }
             }
         )
 

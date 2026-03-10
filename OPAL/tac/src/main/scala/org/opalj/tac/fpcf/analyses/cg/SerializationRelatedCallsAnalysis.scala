@@ -296,7 +296,7 @@ class OISReadObjectAnalysis private[analyses] (
         for {
             use <- targetVar.usedBy
         } stmts(use) match {
-            case Checkcast(_, value, ElementReferenceType(castType)) =>
+            case Checkcast(_, _, ElementReferenceType(castType)) =>
                 foundCast = true
 
                 // for each subtype of the cast type we add calls to the relevant methods

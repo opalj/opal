@@ -5,8 +5,10 @@ import org.opalj.br._
 import org.opalj.br.analyses.Project
 import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.br.fpcf.properties.pointsto.longToAllocationSite
+import org.opalj.fpcf.FinalEP
+import org.opalj.fpcf.Property
+import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.properties.AbstractPropertyMatcher
-import org.opalj.fpcf.{FinalEP, Property, PropertyStore}
 import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.fpcf.analyses.cg.TypeIterator
 import org.opalj.xl.Coordinator.ScriptEngineInstance
@@ -45,21 +47,22 @@ class TAJSEnvironmentMatcher extends AbstractPropertyMatcher {
     ): Option[String] = {
         val annotationType = a.annotationType.asObjectType
 
-        val bindings = getValue(p, annotationType, a.elementValuePairs, "bindings").asArrayValue.values.map(_.asAnnotationValue.annotation).map(
-            a => (
+        val bindings = getValue(p, annotationType, a.elementValuePairs, "bindings").asArrayValue.values.map(
+            _.asAnnotationValue.annotation
+        ).map(a =>
+            (
                 findElement(a.elementValuePairs, "identifier").get.asStringValue.value,
-                findElement(a.elementValuePairs, "value").get.asStringValue.value,
-
+                findElement(a.elementValuePairs, "value").get.asStringValue.value
             )
         ).toSet
         implicit val ps: PropertyStore = p.get(PropertyStoreKey)
         implicit val typeIterator: TypeIterator = p.get(TypeIteratorKey)
         val m = entity.asInstanceOf[Method]
-        //val allProperties = ps.properties(m).toSet
+        // val allProperties = ps.properties(m).toSet
         val allEntities = ps.entities(AnalysisResult.key).toSet
         val scriptEngineInstances = allEntities.flatMap {
             case FinalEP(scriptEngineInstance: ScriptEngineInstance[_], _) => Option(scriptEngineInstance)
-            case _ => None
+            case _                                                         => None
         }
         val scriptEnginesInMethod = scriptEngineInstances
             .filter(sei => longToAllocationSite(sei.element.asInstanceOf[Long])._1.method.definedMethod == m).toSet
@@ -68,7 +71,8 @@ class TAJSEnvironmentMatcher extends AbstractPropertyMatcher {
             (ps(se, AnalysisResult.key) match {
                 case FinalEP(_, InterimAnalysisResult(tajsStore)) => tajsStore
                 case _                                            => throw new Exception(s"no TAJS result available for method ${m.fullyQualifiedSignature}");
-            }))
+            })
+        )
 
         val testBindings = tajsMapping.toSet.map((kv: (Any, Any)) => (kv._1.toString, kv._2.toString))
 

@@ -5,18 +5,18 @@ package translator
 
 import java.net.URL
 
-import dk.brics.tajs.flowgraph.jsnodes.JNode
-import dk.brics.tajs.flowgraph.SourceLocation
+import org.opalj.br.ObjectType
+import org.opalj.br.ReferenceType
+import org.opalj.br.fpcf.properties.pointsto.PointsToSetLike
+import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.tac.fpcf.properties.TheTACAI
+
 import dk.brics.tajs.flowgraph.AbstractNode
+import dk.brics.tajs.flowgraph.SourceLocation
+import dk.brics.tajs.flowgraph.jsnodes.JNode
 import dk.brics.tajs.lattice.ObjectLabel
 import dk.brics.tajs.lattice.PKey
 import dk.brics.tajs.lattice.Value
-
-import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.br.ObjectType
-import org.opalj.br.fpcf.properties.pointsto.PointsToSetLike
-import org.opalj.br.ReferenceType
-import org.opalj.tac.fpcf.properties.TheTACAI
 
 object JavaJavaScriptTranslator {
 
@@ -34,9 +34,10 @@ object JavaJavaScriptTranslator {
             pointsToSetLike.forNewestNTypes(pointsToSetLike.numElements) { tpe =>
                 {
                     if (tpe == ObjectType.String)
-                        defaultValue = defaultValue.join(Value.makeAnyStr().removeAttributes()) //TODO
+                        defaultValue = defaultValue.join(Value.makeAnyStr().removeAttributes()) // TODO
                     if (tpe.isNumericType || tpe == ObjectType.Integer ||
-                        tpe == ObjectType.Double || tpe == ObjectType.Long) {
+                        tpe == ObjectType.Double || tpe == ObjectType.Long
+                    ) {
                         defaultValue = defaultValue.join(Value.makeAnyNum().removeAttributes())
                     } else if (tpe.isBooleanType || tpe == ObjectType.Boolean) {
                         defaultValue = defaultValue.join(Value.makeAnyBool().removeAttributes())
@@ -77,7 +78,11 @@ object JavaJavaScriptTranslator {
         }
         (PKey.StringPKey.make(variableName), defaultValue)
     }
-    def JavaScript2Java[PointsToSet, ContextType](javaScriptValues: Set[Value]): (Set[ReferenceType], Set[PointsToSet], Integer) = {
+    def JavaScript2Java[PointsToSet, ContextType](javaScriptValues: Set[Value]): (
+        Set[ReferenceType],
+        Set[PointsToSet],
+        Integer
+    ) = {
         var pointsToSetSet = Set.empty[PointsToSet]
         var typesSet = Set.empty[ReferenceType]
         var jsNodes = Set.empty[AbstractNode]
@@ -88,17 +93,17 @@ object JavaJavaScriptTranslator {
                 v.isMaybeFuzzyNum ||
                 v.isMaybeNumOther ||
                 v.isMaybeNumUInt ||
-                v.isMaybeNumUIntPos) {
+                v.isMaybeNumUIntPos
+            ) {
                 typesSet += ObjectType.Double
             } else if (v.isMaybeAnyBool) {
                 typesSet += ObjectType.Boolean
             } else if (v.isAlsoJavaObject) {
                 v.getObjectLabels.forEach(objectLabel => {
-                    if (objectLabel.getNode().
-                        isInstanceOf[JNode[_, _, _, _]]) {
+                    if (objectLabel.getNode().isInstanceOf[JNode[_, _, _, _]]) {
                         typesSet += ObjectType(objectLabel.getJavaName)
-                        val node = objectLabel.getNode().
-                            asInstanceOf[JNode[PointsToSet, ContextType, IntTrieSet, TheTACAI]]
+                        val node =
+                            objectLabel.getNode().asInstanceOf[JNode[PointsToSet, ContextType, IntTrieSet, TheTACAI]]
                         pointsToSetSet += node.getPointsToSet
                         jsNodes += node
                     }

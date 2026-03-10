@@ -39,7 +39,8 @@ class DebugInformation(implicit hermes: HermesConfig) extends FeatureQuery {
             if (classFile.sourceFile.isDefined) locations(0) += classFileLocation
 
             for {
-                method @ MethodWithBody(body) <- classFile.methods
+                method <- classFile.methods
+                MethodWithBody(body) = method
                 methodLocation = MethodLocation(classFileLocation, method)
             } {
                 if (body.localVariableTable.isDefined) locations(1) += methodLocation

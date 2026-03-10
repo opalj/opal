@@ -37,7 +37,8 @@ class NonJavaBytecode1(implicit hermes: HermesConfig) extends DefaultFeatureQuer
             (classFile, source) <- project.projectClassFilesWithSources
             if !isInterrupted()
             classFileLocation = ClassFileLocation(source, classFile)
-            method @ MethodWithBody(body) <- classFile.methods
+            method <- classFile.methods
+            MethodWithBody(body) = method
             methodLocation = MethodLocation(classFileLocation, method)
             pcAndInstruction <- body
             if pcAndInstruction.instruction.opcode == INVOKEINTERFACE.opcode

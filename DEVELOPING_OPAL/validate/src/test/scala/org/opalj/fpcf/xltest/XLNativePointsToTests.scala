@@ -3,24 +3,29 @@ package org.opalj.fpcf.xltest
 
 import java.net.URL
 
+import org.scalatest.tools.Runner
+
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 
-import org.opalj.fpcf.PropertiesTest
 import org.opalj.br.analyses.Project
 import org.opalj.br.fpcf.FPCFAnalysisScheduler
+import org.opalj.fpcf.PropertiesTest
 import org.opalj.tac.cg.AllocationSiteBasedPointsToCallGraphKey
 import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.fpcf.analyses.LazyTACAIProvider
 import org.opalj.tac.fpcf.analyses.cg.AllocationSitesPointsToTypeIterator
-import org.scalatest.tools.Runner
-
 import org.opalj.xl.connector.svf.AllocationSiteBasedSVFConnectorDetectorScheduler
 
 object RunXLNativePointsToTests {
     def main(args: Array[String]): Unit = {
-        //val test = new XLJavaScriptTests()
-        Runner.run(Array("-C", "org.opalj.fpcf.xltest.MyCustomReporterPointsTo", "-s", "org.opalj.fpcf.xltest.XLNativePointsToTests"))
+        // val test = new XLJavaScriptTests()
+        Runner.run(Array(
+            "-C",
+            "org.opalj.fpcf.xltest.MyCustomReporterPointsTo",
+            "-s",
+            "org.opalj.fpcf.xltest.XLNativePointsToTests"
+        ))
     }
 }
 
@@ -53,7 +58,7 @@ class XLNativePointsToTests extends PropertiesTest {
     describe("test native XL points-to-sets") {
         val statistics =
             FixtureProject
-                .statistics.map(kv => "- "+kv._1+": "+kv._2)
+                .statistics.map(kv => "- " + kv._1 + ": " + kv._2)
                 .toList.sorted.reverse
                 .mkString("project statistics:\n\t", "\n\t", "\n")
         info(statistics)
@@ -101,7 +106,7 @@ class XLNativePointsToTests extends PropertiesTest {
             println("points to sets: ")
             println(pts)
         }
-        */
+         */
         validateProperties(as, methodsWithAnnotations(as.project), Set("PointsToSetIncludes"))
     }
 }
