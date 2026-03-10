@@ -295,30 +295,32 @@ abstract class NativeAnalysis(
                                 None
                             )
 
-                            baseObjectPointsToSet.forNewestNElements(baseObjectPointsToSet.numElements) { as =>
-                                {
+                            def retrieveFieldPTS(entity: Entity): Unit = {
+                                val fieldPointsToSet = currentPointsTo("getField", entity, PointsToSetLike.noFilter)
+
+                                fieldPointsToSet.forNewestNElements(fieldPointsToSet.numElements) { element =>
+                                    javaJNITranslator.storePointsToSet(
+                                        element.asInstanceOf[Long],
+                                        fieldPointsToSet
+                                    )
+                                    result = element.asInstanceOf[Long] :: result
+
+                                }
+                                val readFieldDependeesMap = if (pointsToAnalysisState.hasDependees("getField"))
+                                    pointsToAnalysisState.dependeesOf("getField")
+                                else
+                                    Map.empty[SomeEPK, (SomeEOptionP, ReferenceType => Boolean)]
+
+                                svfConnectorState.connectorDependees = svfConnectorState.connectorDependees ++
+                                    readFieldDependeesMap.valuesIterator.map(_._1)
+                            }
+
+                            if (field.isDefinedField && field.definedField.isStatic) {
+                                retrieveFieldPTS(field)
+                            } else {
+                                baseObjectPointsToSet.forNewestNElements(baseObjectPointsToSet.numElements) { as =>
                                     val fieldEntity = (as, field)
-
-                                    val fieldPointsToSet =
-                                        currentPointsTo("getField", fieldEntity, PointsToSetLike.noFilter)
-
-                                    fieldPointsToSet.forNewestNElements(fieldPointsToSet.numElements) {
-                                        element =>
-                                            {
-                                                javaJNITranslator.storePointsToSet(
-                                                    element.asInstanceOf[Long],
-                                                    fieldPointsToSet
-                                                )
-                                                result = element.asInstanceOf[Long] :: result
-                                            }
-                                    }
-                                    val readFieldDependeesMap = if (pointsToAnalysisState.hasDependees("getField"))
-                                        pointsToAnalysisState.dependeesOf("getField")
-                                    else
-                                        Map.empty[SomeEPK, (SomeEOptionP, ReferenceType => Boolean)]
-
-                                    svfConnectorState.connectorDependees = svfConnectorState.connectorDependees ++
-                                        readFieldDependeesMap.valuesIterator.map(_._1)
+                                    retrieveFieldPTS(fieldEntity)
                                 }
                             }
                         })
@@ -409,16 +411,24 @@ abstract class NativeAnalysis(
                                 None
                             )
 
-                            baseObjectPointsToSet.forNewestNElements(baseObjectPointsToSet.numElements) { as =>
-                                val tpe = getTypeOf(as)
-                                if (tpe.isObjectType) {
-                                    Iterator((as, declaredField)).foreach(fieldEntity => {
-                                        pointsToAnalysisState.includeSharedPointsToSet(
-                                            fieldEntity,
-                                            rhsPointsToSet,
-                                            PointsToSetLike.noFilter
-                                        )
-                                    })
+                            if (declaredField.isDefinedField && declaredField.definedField.isStatic) {
+                                pointsToAnalysisState.includeSharedPointsToSet(
+                                    declaredField,
+                                    rhsPointsToSet,
+                                    PointsToSetLike.noFilter
+                                )
+                            } else {
+                                baseObjectPointsToSet.forNewestNElements(baseObjectPointsToSet.numElements) { as =>
+                                    val tpe = getTypeOf(as)
+                                    if (tpe.isObjectType) {
+                                        Iterator((as, declaredField)).foreach(fieldEntity => {
+                                            pointsToAnalysisState.includeSharedPointsToSet(
+                                                fieldEntity,
+                                                rhsPointsToSet,
+                                                PointsToSetLike.noFilter
+                                            )
+                                        })
+                                    }
                                 }
                             }
                         })
