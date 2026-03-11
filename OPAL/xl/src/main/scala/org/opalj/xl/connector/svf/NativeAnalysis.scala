@@ -46,7 +46,9 @@ import svfjava.SVFModule
 
 abstract class NativeAnalysis(
     final val project:            SomeProject,
-    override final val apiMethod: DeclaredMethod
+    override final val apiMethod: DeclaredMethod,
+    val svfModuleName:            String,
+    val svfLLVMFiles:             Array[String]
 ) extends PointsToAnalysisBase with APIBasedAnalysis {
 
     case class SVFConnectorState(
@@ -56,7 +58,6 @@ abstract class NativeAnalysis(
         project:                   SomeProject,
         var svfModule:             SVFModule                            = null,
         var n:                     Integer                              = -1000,
-        var svfModuleName:         String                               = System.getenv("LLVM_LIB_PATH"),
         var connectorDependees:    Set[EOptionP[Entity, Property]]      = Set.empty,
         var connectorResults:      Set[ProperPropertyComputationResult] = Set.empty[ProperPropertyComputationResult],
         var mapping:               mutable.Map[Long, PointsToSet]       = mutable.Map.empty[Long, PointsToSet],
@@ -65,8 +66,8 @@ abstract class NativeAnalysis(
 
     def runSVF(implicit svfConnectorState: SVFConnectorState): ProperPropertyComputationResult = this.synchronized {
         println("run svf")
-        if (svfConnectorState.svfModuleName == null || svfConnectorState.svfModuleName.isEmpty) {
-            throw new RuntimeException("LLVM_LIB_PATH not set. Please specify the .bc module to analyze. ")
+        if (svfLLVMFiles == null || svfLLVMFiles.isEmpty || svfLLVMFiles(0).isEmpty) {
+            throw new RuntimeException("LLVM files not set. Please specify the .bc module to analyze. ")
         }
         implicit val pointsToAnalysisState: PointsToAnalysisState[ElementType, PointsToSet, ContextType] =
             new PointsToAnalysisState(svfConnectorState.callerContext, null)
@@ -236,8 +237,8 @@ abstract class NativeAnalysis(
                     svfConnectorState.n,
                     NoContext.asInstanceOf[ContextType],
                     referenceType,
-                    false,
-                    false
+                    isConstant = false,
+                    isEmptyArray = false
                 )
                 println(s"jni new object - svf connnector state before n: ${svfConnectorState.n}")
                 svfConnectorState.n = svfConnectorState.n - 1
@@ -613,7 +614,7 @@ abstract class NativeAnalysis(
         implicit val svfConnectorState = SVFConnectorState(callerContext, calleeContext, pc, project)
         // svfConnectorState.svfModuleName = "/Users/tobiasroth/Test/native/sun-nio.bc" //"/Users/tobiasroth/Test/native/java-nio.bc" // "/Users/tobiasroth/Test/native/java-net.bc" //"/Users/tobiasroth/Test/native/java-util.bc" //getNativeFileName(calleeContext)
         svfjava.SVFJava.init()
-        svfConnectorState.svfModule = SVFModule.createSVFModule(svfConnectorState.svfModuleName, false)
+        svfConnectorState.svfModule = SVFModule.createSVFModule(svfModuleName, svfLLVMFiles, false)
         // if(calleeContext.method.name.contains("setOut")){
         // println("set out--------->")
         println(s"method name: ${calleeContext.method.name}")
@@ -632,7 +633,7 @@ abstract class NativeAnalysis(
             case UBP(_: PointsToSet @unchecked) =>
                 svfConnectorState.connectorDependees += eps
                 // svfjava.SVFJava.init()
-                // svfConnectorState.svfModule = SVFModule.createSVFModule(svfConnectorState.svfModuleName, false)
+                // svfConnectorState.svfModule = SVFModule.createSVFModule(svfModuleName, svfLLVMFiles, false)
                 runSVF(svfConnectorState)
 
             case _ => throw new Exception(s"message: ${eps.toString}")

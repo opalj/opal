@@ -101,7 +101,9 @@ object XLImmutability {
         configurationName:                 Option[String],
         times:                             Int,
         callgraphKey:                      CallGraphKey,
-        analyzeNativeCode:                 Boolean
+        analyzeNativeCode:                 Boolean,
+        svfModuleName:                     String,
+        svfLLVMFiles:                      Array[String]
     ): BasicReport = {
 
         val classFiles = projectDir match {
@@ -161,7 +163,7 @@ object XLImmutability {
                 LazyFieldLocalityAnalysis
             ) ++ {
                 if (analyzeNativeCode)
-                    List(AllocationSiteBasedSVFConnectorDetectorScheduler)
+                    List(new AllocationSiteBasedSVFConnectorDetectorScheduler(svfModuleName, svfLLVMFiles))
                 else
                     Nil.asInstanceOf[List[FPCFAnalysisScheduler]]
             }
@@ -709,7 +711,7 @@ object XLImmutability {
             | [-withoutConsiderGenericity]
             | [-withoutConsiderLazyInitialization]
             | [-times <1...n>] (times of execution. n is a natural number)
-            | -xl Analyze native code
+            | -xl <folder containing .bc files> Analyze native code
             |""".stripMargin
         }
 
@@ -728,6 +730,8 @@ object XLImmutability {
         var multiProjects = false
         var configurationName: Option[String] = None
         var analyzeNativeCode = false
+        var svfModuleName: String = null
+        var svfLLVMFiles: Array[String] = null
 
         def readNextArg(): String = {
             i = i + 1
@@ -760,14 +764,17 @@ object XLImmutability {
                         println(usage)
                         throw new IllegalArgumentException(s"unknown parameter: $result")
                     }
-                case "-cp"                                => cp = new File(readNextArg())
-                case "-resultFolder"                      => resultFolder = FileSystems.getDefault.getPath(readNextArg())
-                case "-projectDir"                        => projectDir = Some(readNextArg())
-                case "-libDir"                            => libDir = Some(readNextArg())
-                case "-closedWorld"                       => closedWorldAssumption = true
-                case "-isLibrary"                         => isLibrary = true
-                case "-noJDK"                             => withoutJDK = true
-                case "-xl"                                => analyzeNativeCode = true
+                case "-cp"           => cp = new File(readNextArg())
+                case "-resultFolder" => resultFolder = FileSystems.getDefault.getPath(readNextArg())
+                case "-projectDir"   => projectDir = Some(readNextArg())
+                case "-libDir"       => libDir = Some(readNextArg())
+                case "-closedWorld"  => closedWorldAssumption = true
+                case "-isLibrary"    => isLibrary = true
+                case "-noJDK"        => withoutJDK = true
+                case "-xl" =>
+                    analyzeNativeCode = true
+                    svfModuleName = readNextArg()
+                    svfLLVMFiles = new File(svfModuleName).list((_, name) => name.endsWith(".bc"))
                 case "-callGraph"                         => callGraphName = Some(readNextArg())
                 case "-level"                             => level = Integer.parseInt(readNextArg())
                 case "-times"                             => times = Integer.parseInt(readNextArg())
@@ -816,7 +823,9 @@ object XLImmutability {
                         configurationName,
                         nIndex,
                         callGraphKey,
-                        analyzeNativeCode
+                        analyzeNativeCode,
+                        svfModuleName,
+                        svfLLVMFiles
                     )
                 }
             } else {
@@ -834,7 +843,9 @@ object XLImmutability {
                     configurationName,
                     nIndex,
                     callGraphKey,
-                    analyzeNativeCode
+                    analyzeNativeCode,
+                    svfModuleName,
+                    svfLLVMFiles
                 )
             }
             nIndex = nIndex + 1

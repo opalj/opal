@@ -1,6 +1,7 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.xltest
 
+import java.io.File
 import java.net.URL
 
 import org.scalatest.tools.Runner
@@ -43,6 +44,8 @@ class XLNativePointsToTests extends PropertiesTest {
         List("org/opalj/fpcf/fixtures/xl/llvm/")
     }
 
+    val svfLLVMFile = new File("DEVELOPING_OPAL/validateCross/src/test/resources/xl_llvm/libnative.bc")
+
     override def createConfig(): Config = ConfigFactory.load("reference.conf")
 
     override def init(p: Project[URL]): Unit = {
@@ -51,7 +54,10 @@ class XLNativePointsToTests extends PropertiesTest {
     }
     def addAnalyses(): Iterable[FPCFAnalysisScheduler] = {
         Iterable(
-            AllocationSiteBasedSVFConnectorDetectorScheduler
+            new AllocationSiteBasedSVFConnectorDetectorScheduler(
+                svfLLVMFile.getAbsolutePath,
+                Array(svfLLVMFile.getAbsolutePath)
+            )
         )
     }
 

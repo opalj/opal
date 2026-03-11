@@ -2,6 +2,7 @@
 package org.opalj
 package xl
 
+import java.io.File
 import java.net.URL
 
 import org.opalj.br.Method
@@ -93,7 +94,12 @@ object Coordinator extends AnalysisApplication with OneStepAnalysis[URL, Reporta
 
         val crossLanguage = true
         if (crossLanguage) {
-            analyses ++= Iterable(AllocationSiteBasedSVFConnectorDetectorScheduler)
+            analyses ++= Iterable(
+                new AllocationSiteBasedSVFConnectorDetectorScheduler(
+                    parameters.head.substring(0, parameters.head.lastIndexOf(File.separatorChar)),
+                    parameters.toArray
+                )
+            )
         }
 
         println(org.opalj.bytecode.JRELibraryFolder)

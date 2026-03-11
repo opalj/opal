@@ -24,7 +24,8 @@ import org.opalj.tac.fpcf.analyses.pointsto.AllocationSiteBasedAnalysis
 import org.opalj.tac.fpcf.analyses.pointsto.PointsToAnalysisBase
 import org.opalj.tac.fpcf.analyses.pointsto.TypeBasedAnalysis
 
-abstract class SVFConnector(final val project: SomeProject) extends PointsToAnalysisBase {
+abstract class SVFConnector(final val project: SomeProject, svfModuleName: String, svfLLVMFiles: Array[String])
+    extends PointsToAnalysisBase {
     self =>
 
     val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
@@ -80,7 +81,12 @@ abstract class SVFConnector(final val project: SomeProject) extends PointsToAnal
             // filter(_.classFile.thisType.simpleName.contains("TimeZone"))
             // filter(!_.asMethod.classFile.thisType.fqn.contains("ThreadImpl")) //TODO remove
             .map(method => { // .filter(_.name.contains("setOut0"))
-                new NativeAnalysis(project, declaredMethods(method)) with PointsToBase
+                new NativeAnalysis(
+                    project,
+                    declaredMethods(method),
+                    svfModuleName,
+                    svfLLVMFiles
+                ) with PointsToBase
             })
         Results(analyses.map(_.registerAPIMethod()))
     }
@@ -108,14 +114,15 @@ trait SVFConnectorScheduler extends BasicFPCFEagerAnalysisScheduler {
     }
 }
 
-object TypeBasedSVFConnectorScheduler extends SVFConnectorScheduler {
+class TypeBasedSVFConnectorScheduler(svfModuleName: String, svfLLVMFiles: Array[String]) extends SVFConnectorScheduler {
     override val propertyKind: PropertyMetaInformation = TypeBasedPointsToSet
     override val createAnalysis: SomeProject => SVFConnector =
-        new SVFConnector(_) with TypeBasedAnalysis
+        new SVFConnector(_, svfModuleName, svfLLVMFiles) with TypeBasedAnalysis
 }
 
-object AllocationSiteBasedSVFConnectorDetectorScheduler extends SVFConnectorScheduler {
+class AllocationSiteBasedSVFConnectorDetectorScheduler(svfModuleName: String, svfLLVMFiles: Array[String])
+    extends SVFConnectorScheduler {
     override val propertyKind: PropertyMetaInformation = AllocationSitePointsToSet
     override val createAnalysis: SomeProject => SVFConnector =
-        new SVFConnector(_) with AllocationSiteBasedAnalysis
+        new SVFConnector(_, svfModuleName, svfLLVMFiles) with AllocationSiteBasedAnalysis
 }
