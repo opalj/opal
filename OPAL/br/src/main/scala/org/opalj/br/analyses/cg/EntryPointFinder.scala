@@ -376,7 +376,11 @@ trait ConfigurationEntryPointsFinder extends EntryPointFinder {
         declaringClass: String,
         name:           String,
         descriptor:     Option[String]
-    ) derives ConfigReader
+    )
+
+    // Implement ConfigReader manually to avoid issue with scala-reflect: https://github.com/opalj/JCG/issues/17
+    implicit private val entryPointContainerReader: ConfigReader[EntryPointContainer] =
+        ConfigReader.forProduct3("declaringClass", "name", "descriptor")(new EntryPointContainer(_,_,_))
 }
 
 /**
