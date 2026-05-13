@@ -124,14 +124,24 @@ package object util {
     def getObjectReflectively[A](fqn: String, source: AnyRef, category: String = "configuration")(implicit
         logContext: LogContext = GlobalLogContext
     ): Option[A] = {
-        import scala.reflect.runtime.universe._
         try {
-            val mirror = runtimeMirror(source.getClass.getClassLoader)
-            val module = mirror.staticModule(fqn)
-            Some(mirror.reflectModule(module).instance.asInstanceOf[A])
+            // Get the class loader from the source object
+            val classLoader = source.getClass.getClassLoader
+
+            // Scala objects append a '$' to the full qualified name
+            val clazz = Class.forName(fqn+"$", true, classLoader)
+
+            // Access the singleton instance field
+            val moduleField = clazz.getField("MODULE$")
+
+            // Read the static field (passing null because it is a static field)
+            Some(moduleField.get(null).asInstanceOf[A])
         } catch {
-            case sre: ScalaReflectionException =>
+            case sre: ClassNotFoundException =>
                 error(category, s"Cannot find object $fqn", sre)
+                None
+            case nsfe: NoSuchFieldException =>
+                error(category, "Singleton instance field not found", nsfe)
                 None
             case cce: ClassCastException =>
                 error(category, "Reflected object is invalid", cce)
