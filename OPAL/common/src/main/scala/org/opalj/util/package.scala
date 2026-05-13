@@ -129,7 +129,7 @@ package object util {
             val classLoader = source.getClass.getClassLoader
 
             // Scala objects append a '$' to the full qualified name
-            val clazz = Class.forName(fqn+"$", true, classLoader)
+            val clazz = Class.forName(fqn + "$", true, classLoader)
 
             // Access the singleton instance field
             val moduleField = clazz.getField("MODULE$")
