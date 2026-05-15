@@ -124,12 +124,15 @@ package object util {
     def getObjectReflectively[A](fqn: String, source: AnyRef, category: String = "configuration")(implicit
         logContext: LogContext = GlobalLogContext
     ): Option[A] = {
+        // Ensure fully qualified name of singleton object ends with dollar symbol
+        val fqnObject = if (fqn.endsWith("$")) fqn else fqn + "$"
+
         try {
             // Get the class loader from the source object
             val classLoader = source.getClass.getClassLoader
 
-            // Scala objects append a '$' to the full qualified name
-            val clazz = Class.forName(fqn + "$", true, classLoader)
+            // Get class from class loader
+            val clazz = Class.forName(fqnObject, true, classLoader)
 
             // Access the singleton instance field
             val moduleField = clazz.getField("MODULE$")
@@ -138,7 +141,7 @@ package object util {
             Some(moduleField.get(null).asInstanceOf[A])
         } catch {
             case sre: ClassNotFoundException =>
-                error(category, s"Cannot find object $fqn", sre)
+                error(category, s"Cannot find object $fqnObject", sre)
                 None
             case nsfe: NoSuchFieldException =>
                 error(category, "Singleton instance field not found", nsfe)
