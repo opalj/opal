@@ -5,7 +5,6 @@ package fpcf
 package cli
 
 import scala.language.postfixOps
-import scala.reflect.internal.util.NoPosition.showError
 
 import java.io.File
 import java.net.URL
@@ -102,7 +101,7 @@ trait ProjectBasedCommandLineConfig extends OPALCommandLineConfig {
 
             val cpFiles = resolveDirToCP(get(ProjectDirectoryArg), cp, cp)
             if (cpFiles.isEmpty) {
-                showError("Nothing to analyze.")
+                error("fatal", "Nothing to analyze.")
                 printHelp()
                 sys.exit(1)
             }

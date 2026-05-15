@@ -35,10 +35,17 @@ trait ConfigurationBasedConstructorEscapeAnalysis extends AbstractEscapeAnalysis
      */
     private val predefinedConstructors: Map[ClassType, EscapeProperty] = {
         ConfigSource.fromConfig(project.config).at(ConfigKey).loadOrThrow[Seq[PredefinedResult]].map { r =>
-            import scala.reflect.runtime.*
-            val rootMirror = universe.runtimeMirror(getClass.getClassLoader)
-            val module = rootMirror.staticModule(r.escapeOfThis)
-            val property = rootMirror.reflectModule(module).instance.asInstanceOf[EscapeProperty]
+            // 1. Get the ClassLoader
+            val classLoader = this.getClass.getClassLoader
+
+            // 2. Load the companion object or module class
+            // Note: Scala modules (object) compiled to Java have a '$' suffix
+            val moduleClass = classLoader.loadClass(r.escapeOfThis + "$")
+
+            // 3. Access the singleton instance via the MODULE$ field
+            val moduleField = moduleClass.getField("MODULE$")
+            val property = moduleField.get(null).asInstanceOf[EscapeProperty]
+
             (ClassType(r.classType), property)
         }.toMap
     }
