@@ -18,7 +18,7 @@ import org.opalj.tac.fpcf.analyses.cg.CFA_k_l_TypeIterator
  *
  * @author Dominik Helm
  */
-object CFA_1_1_CallGraphKey extends PointsToCallGraphKey {
+object CFA_1_1_CallGraphKey extends AllocationSiteBasedPointsToCallGraphKey {
 
     override val pointsToType: String = "AllocationSiteBased"
     override val contextKey: ProjectInformationKey[CallStringContexts, Nothing] = CallStringContextsKey

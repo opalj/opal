@@ -52,7 +52,7 @@ trait PointsToCallGraphKey extends CallGraphKey {
         }
     }
 
-    private def getModuleFQN(moduleName: String): String = {
+    protected def getModuleFQN(moduleName: String): String = {
         s"org.opalj.tac.fpcf.analyses.pointsto.${pointsToType}${moduleName}AnalysisScheduler"
     }
 }
