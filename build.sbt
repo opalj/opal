@@ -185,6 +185,7 @@ lazy val `OPAL` = (project in file("."))
         ifds,
         ide,
         tac,
+        tac2bc,
         de,
         av,
         apk,
@@ -361,6 +362,39 @@ lazy val `ThreeAddressCode` = (project in file("OPAL/tac"))
     .dependsOn(ifds % "it->it;it->test;test->test;compile->compile")
     .configs(IntegrationTest)
 
+lazy val tac2bc = `ThreeAddressCodeToBytecode`
+
+lazy val `ThreeAddressCodeToBytecode` = (project in file("OPAL/tac2bc"))
+    .settings(buildSettings: _*)
+    .settings(
+        name := "Three Address Code to Bytecode",
+        Compile / doc / scalacOptions := (Opts.doc
+            .title("OPAL - Three Address Code to Bytecode") ++ Seq("-groups", "-implicits")),
+        assembly / mainClass := Some("org.opalj.tac2bc.TACtoBC"),
+        run / fork := true,
+
+        // Ensure resources directory is included in the classpath
+        Compile / resourceDirectory := baseDirectory.value / "src" / "main" / "resources",
+        Test / resourceDirectory := baseDirectory.value / "src" / "test" / "resources",
+
+        // Include resources in the classpath
+        Compile / resourceGenerators += Def.task {
+            val resources = (Compile / resourceDirectory).value
+            val targetDir = (Compile / classDirectory).value / "resources"
+            IO.copyDirectory(resources, targetDir)
+            Seq(targetDir)
+        },
+        Test / resourceGenerators += Def.task {
+            val resources = (Test / resourceDirectory).value
+            val targetDir = (Test / classDirectory).value / "resources"
+            IO.copyDirectory(resources, targetDir)
+            Seq(targetDir)
+        }
+    )
+    .dependsOn(ba % "it->it;it->test;test->test;compile->compile")
+    .dependsOn(tac % "it->it;it->test;test->test;compile->compile")
+    .configs(IntegrationTest)
+
 lazy val ba = `BytecodeAssembler`
 
 lazy val `BytecodeAssembler` = (project in file("OPAL/ba"))
@@ -426,7 +460,8 @@ lazy val `Framework` = (project in file("OPAL/framework"))
     .dependsOn(
         ba % "it->it;it->test;test->test;compile->compile",
         av % "it->it;it->test;test->test;compile->compile",
-        tac % "it->it;it->test;test->test;compile->compile"
+        tac % "it->it;it->test;test->test;compile->compile",
+        tac2bc % "it->it;it->test;test->test;compile->compile"
     )
     .configs(IntegrationTest)
 

@@ -2,6 +2,7 @@
 flowchart BT
     Framework[Framework<br>framework]
     ThreeAddressCode[Three Address Code<br>tac]
+    ThreeAddressCode2Bytecode[TAC2BC<br>tac2bc]
     APK[APK<br>apk]
     DependenciesExtractionLibrary[Dependencies Extraction Library<br>de]
     IDE[IDE<br>ide]
@@ -24,9 +25,12 @@ flowchart BT
     Framework --> BytecodeAssembler
     Framework --> ArchitectureValidation
     Framework --> ThreeAddressCode
+    Framework --> ThreeAddressCode2Bytecode
     ThreeAddressCode --> AbstractInterpretationFramework
     ThreeAddressCode --> IFDS
     APK --> ThreeAddressCode
+    ThreeAddressCode2Bytecode --> ThreeAddressCode
+    ThreeAddressCode2Bytecode --> BytecodeAssembler
     DependenciesExtractionLibrary --> AbstractInterpretationFramework
     IDE --> StaticAnalysisInfrastructure
     IDE --> BytecodeRepresentation
