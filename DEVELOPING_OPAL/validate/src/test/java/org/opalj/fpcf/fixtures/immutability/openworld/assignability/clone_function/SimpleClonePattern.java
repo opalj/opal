@@ -6,6 +6,7 @@ import org.opalj.fpcf.properties.immutability.field_assignability.AssignableFiel
 import org.opalj.fpcf.properties.immutability.fields.TransitivelyImmutableField;
 import org.opalj.fpcf.properties.immutability.field_assignability.EffectivelyNonAssignableField;
 import org.opalj.fpcf.properties.immutability.types.TransitivelyImmutableType;
+import org.opalj.tac.fpcf.analyses.fieldassignability.L2FieldAssignabilityAnalysis;
 
 /**
  * This class encompasses different possible cases of the clone pattern.
@@ -15,7 +16,8 @@ import org.opalj.fpcf.properties.immutability.types.TransitivelyImmutableType;
 public final class SimpleClonePattern {
 
     @TransitivelyImmutableField("Field is effectively non assignable and has a primitive type")
-    @EffectivelyNonAssignableField("Field is only assigned ones due to the clone function pattern")
+    @EffectivelyNonAssignableField(value = "Field is only assigned once due to the clone function pattern",
+            analyses = { L2FieldAssignabilityAnalysis.class })
     private int i;
 
     public SimpleClonePattern clone(){
@@ -28,7 +30,8 @@ public final class SimpleClonePattern {
 class CloneNonAssignableWithNewObject {
 
     @TransitivelyImmutableField("field is effectively non assignable and assigned with a transitively immutable object")
-    @EffectivelyNonAssignableField("field is only assigned ones due to the clone function pattern")
+    @EffectivelyNonAssignableField(value = "field is only assigned once due to the clone function pattern",
+            analyses = { L2FieldAssignabilityAnalysis.class })
     private Integer integer;
 
     public CloneNonAssignableWithNewObject clone(){
@@ -41,7 +44,8 @@ class CloneNonAssignableWithNewObject {
 class EscapesAfterAssignment {
 
     @TransitivelyImmutableField("field is effectively non assignable and assigned with a transitively immutable object")
-    @EffectivelyNonAssignableField("field is only assigned ones due to the clone function pattern")
+    @EffectivelyNonAssignableField(value = "field is only assigned once due to the clone function pattern",
+            analyses = { L2FieldAssignabilityAnalysis.class })
     private Integer integer;
 
     private Integer integerCopy;
@@ -59,11 +63,13 @@ class EscapesAfterAssignment {
 final class MultipleFieldsAssignedInCloneFunction {
 
     @TransitivelyImmutableField("The field is effectively non assignable and has a transitively immutable type")
-    @EffectivelyNonAssignableField("The field is only assigned once in the clone function")
+    @EffectivelyNonAssignableField(value = "The field is only assigned once in the clone function",
+            analyses = { L2FieldAssignabilityAnalysis.class })
     private Integer firstInteger;
 
     @TransitivelyImmutableField("The field is effectively non assignable and has a transitively immutable type")
-    @EffectivelyNonAssignableField("The field is only assigned once in the clone function")
+    @EffectivelyNonAssignableField(value = "The field is only assigned once in the clone function",
+            analyses = { L2FieldAssignabilityAnalysis.class })
     private Integer secondInteger;
 
     public MultipleFieldsAssignedInCloneFunction clone(){
@@ -77,7 +83,8 @@ final class MultipleFieldsAssignedInCloneFunction {
 class ConstructorWithParameter {
 
     @TransitivelyImmutableField("field is effectively non assignable and has a transitively immutable type")
-    @EffectivelyNonAssignableField("field is only assigned ones due to the clone function pattern")
+    @EffectivelyNonAssignableField(value = "field is only assigned once due to the clone function pattern",
+            analyses = { L2FieldAssignabilityAnalysis.class })
     private Integer integer;
 
     public ConstructorWithParameter(Integer integer){
@@ -94,7 +101,8 @@ class ConstructorWithParameter {
 
 class CloneNonAssignableArrayWithRead {
 
-    @EffectivelyNonAssignableField("field is only assigned once due to the clone function pattern")
+    @EffectivelyNonAssignableField(value = "field is only assigned once due to the clone function pattern",
+            analyses = { L2FieldAssignabilityAnalysis.class })
     private boolean[] booleans;
 
     public CloneNonAssignableArrayWithRead clone(){

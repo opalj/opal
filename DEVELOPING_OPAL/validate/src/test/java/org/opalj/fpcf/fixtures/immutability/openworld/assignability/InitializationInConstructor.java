@@ -11,15 +11,17 @@ class InitializationInConstructorAssignable {
 
     @AssignableField("The field is written everytime it is passed to the constructor of another instance.")
     private InitializationInConstructorAssignable child;
+
     public InitializationInConstructorAssignable(InitializationInConstructorAssignable parent) {
         parent.child = this;
-        }
     }
+}
 
 class InitializationInConstructorNonAssignable {
 
     @EffectivelyNonAssignableField("The field is only assigned once in its own constructor.")
     private InitializationInConstructorNonAssignable parent;
+
     public InitializationInConstructorNonAssignable(InitializationInConstructorNonAssignable parent) {
         this.parent = parent.parent;
     }

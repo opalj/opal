@@ -34,11 +34,11 @@ sealed trait FieldAssignability extends OrderedProperty with FieldAssignabilityP
     final def key: PropertyKey[FieldAssignability] = FieldAssignability.key
 
     def isImmutable = false
+
+    def meet(that: FieldAssignability): FieldAssignability
 }
 
 object FieldAssignability extends FieldAssignabilityPropertyMetaInformation {
-
-    var notEscapes: Boolean = false
 
     final val PropertyKeyName = "opalj.FieldAssignability"
 
@@ -73,9 +73,9 @@ case object EffectivelyNonAssignable extends NonAssignableField {
 
     def meet(other: FieldAssignability): FieldAssignability =
         if (other == NonAssignable) {
-            other
-        } else {
             this
+        } else {
+            other
         }
 }
 

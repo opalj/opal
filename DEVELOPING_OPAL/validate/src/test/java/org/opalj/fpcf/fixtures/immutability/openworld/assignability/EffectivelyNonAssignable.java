@@ -85,3 +85,21 @@ public class EffectivelyNonAssignable {
     @EffectivelyNonAssignableField("The field is not written after initialization")
     private HashMap<Object, Object> effectivelyNonAssignableHashMap = new HashMap<Object, Object>();
 }
+
+class MultiWritesInConstructor {
+    @EffectivelyNonAssignableField("The field is only observed with one value")
+    private boolean ignoreAutoboxing;
+
+    public MultiWritesInConstructor() {
+        this(false);
+    }
+
+    public MultiWritesInConstructor(boolean ignoreAutoboxing) {
+        this.ignoreAutoboxing = false;
+        this.ignoreAutoboxing = ignoreAutoboxing;
+    }
+
+    public boolean isIgnoringAutoboxing() {
+        return this.ignoreAutoboxing;
+    }
+}
