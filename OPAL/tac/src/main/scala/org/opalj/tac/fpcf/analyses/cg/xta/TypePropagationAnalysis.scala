@@ -280,12 +280,16 @@ final class TypePropagationAnalysis private[analyses] (
             // Some sanity checks ...
             // Methods with multiple defined methods should never appear as callees.
             elidedAssert(!callee.hasMultipleDefinedMethods)
+            
             // Instances of DefinedMethod we see should only be those where the method is defined in the class file of
             // the declaring class type (i.e., it is not a DefinedMethod instance of some inherited method).  However,
             // in inconsistent bytecode scenarios, the call graph may resolve to a non-implemented abstract method.
-            elidedAssert(!callee.hasSingleDefinedMethod ||
-                (callee.declaringClassType == callee.asDefinedMethod.definedMethod.classFile.thisType) ||
-                callee.asDefinedMethod.definedMethod.isAbstract)
+            //
+            // Assertion removed because of https://github.com/opalj/opal/issues/368
+            // elidedAssert(!callee.hasSingleDefinedMethod ||
+            //    (callee.declaringClassType == callee.asDefinedMethod.definedMethod.classFile.thisType) ||
+            //    callee.asDefinedMethod.definedMethod.isAbstract)
+            //
 
             // Remember callee (with PC) so we don't have to process it again later.
             state.addSeenCallee(pc, callee)
