@@ -235,8 +235,8 @@ trait LibraryEntryPointsFinder extends EntryPointFinder {
  *            InitialEntryPointKey {
  *                analysis = "org.opalj.br.analyses.cg.ConfigurationEntryPointsFinder"
  *                entryPoints = [
- *                  {declaringClass = "java/util/List+", name = "add"},
- *                  {declaringClass = "java/util/List", name = "remove", descriptor = "(I)Z"}
+ *                  {declaring-class = "java/util/List+", name = "add"},
+ *                  {declaring-class = "java/util/List", name = "remove", descriptor = "(I)Z"}
  *                ]
  *            }
  *        }
@@ -245,7 +245,7 @@ trait LibraryEntryPointsFinder extends EntryPointFinder {
  * Please note that the first entry point, by adding the "+" to the declaring class' name, considers
  * all "add" methods from all subtypes independently of the respective method's descriptor. In
  * contrast, the second entry does specify a descriptor and does not consider List's subtypes (by
- * not suffixing a plus to the declaringClass) which implies that only the remove method with this
+ * not suffixing a plus to the declaring-class) which implies that only the remove method with this
  * descriptor is considered as entry point.
  *
  * @author Michael Reif
@@ -376,7 +376,11 @@ trait ConfigurationEntryPointsFinder extends EntryPointFinder {
         declaringClass: String,
         name:           String,
         descriptor:     Option[String]
-    ) derives ConfigReader
+    )
+
+    // Implement ConfigReader manually to avoid issue with scala-reflect: https://github.com/opalj/JCG/issues/17
+    private implicit val entryPointContainerReader: ConfigReader[EntryPointContainer] =
+        ConfigReader.forProduct3("declaring-class", "name", "descriptor")(EntryPointContainer.apply)
 }
 
 /**

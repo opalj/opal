@@ -3,8 +3,6 @@ package org.opalj
 package ba
 
 import scala.language.postfixOps
-import scala.reflect.classTag
-import scala.reflect.runtime.universe.*
 
 import java.io.ByteArrayInputStream
 
@@ -88,8 +86,8 @@ class FieldBuilderTest extends AnyFlatSpec {
         this.getClass.getClassLoader
     )
 
-    val fieldInstance = loader.loadClass(javaClassName).getDeclaredConstructor().newInstance()
-    val mirror = runtimeMirror(loader).reflect(fieldInstance)(using classTag[AnyRef])
+    val clazz = loader.loadClass(javaClassName)
+    val fieldInstance = clazz.getDeclaredConstructor().newInstance()
 
     val brClassFile = Java8Framework.ClassFile(() => new ByteArrayInputStream(rawClassFile)).head
 
@@ -101,13 +99,14 @@ class FieldBuilderTest extends AnyFlatSpec {
     }
 
     "the field `FieldClass.privateField`" should "be initialized as true" in {
-        val field = mirror.symbol.typeSignature.member(TermName("privateField")).asTerm
-        assert(mirror.reflectField(field).get == true)
+        val field = clazz.getDeclaredField("privateField")
+        field.setAccessible(true)
+        assert(field.get(fieldInstance) == true)
     }
 
     "FieldClass.publicField" should "be initialized as 3" in {
-        val field = mirror.symbol.typeSignature.member(TermName("publicField")).asTerm
-        assert(mirror.reflectField(field).get == 3)
+        val field = clazz.getDeclaredField("publicField")
+        assert(field.get(fieldInstance) == 3)
     }
 
 }

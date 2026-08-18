@@ -329,7 +329,6 @@ sealed class ConcreteCallees(
         indirectCallParameters: IntMap[IntMap[Seq[Option[(ValueInformation, br.PCs)]]]]
     ): Callees = {
         val cId = callerContext.id
-        directCalleesIds.updateWith(cId, directCallees, (o, n) => o.unionWith(n, (_, l, r) => l ++ r))
         new ConcreteCallees(
             directCalleesIds.updateWith(
                 cId,

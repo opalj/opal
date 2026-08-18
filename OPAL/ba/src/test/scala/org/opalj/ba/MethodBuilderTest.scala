@@ -3,8 +3,6 @@ package org.opalj
 package ba
 
 import scala.language.postfixOps
-import scala.reflect.classTag
-import scala.reflect.runtime.universe.*
 
 import java.io.ByteArrayInputStream
 import scala.collection.immutable.ArraySeq
@@ -59,10 +57,9 @@ class MethodBuilderTest extends AnyFlatSpec {
 
         val simpleMethodClazz = loader.loadClass("SimpleMethodClass")
         val simpleMethodInstance = simpleMethodClazz.getDeclaredConstructor().newInstance()
-        val mirror = runtimeMirror(loader).reflect(simpleMethodInstance)(using classTag[AnyRef])
-        val method = mirror.symbol.typeSignature.member(TermName("testMethod")).asMethod
+        val method = simpleMethodClazz.getMethod("testMethod", classOf[String])
 
-        assert(mirror.reflectMethod(method)("test") == null)
+        assert(method.invoke(simpleMethodInstance, "test") == null)
     }
 
     val brClassFile = J8ClassFile(() => new java.io.ByteArrayInputStream(rawClassFile)).head
@@ -205,11 +202,10 @@ class MethodBuilderTest extends AnyFlatSpec {
         try {
             val attributeMethodClass = loader.loadClass("AttributeMethodClass")
             val attributeTestInstance = attributeMethodClass.getDeclaredConstructor().newInstance()
-            val mirror = runtimeMirror(loader).reflect(attributeTestInstance)(using classTag[AnyRef])
-            val method = mirror.symbol.typeSignature.member(TermName("tryCatchFinallyTest")).asMethod
-            assert(mirror.reflectMethod(method)(-1) == 0)
-            assert(mirror.reflectMethod(method)(0) == 1)
-            assert(mirror.reflectMethod(method)(1) == 2)
+            val method = attributeMethodClass.getDeclaredMethod("tryCatchFinallyTest", classOf[Int])
+            assert(method.invoke(attributeTestInstance, -1) == 0)
+            assert(method.invoke(attributeTestInstance, 0) == 1)
+            assert(method.invoke(attributeTestInstance, 1) == 2)
         } catch {
             case t: Throwable =>
                 info(
