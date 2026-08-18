@@ -2,6 +2,7 @@
 package org.opalj
 package fpcf
 
+import org.opalj.fpcf.scheduling.CleanupSpec
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger.info
 import org.opalj.util.PerformanceEvaluation.time
@@ -18,7 +19,8 @@ import org.opalj.util.elidedAssert
  */
 case class Schedule[A](
     batches:            List[PhaseConfiguration[A]],
-    initializationData: Map[ComputationSpecification[A], Any]
+    initializationData: Map[ComputationSpecification[A], Any],
+    cleanupSpec:        Option[CleanupSpec]
 ) extends (
         (
             PropertyStore,
@@ -44,16 +46,24 @@ case class Schedule[A](
     ): List[(ComputationSpecification[A], A)] = {
         implicit val logContext: LogContext = ps.logContext
 
+        val phases = cleanupSpec.map(scheduling.Cleanup.withPerPhaseCleanup(batches, ps, _)).getOrElse(batches)
+
         var allExecutedAnalyses: List[(ComputationSpecification[A], A)] = Nil
 
-        batches.iterator.zipWithIndex foreach { batchId =>
-            val (PhaseConfiguration(configuration, css), id) = batchId
+        phases.iterator.zipWithIndex foreach { batchId =>
+            val (phase, id) = batchId
+            val configuration = phase.propertyKinds
+            val css = phase.scheduled
 
             if (trace) {
                 info("analysis progress", s"setting up analysis phase $id: $configuration")
+                if (phase.toDelete.nonEmpty) {
+                    info("analysis progress", s"to be deleted after this phase: " + phase.toDelete.map(PropertyKey.name))
+                }
             }
             time {
-                ps.setupPhase(configuration)
+                ps.setupPhase(configuration, phase.toDelete)
+
                 afterPhaseSetup(configuration)
                 elidedAssert(ps.isIdle, "the property store is not idle after phase setup")
 
@@ -88,8 +98,9 @@ case class Schedule[A](
                     )
             }
         }
+
         // ... we are done now; the computed properties will no longer be computed!
-        ps.setupPhase(Set.empty, Set.empty)
+        ps.setupPhase(Set.empty, propertyKindsComputedInLaterPhase = Set.empty)
 
         allExecutedAnalyses
     }

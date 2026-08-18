@@ -6,6 +6,7 @@ import com.typesafe.config.Config
 
 import org.opalj.fpcf.AnalysisScenario.AnalysisAutoConfigKey
 import org.opalj.fpcf.AnalysisScenario.AnalysisSchedulingStrategyKey
+import org.opalj.fpcf.scheduling.CleanupSpec
 import org.opalj.fpcf.scheduling.SchedulingStrategy
 import org.opalj.graphs.Graph
 import org.opalj.log.LogContext
@@ -209,7 +210,8 @@ class AnalysisScenario[A](val ps: PropertyStore) {
      */
     def computeSchedule(
         propertyStore:   PropertyStore,
-        defaultAnalysis: PropertyBounds => Option[ComputationSpecification[A]] = _ => None
+        defaultAnalysis: PropertyBounds => Option[ComputationSpecification[A]] = _ => None,
+        cleanupSpec:     Option[CleanupSpec]                                   = None
     )(
         implicit logContext: LogContext
     ): Schedule[A] = {
@@ -282,7 +284,8 @@ class AnalysisScenario[A](val ps: PropertyStore) {
 
         Schedule(
             scheduledBatches,
-            initializationData
+            initializationData,
+            cleanupSpec
         )
     }
 }

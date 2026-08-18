@@ -97,7 +97,6 @@ abstract class MultiplePhaseScheduling extends SchedulingStrategy {
             remainingAnalyses --= phaseAnalyses
             computePhase(ps, phaseAnalyses, remainingAnalyses)
         }
-
         schedule
     }
 
@@ -167,4 +166,10 @@ object MaximumPhaseScheduling extends MultiplePhaseScheduling {
     ): (Map[Int, List[Int]], Map[Int, Set[Int]]) = {
         (initialPhaseDependencyGraph.toMap, initialPhaseIndexToAnalyses.toMap)
     }
+}
+
+object CleanupCalculation {
+    final val PropertiesToKeepKey = s"${ConfigKeyPrefix}KeepPropertyKeys"
+    final val PropertiesToRemoveKey = s"${ConfigKeyPrefix}ClearPropertyKeys"
+    final val DisableCleanupKey = s"${ConfigKeyPrefix}DisableCleanup"
 }

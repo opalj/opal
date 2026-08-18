@@ -832,10 +832,13 @@ final class PKESequentialPropertyStore protected (
             continueComputation
         } do ()
 
+        clearObsoletePropertyKinds()
         idle = true
 
         if (exception != null) throw exception;
     }
+
+    override protected def clearPK(id: Int): Unit = ps(id).clear()
 
     def shutdown(): Unit = {}
 }
